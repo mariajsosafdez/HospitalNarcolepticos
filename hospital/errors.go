@@ -26,6 +26,8 @@ var (
 	ErrNotInRoom = errors.New("patient is not in this room")
 	// ErrAlreadyAwake: se intentó despertar a un paciente que ya está despierto.
 	ErrAlreadyAwake = errors.New("patient is already awake")
+	// ErrAlreadyAsleep: se registró un ataque de sueño de alguien que ya está dormido.
+	ErrAlreadyAsleep = errors.New("patient is already asleep")
 	// ErrPatientAwake: se intentó atender una emergencia de sueño de alguien despierto.
 	ErrPatientAwake = errors.New("patient is awake, there is no sleep emergency")
 	// ErrNotInHallway: se pidió cuarto para alguien que no está dormido en el pasillo.
