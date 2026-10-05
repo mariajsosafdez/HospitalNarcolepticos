@@ -2,7 +2,9 @@ package hospital
 
 import (
 	"errors"
+	"fmt"
 	"testing"
+	"time"
 )
 
 // Las pruebas en Go viven en archivos *_test.go y son funciones que empiezan
@@ -220,5 +222,61 @@ func TestWakeUpReleasesRoom(t *testing.T) {
 	}
 	if err := h.WakeUpPatient(sleeper); !errors.Is(err, ErrAlreadyAwake) {
 		t.Errorf("expected ErrAlreadyAwake, got %v", err)
+	}
+}
+
+// Bono de concurrencia: varias goroutines usan el hospital a la vez.
+// Esta prueba tiene sentido sobre todo con el detector de carreras:
+//
+//	go test -race ./...
+//
+// Si algún dato se leyera o escribiera sin el candado, -race lo reportaría
+// como "WARNING: DATA RACE" y la prueba fallaría.
+func TestSimulationIsRaceFree(t *testing.T) {
+	var patients []*Patient
+	for i := 1; i <= 8; i++ {
+		id := fmt.Sprintf("P-%03d", i)
+		patients = append(patients, mustPatient(t, id, "Patient "+id, Severe))
+	}
+	h := newTestHospital(t, 3, patients...)
+
+	// Mientras la simulación corre, otra goroutine toma fotos sin parar
+	// (como hace el servidor web). done sirve para avisarle que se detenga.
+	done := make(chan struct{})
+	readerFinished := make(chan struct{})
+	go func() {
+		defer close(readerFinished)
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				_ = h.Snapshot()
+			}
+		}
+	}()
+
+	result := h.Simulate(SimulationConfig{Rounds: 20, MaxDelay: time.Millisecond})
+	close(done)
+	<-readerFinished
+
+	if result.Goroutines != len(patients) {
+		t.Errorf("expected %d goroutines, got %d", len(patients), result.Goroutines)
+	}
+	if result.Episodes != len(h.History()) {
+		t.Errorf("episodes counted (%d) must match history (%d)", result.Episodes, len(h.History()))
+	}
+	// Invariante: ningún cuarto puede tener más pacientes que camas, y todo
+	// paciente "en cama" debe estar realmente dentro de un cuarto.
+	snap := h.Snapshot()
+	for _, r := range snap.Rooms {
+		if len(r.Occupants) > r.Capacity {
+			t.Errorf("room %d has %d occupants for %d beds", r.Number, len(r.Occupants), r.Capacity)
+		}
+	}
+	for _, p := range snap.Patients {
+		if p.State == AsleepInBed && p.RoomNumber == 0 {
+			t.Errorf("patient %s is in bed without a room", p.ID)
+		}
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync"
 	"time"
 )
 
@@ -18,7 +19,21 @@ import (
 // el primer cuarto disponible, los pacientes en el orden en que fueron
 // admitidos, y el personal en orden para despacharlo por turnos. Con pocos
 // elementos, buscar recorriendo el slice es simple y suficientemente rápido.
+//
+// CONCURRENCIA: varias goroutines (la simulación, el servidor web) pueden
+// usar el mismo hospital al mismo tiempo. Para que no se pisen, el hospital
+// tiene un candado (mu). REGLA de este archivo:
+//   - Todo método PÚBLICO toma el candado al empezar y lo suelta al terminar.
+//   - Los métodos privados terminados en "Locked" (y attend/dispatchAttender)
+//     ASUMEN que el candado ya está tomado y nunca lo toman de nuevo.
+//
+// ¿Por qué esa separación? sync.Mutex NO es reentrante: si una goroutine que
+// ya tiene el candado intenta tomarlo otra vez, se queda esperándose a sí
+// misma para siempre (deadlock). Por eso RegisterEpisode llama a
+// assignRoomLocked y no al método público AssignRoom.
 type Hospital struct {
+	mu sync.Mutex // protege TODOS los campos de abajo y los objetos que contienen
+
 	name      string
 	doctors   []*Doctor       // solo los doctores (para la consulta por doctor)
 	staff     []Attender      // TODO el personal: doctores y camilleros juntos (polimorfismo)
@@ -33,7 +48,8 @@ func NewHospital(name string) *Hospital {
 	return &Hospital{name: name}
 }
 
-// Name devuelve el nombre del hospital.
+// Name devuelve el nombre del hospital. No usa el candado porque el nombre
+// nunca cambia después de crear el hospital (solo se lee).
 func (h *Hospital) Name() string { return h.name }
 
 // ---------------------------------------------------------------------------
@@ -45,7 +61,10 @@ func (h *Hospital) AdmitPatient(p *Patient) error {
 	if p == nil {
 		return fmt.Errorf("admit patient: %w", ErrInvalidData)
 	}
-	if h.findPatient(p.ID()) != nil {
+	h.mu.Lock()         // desde aquí ninguna otra goroutine puede tocar el hospital...
+	defer h.mu.Unlock() // ...y "defer" garantiza soltar el candado al salir, pase lo que pase
+
+	if h.findPatientLocked(p.ID()) != nil {
 		return fmt.Errorf("admit patient %s: %w", p.ID(), ErrDuplicateID)
 	}
 	h.patients = append(h.patients, p)
@@ -53,7 +72,7 @@ func (h *Hospital) AdmitPatient(p *Patient) error {
 }
 
 // HireDoctor contrata a un doctor. Internamente usa HireStaff, porque un
-// doctor también es un Attender.
+// doctor también es un Attender. (No toma el candado: HireStaff lo hace.)
 func (h *Hospital) HireDoctor(d *Doctor) error {
 	if d == nil {
 		return fmt.Errorf("hire doctor: %w", ErrInvalidData)
@@ -67,7 +86,10 @@ func (h *Hospital) HireStaff(a Attender) error {
 	if a == nil {
 		return fmt.Errorf("hire staff: %w", ErrInvalidData)
 	}
-	if h.findStaff(a.ID()) != nil {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if h.findStaffLocked(a.ID()) != nil {
 		return fmt.Errorf("hire staff %s: %w", a.ID(), ErrDuplicateID)
 	}
 	h.staff = append(h.staff, a)
@@ -87,6 +109,9 @@ func (h *Hospital) AddRoom(r *Room) error {
 	if r == nil {
 		return fmt.Errorf("add room: %w", ErrInvalidData)
 	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
 	for _, existing := range h.rooms {
 		if existing.number == r.number {
 			return fmt.Errorf("add room %d: %w", r.number, ErrDuplicateID)
@@ -99,30 +124,65 @@ func (h *Hospital) AddRoom(r *Room) error {
 // ---------------------------------------------------------------------------
 // Getters: devuelven COPIAS de los slices para que nadie de afuera pueda
 // agregar o quitar elementos de las listas internas del hospital.
+//
+// Ojo: la copia es del slice, pero los punteros apuntan a los mismos objetos.
+// Leer p.State() desde afuera mientras corre una simulación sería una carrera
+// de datos; para leer de forma segura en concurrencia se usa Snapshot() o
+// StateOf().
 // ---------------------------------------------------------------------------
 
 // Patients devuelve los pacientes admitidos.
-func (h *Hospital) Patients() []*Patient { return slices.Clone(h.patients) }
+func (h *Hospital) Patients() []*Patient {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return slices.Clone(h.patients)
+}
 
 // Doctors devuelve los doctores contratados.
-func (h *Hospital) Doctors() []*Doctor { return slices.Clone(h.doctors) }
+func (h *Hospital) Doctors() []*Doctor {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return slices.Clone(h.doctors)
+}
 
 // Staff devuelve todo el personal (doctores, camilleros...) como Attender.
-func (h *Hospital) Staff() []Attender { return slices.Clone(h.staff) }
+func (h *Hospital) Staff() []Attender {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return slices.Clone(h.staff)
+}
 
 // Rooms devuelve los cuartos registrados.
-func (h *Hospital) Rooms() []*Room { return slices.Clone(h.rooms) }
+func (h *Hospital) Rooms() []*Room {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return slices.Clone(h.rooms)
+}
 
 // History devuelve todos los episodios registrados.
-func (h *Hospital) History() []EpisodeRecord { return slices.Clone(h.history) }
+func (h *Hospital) History() []EpisodeRecord {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return slices.Clone(h.history)
+}
 
 // FindPatient busca un paciente por su ID.
 func (h *Hospital) FindPatient(id string) (*Patient, error) {
-	p := h.findPatient(id)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	p := h.findPatientLocked(id)
 	if p == nil {
 		return nil, fmt.Errorf("find patient %q: %w", id, ErrPatientNotFound)
 	}
 	return p, nil
+}
+
+// StateOf lee el estado de un paciente CON el candado tomado. Es la forma
+// segura de preguntar "¿está dormido?" mientras otras goroutines trabajan.
+func (h *Hospital) StateOf(p *Patient) PatientState {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return p.state
 }
 
 // ---------------------------------------------------------------------------
@@ -139,11 +199,17 @@ func (h *Hospital) FindPatient(id string) (*Patient, error) {
 // El episodio SIEMPRE queda registrado (el paciente sí se durmió). Si no hubo
 // cuarto o no hubo personal, se devuelve un error explicándolo, que se puede
 // revisar con errors.Is(err, ErrNoRoomAvailable).
+//
+// Los 4 pasos ocurren con el candado tomado: ninguna otra goroutine puede
+// ver el estado "a medias" (por ejemplo, dormido pero sin episodio).
 func (h *Hospital) RegisterEpisode(p *Patient, location string) error {
 	if p == nil || location == "" {
 		return fmt.Errorf("register episode: %w", ErrInvalidData)
 	}
-	if !h.hasPatient(p) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if !h.hasPatientLocked(p) {
 		return fmt.Errorf("register episode of %s: %w", p.ID(), ErrPatientNotFound)
 	}
 	if p.state != Awake {
@@ -155,7 +221,8 @@ func (h *Hospital) RegisterEpisode(p *Patient, location string) error {
 
 	// 2. Buscar cama. Si falla, guardamos el error pero seguimos: el paciente
 	//    necesita ser atendido aunque se quede en el pasillo.
-	_, roomErr := h.AssignRoom(p)
+	//    (Versión "Locked" porque YA tenemos el candado.)
+	_, roomErr := h.assignRoomLocked(p)
 
 	// 3. Despachar personal sin saber si es Doctor u Orderly.
 	record, staffErr := h.attend(p, location)
@@ -170,7 +237,7 @@ func (h *Hospital) RegisterEpisode(p *Patient, location string) error {
 
 // attend despacha a un miembro del personal para atender al paciente y
 // devuelve el registro del episodio. Si nadie puede atender, el episodio
-// se registra igual, pero sin attender.
+// se registra igual, pero sin attender. Requiere el candado tomado.
 func (h *Hospital) attend(p *Patient, location string) (EpisodeRecord, error) {
 	attender, err := h.dispatchAttender()
 	if err != nil {
@@ -188,6 +255,7 @@ func (h *Hospital) attend(p *Patient, location string) (EpisodeRecord, error) {
 // dispatchAttender elige al siguiente miembro del personal disponible,
 // por turnos (round-robin): empieza en nextStaff y da la vuelta al slice.
 // Solo usa métodos de la interfaz: no sabe ni le importa el tipo concreto.
+// Requiere el candado tomado.
 func (h *Hospital) dispatchAttender() (Attender, error) {
 	n := len(h.staff)
 	for i := 0; i < n; i++ {
@@ -206,7 +274,10 @@ func (h *Hospital) WakeUpPatient(p *Patient) error {
 	if p == nil {
 		return fmt.Errorf("wake up: %w", ErrInvalidData)
 	}
-	if !h.hasPatient(p) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if !h.hasPatientLocked(p) {
 		return fmt.Errorf("wake up %s: %w", p.ID(), ErrPatientNotFound)
 	}
 	return p.WakeUp()
@@ -214,11 +285,19 @@ func (h *Hospital) WakeUpPatient(p *Patient) error {
 
 // ---------------------------------------------------------------------------
 // Consultas requeridas (sección 5). Todas DEVUELVEN datos; ninguna imprime.
+// Cada una tiene su versión pública (toma el candado) y su versión Locked
+// (hace el trabajo), para poder reutilizarlas desde Snapshot().
 // ---------------------------------------------------------------------------
 
 // PatientsInHallway es la consulta 5.1: devuelve los pacientes dormidos en
 // un pasillo, para poder enviar a un camillero.
 func (h *Hospital) PatientsInHallway() []*Patient {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.patientsInHallwayLocked()
+}
+
+func (h *Hospital) patientsInHallwayLocked() []*Patient {
 	var result []*Patient
 	for _, p := range h.patients {
 		if p.state == AsleepInHallway {
@@ -232,13 +311,25 @@ func (h *Hospital) PatientsInHallway() []*Patient {
 // ahí al paciente (el cuarto puede quedar Occupied y el paciente AsleepInBed).
 // Si no hay cuarto libre devuelve ErrNoRoomAvailable: el paciente sigue en el
 // pasillo, el programa no se cae y no se inventa ningún cuarto.
+//
+// Concurrencia: si dos goroutines piden el ÚLTIMO cuarto libre al mismo
+// tiempo, el candado hace que entren de una en una. La primera lo ocupa; la
+// segunda, al entrar, ya lo ve lleno y recibe ErrNoRoomAvailable.
 func (h *Hospital) AssignRoom(p *Patient) (*Room, error) {
 	if p == nil {
 		return nil, fmt.Errorf("assign room: %w", ErrInvalidData)
 	}
-	if !h.hasPatient(p) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.assignRoomLocked(p)
+}
+
+func (h *Hospital) assignRoomLocked(p *Patient) (*Room, error) {
+	if !h.hasPatientLocked(p) {
 		return nil, fmt.Errorf("assign room to %s: %w", p.ID(), ErrPatientNotFound)
 	}
+	// Se revisa el estado DENTRO del candado: si otra goroutine ya le dio
+	// cama a este paciente, aquí lo vemos y no le damos una segunda.
 	if p.state != AsleepInHallway {
 		return nil, fmt.Errorf("assign room to %s: %w", p.ID(), ErrNotInHallway)
 	}
@@ -260,6 +351,12 @@ func (h *Hospital) AssignRoom(p *Patient) (*Room, error) {
 // y sumar por clave es directo. Los pacientes Severe sin episodios aparecen
 // con 0. Ojo: un map de Go NO tiene orden; quien imprima debe ordenar.
 func (h *Hospital) SevereReport() map[*Patient]int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.severeReportLocked()
+}
+
+func (h *Hospital) severeReportLocked() map[*Patient]int {
 	report := make(map[*Patient]int)
 	for _, p := range h.patients {
 		if p.level == Severe {
@@ -277,11 +374,11 @@ func (h *Hospital) SevereReport() map[*Patient]int {
 }
 
 // ---------------------------------------------------------------------------
-// Ayudantes privados
+// Ayudantes privados (todos requieren el candado tomado)
 // ---------------------------------------------------------------------------
 
-// findPatient devuelve el paciente con ese ID, o nil si no existe.
-func (h *Hospital) findPatient(id string) *Patient {
+// findPatientLocked devuelve el paciente con ese ID, o nil si no existe.
+func (h *Hospital) findPatientLocked(id string) *Patient {
 	for _, p := range h.patients {
 		if p.ID() == id {
 			return p
@@ -290,8 +387,8 @@ func (h *Hospital) findPatient(id string) *Patient {
 	return nil
 }
 
-// findStaff devuelve el miembro del personal con ese ID, o nil si no existe.
-func (h *Hospital) findStaff(id string) Attender {
+// findStaffLocked devuelve el miembro del personal con ese ID, o nil si no existe.
+func (h *Hospital) findStaffLocked(id string) Attender {
 	for _, a := range h.staff {
 		if a.ID() == id {
 			return a
@@ -300,8 +397,8 @@ func (h *Hospital) findStaff(id string) Attender {
 	return nil
 }
 
-// hasPatient dice si ese paciente (el mismo puntero) está admitido aquí.
-func (h *Hospital) hasPatient(p *Patient) bool {
+// hasPatientLocked dice si ese paciente (el mismo puntero) está admitido aquí.
+func (h *Hospital) hasPatientLocked(p *Patient) bool {
 	return slices.Contains(h.patients, p)
 }
 
