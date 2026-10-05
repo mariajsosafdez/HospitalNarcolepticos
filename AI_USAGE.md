@@ -35,7 +35,8 @@ How we worked:
 4. **Uninformative simulation output.** With an even number of rounds, every patient alternated sleep/wake and always finished *awake*. The console summary then showed every room empty, which demonstrated nothing. The number of rounds was changed to 7, so the final state shows occupied rooms and patients in the hallway.
 5. **Layout bug in the web page.** In the scenario tab the wide console text pushed the right-hand column off the screen, because the grid used `1fr 1fr`. This was found by taking screenshots with headless Edge. The fix was `minmax(0, 1fr)` columns, so the console scrolls instead.
 6. **Possible lost clicks.** The page redrew every table every 500 ms. A click could be lost if the button was replaced between mouse-down and mouse-up. Now the page only redraws when the received data actually changed.
-7. **Design adjustment: circular dependency.** `Patient` needs `*Doctor` and `Doctor` needs `*Patient`, so the planned "Patient/Room/Episode first, Doctor later" phases did not compile on their own. The `assignedDoctor` field was added to `Patient` in the same phase as `Doctor`.
+7. **Windows line endings broke `gofmt`.** After a `git checkout` of a file, Git for Windows (`core.autocrlf=true`) rewrote it with CRLF endings, and `gofmt -l` flagged it. Anyone cloning the repository on Windows would have seen every file flagged. The fix was a `.gitattributes` with `* text=auto eol=lf`, then checking a fresh clone from GitHub: `gofmt`, `go vet` and `go test` were all clean.
+8. **Design adjustment: circular dependency.** `Patient` needs `*Doctor` and `Doctor` needs `*Patient`, so the planned "Patient/Room/Episode first, Doctor later" phases did not compile on their own. The `assignedDoctor` field was added to `Patient` in the same phase as `Doctor`.
 
 ## What I learned
 
