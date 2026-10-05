@@ -1,0 +1,4 @@
+# gofmt exige finales de línea LF. Con esto git siempre deja LF en la copia
+# de trabajo, también en Windows (donde por defecto convertiría a CRLF y
+# gofmt marcaría todos los archivos como "sin formatear").
+* text=auto eol=lf
