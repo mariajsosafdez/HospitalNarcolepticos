@@ -7,6 +7,7 @@
 package main
 
 import (
+	"bytes"
 	"cmp"
 	"errors"
 	"fmt"
@@ -17,19 +18,41 @@ import (
 	"time"
 
 	"costenos-narcolepsia/hospital"
+	"costenos-narcolepsia/web"
 )
 
 const hospitalName = "Hospital de los Costeños con Narcolepsia"
 
+// serverAddress es donde escucha la interfaz web. Se usa "localhost" para
+// que solo sea accesible desde este computador.
+const serverAddress = "localhost:8080"
+
 func main() {
-	if _, err := runScenario(os.Stdout); err != nil {
+	// 1. Escenario obligatorio. io.MultiWriter es un Writer que copia todo
+	//    lo que recibe a VARIOS destinos: la consola y un buffer en memoria.
+	//    Así el mismo texto se muestra luego en la pestaña 1 de la web.
+	var scenarioLog bytes.Buffer
+	scenario, err := runScenario(io.MultiWriter(os.Stdout, &scenarioLog))
+	if err != nil {
 		// Solo llegamos aquí si los DATOS del escenario están mal escritos
 		// (por ejemplo, un ID repetido). No es una situación del hospital.
 		log.Fatalf("could not build the scenario: %v", err)
 	}
 
+	// 2. Bono: simulación concurrente corta en consola.
 	if err := runSimulation(os.Stdout); err != nil {
 		log.Fatalf("could not run the simulation: %v", err)
+	}
+
+	// 3. Bono: interfaz web. El hospital "vivo" de la web empieza con los
+	//    datos del paso 1 (buildHospital) y el botón Reset vuelve a crearlo.
+	server, err := web.NewServer(scenario, scenarioLog.String(), buildHospital)
+	if err != nil {
+		log.Fatalf("could not create the web server: %v", err)
+	}
+	fmt.Printf("\n== Web interface ==\n  Open http://%s in your browser (press Ctrl+C to stop)\n", serverAddress)
+	if err := web.Start(serverAddress, server); err != nil {
+		log.Fatalf("web server stopped: %v", err)
 	}
 }
 
