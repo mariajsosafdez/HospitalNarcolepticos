@@ -1,0 +1,199 @@
+/* Colores del hospital: verde-azulado clínico con acentos del Caribe. */
+:root {
+  --primary: #0f766e;
+  --primary-dark: #115e59;
+  --primary-soft: #ccfbf1;
+  --sea: #0369a1;
+  --sun: #f59e0b;
+  --bg: #f0f5f4;
+  --card: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #dbe4e3;
+  --awake: #15803d;
+  --awake-bg: #dcfce7;
+  --hallway: #c2410c;
+  --hallway-bg: #ffedd5;
+  --bed: #1d4ed8;
+  --bed-bg: #dbeafe;
+  --danger: #b91c1c;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ---------- Encabezado ---------- */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 28px;
+  color: #fff;
+  background: linear-gradient(110deg, var(--primary-dark), var(--primary) 55%, var(--sea));
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand h1 { margin: 0; font-size: 21px; }
+.brand p { margin: 2px 0 0; opacity: .85; }
+.cross {
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  font-size: 28px; color: var(--danger);
+  background: #fff; border-radius: 12px;
+}
+.clock { font-size: 13px; opacity: .9; white-space: nowrap; }
+
+/* ---------- Pestañas ---------- */
+.tabs {
+  display: flex; gap: 4px;
+  padding: 0 24px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.tab {
+  border: 0; background: none; cursor: pointer;
+  padding: 14px 18px;
+  font: inherit; font-weight: 600; color: var(--muted);
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--primary); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+main { padding: 22px 24px 40px; max-width: 1400px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+.intro { margin: 0 0 16px; color: var(--muted); }
+
+/* ---------- Tarjetas y grillas ---------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(15, 118, 110, .06);
+}
+.card h2 { margin: 0 0 12px; font-size: 15px; }
+.card h2 small { color: var(--muted); font-weight: 400; }
+.card h3 { margin: 16px 0 8px; font-size: 13px; color: var(--muted); }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.card-head h2 { margin: 0; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+/* minmax(0, ...) deja que una columna se encoja aunque su contenido sea
+   ancho (como la consola): el contenido hace scroll en vez de empujar. */
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+#tab-scenario .grid-2 { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
+.grid-main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+@media (max-width: 1000px) {
+  .grid-2, .grid-main { grid-template-columns: 1fr; }
+}
+
+.q {
+  display: inline-block; margin-right: 6px; padding: 1px 7px;
+  border-radius: 6px; font-size: 12px;
+  background: var(--primary-soft); color: var(--primary-dark);
+}
+
+.console {
+  margin: 0; padding: 14px;
+  background: #0f172a; color: #d1fae5;
+  border-radius: 8px;
+  font: 12px/1.5 Consolas, "Cascadia Mono", monospace;
+  overflow: auto; max-height: 760px;
+  white-space: pre;
+}
+
+/* ---------- Estadísticas ---------- */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+@media (max-width: 700px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.stat .value { font-size: 26px; font-weight: 700; color: var(--primary-dark); }
+.stat .label { color: var(--muted); font-size: 12px; }
+.stat.alert .value { color: var(--hallway); }
+
+/* ---------- Tablas ---------- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+tr:last-child td { border-bottom: 0; }
+.mono { font-family: Consolas, monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.empty { color: var(--muted); font-style: italic; margin: 4px 0; }
+
+/* ---------- Etiquetas de estado y nivel ---------- */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.badge.awake { background: var(--awake-bg); color: var(--awake); }
+.badge.hallway { background: var(--hallway-bg); color: var(--hallway); }
+.badge.bed { background: var(--bed-bg); color: var(--bed); }
+.level { font-size: 12px; font-weight: 600; }
+.level.mild { color: var(--awake); }
+.level.moderate { color: var(--sun); }
+.level.severe { color: var(--danger); }
+
+/* ---------- Cuartos ---------- */
+.rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.room { border-radius: 10px; padding: 10px 12px; border: 2px solid; min-height: 86px; }
+.room.free { border-color: #86efac; background: #f0fdf4; }
+.room.full { border-color: #fca5a5; background: #fef2f2; }
+.room .num { font-weight: 700; font-size: 15px; }
+.room .meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.room .who { font-size: 12px; }
+
+/* ---------- Formularios y botones ---------- */
+.form { display: flex; flex-direction: column; gap: 8px; }
+.form h2 { margin-bottom: 4px; }
+input, select {
+  font: inherit; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: #fff; color: var(--text);
+}
+input:focus, select:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); }
+label.inline { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.btn {
+  font: inherit; font-weight: 600; cursor: pointer;
+  padding: 8px 14px; border-radius: 8px; border: 1px solid transparent;
+}
+.btn.primary { background: var(--primary); color: #fff; }
+.btn.primary:hover { background: var(--primary-dark); }
+.btn.primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn.danger { background: #fff; color: var(--danger); border-color: #fecaca; }
+.btn.danger:hover { background: #fef2f2; }
+.btn.small { padding: 4px 9px; font-size: 12px; margin-right: 4px; background: #fff; border-color: var(--border); color: var(--text); }
+.btn.small:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ---------- Simulación ---------- */
+.explain ol { margin: 0; padding-left: 20px; line-height: 1.7; }
+.controls { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 16px 0; }
+.controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.controls input { width: 110px; }
+.status { padding: 6px 12px; border-radius: 999px; background: #e2e8f0; color: var(--muted); font-weight: 600; font-size: 12px; }
+.status.running { background: var(--sun); color: #fff; animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: .6; } }
+.feed { list-style: none; margin: 0; padding: 0; }
+.feed li { padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+.feed li:last-child { border-bottom: 0; }
+.result-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+@media (max-width: 700px) { .result-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- Aviso flotante (toast) ---------- */
+.toast {
+  position: fixed; right: 20px; bottom: 20px; max-width: 380px;
+  padding: 12px 16px; border-radius: 10px;
+  color: #fff; background: var(--primary-dark);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: none; }
+.toast.warn { background: var(--hallway); }
+.toast.error { background: var(--danger); }

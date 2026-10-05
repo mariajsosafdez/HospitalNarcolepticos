@@ -2,10 +2,184 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hospital de los Costeños</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Hospital de los Costeños con Narcolepsia</h1>
-  <p>The REST API is running. Try <a href="/api/state">/api/state</a> or <a href="/api/scenario">/api/scenario</a>.</p>
+  <!-- Encabezado con el nombre del hospital -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="cross" aria-hidden="true">✚</div>
+      <div>
+        <h1>Hospital de los Costeños con Narcolepsia</h1>
+        <p>Central management system · keeping the sleepy carnival under control</p>
+      </div>
+    </div>
+    <div class="clock" id="clock">connecting…</div>
+  </header>
+
+  <!-- Pestañas: separan el escenario obligatorio del resto -->
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="scenario" role="tab">📋 Mandatory Scenario</button>
+    <button class="tab" data-tab="management" role="tab">🏥 Hospital Management</button>
+    <button class="tab" data-tab="simulation" role="tab">⚡ Concurrent Simulation</button>
+  </nav>
+
+  <main>
+    <!-- ============ Pestaña 1: escenario obligatorio ============ -->
+    <section class="panel active" id="tab-scenario">
+      <p class="intro">
+        This is the demonstration scenario required by Section 6, exactly as it was printed in the console
+        when the program started. It runs on its own hospital, so actions in the other tabs never change it.
+      </p>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Console output</h2>
+          <pre id="scenario-log" class="console"></pre>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h2><span class="q">5.1</span> Patients asleep in a hallway</h2>
+            <div id="sc-hallway"></div>
+          </div>
+          <div class="card">
+            <h2><span class="q">5.2</span> Episodes attended by each doctor</h2>
+            <div id="sc-doctors"></div>
+          </div>
+          <div class="card">
+            <h2><span class="q">5.3</span> Bed availability</h2>
+            <div id="sc-rooms" class="rooms"></div>
+          </div>
+          <div class="card">
+            <h2><span class="q">5.4</span> Severity report</h2>
+            <div id="sc-severe"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Pestaña 2: gestión del hospital ============ -->
+    <section class="panel" id="tab-management">
+      <div class="stats" id="stats"></div>
+      <div class="grid-main">
+        <div class="stack">
+          <div class="card">
+            <div class="card-head">
+              <h2>Patients</h2>
+              <label class="inline">Sleep attack location
+                <select id="location-select">
+                  <option>cafeteria (sancocho line)</option>
+                  <option>champeta dance hall</option>
+                  <option>radiology queue</option>
+                  <option>main entrance</option>
+                  <option>hallway 2, second floor</option>
+                  <option>waiting room hammock</option>
+                  <option>vending machine</option>
+                </select>
+              </label>
+            </div>
+            <div class="table-wrap"><table id="patients-table"></table></div>
+          </div>
+          <div class="card">
+            <h2>Rooms</h2>
+            <div id="mg-rooms" class="rooms"></div>
+          </div>
+          <div class="card">
+            <h2>Episode history <small>(latest first)</small></h2>
+            <div class="table-wrap" id="mg-history"></div>
+          </div>
+        </div>
+
+        <aside class="stack">
+          <form class="card form" id="form-patient">
+            <h2>Admit patient</h2>
+            <input name="id" placeholder="ID (e.g. P-006)" required>
+            <input name="name" placeholder="Full name" required>
+            <input name="age" type="number" min="0" placeholder="Age" required>
+            <select name="level">
+              <option value="mild">Mild</option>
+              <option value="moderate">Moderate</option>
+              <option value="severe">Severe</option>
+            </select>
+            <button class="btn primary" type="submit">Admit</button>
+          </form>
+
+          <form class="card form" id="form-staff">
+            <h2>Hire staff</h2>
+            <select name="role" id="staff-role">
+              <option value="doctor">Doctor</option>
+              <option value="orderly">Orderly</option>
+            </select>
+            <input name="id" placeholder="ID (e.g. D-003)" required>
+            <input name="name" placeholder="Full name" required>
+            <input name="age" type="number" min="0" placeholder="Age" required>
+            <input name="specialty" id="staff-specialty" placeholder="Specialty">
+            <button class="btn primary" type="submit">Hire</button>
+          </form>
+
+          <form class="card form" id="form-room">
+            <h2>Add room</h2>
+            <input name="number" type="number" min="1" placeholder="Room number (e.g. 104)" required>
+            <input name="capacity" type="number" min="1" placeholder="Beds" value="1" required>
+            <button class="btn primary" type="submit">Add room</button>
+          </form>
+
+          <div class="card">
+            <h2>Staff on duty</h2>
+            <div id="mg-staff"></div>
+          </div>
+
+          <button class="btn danger" id="reset-btn" type="button">↺ Reset hospital to initial data</button>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ Pestaña 3: simulación concurrente ============ -->
+    <section class="panel" id="tab-simulation">
+      <div class="card explain">
+        <h2>How the simulation works</h2>
+        <ol>
+          <li>The server launches <b>one goroutine per patient</b>. All of them run at the same time.</li>
+          <li>Each goroutine waits a random time, then its patient <b>falls asleep</b> (if awake) or <b>wakes up</b> (if asleep).</li>
+          <li>Every change goes through the hospital, which is protected by a <b>sync.Mutex</b>: only one goroutine at a time can assign a room, so two patients can never get the same bed.</li>
+          <li>This page reads a safe <b>snapshot</b> of the hospital twice per second, so you can watch the beds fill and empty live.</li>
+        </ol>
+      </div>
+
+      <div class="card controls">
+        <label>Rounds per patient
+          <input type="number" id="sim-rounds" min="1" max="30" value="8">
+        </label>
+        <label>Speed
+          <select id="sim-speed">
+            <option value="1500">Slow</option>
+            <option value="800" selected>Normal</option>
+            <option value="250">Fast</option>
+          </select>
+        </label>
+        <button class="btn primary" id="sim-start" type="button">▶ Start simulation</button>
+        <span class="status" id="sim-status">Idle</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>Rooms (live)</h2>
+          <div id="sim-rooms" class="rooms"></div>
+          <h3>Asleep in a hallway</h3>
+          <div id="sim-hallway"></div>
+        </div>
+        <div class="card">
+          <h2>Latest episodes</h2>
+          <div id="sim-feed"></div>
+        </div>
+      </div>
+
+      <div class="card" id="sim-result"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
 </body>
 </html>
