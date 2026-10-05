@@ -73,7 +73,8 @@ type Patient struct {
 	level           NarcolepsyLevel
 	state           PatientState
 	currentLocation string
-	room            *Room // cuarto donde duerme; nil si no tiene cuarto
+	assignedDoctor  *Doctor // doctor que lo diagnosticó; nil si aún no tiene
+	room            *Room   // cuarto donde duerme; nil si no tiene cuarto
 }
 
 // NewPatient crea un paciente despierto en la recepción.
@@ -109,6 +110,9 @@ func (p *Patient) State() PatientState { return p.state }
 
 // Location devuelve el último lugar conocido del paciente.
 func (p *Patient) Location() string { return p.currentLocation }
+
+// AssignedDoctor devuelve el doctor a cargo del paciente, o nil si no tiene.
+func (p *Patient) AssignedDoctor() *Doctor { return p.assignedDoctor }
 
 // Room devuelve el cuarto donde duerme el paciente, o nil si no tiene.
 func (p *Patient) Room() *Room { return p.room }

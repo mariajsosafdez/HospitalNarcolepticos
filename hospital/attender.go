@@ -21,3 +21,12 @@ type Attender interface {
 	// registro del episodio, o un error si no lo pudo atender.
 	Attend(p *Patient, location string) (EpisodeRecord, error)
 }
+
+// Verificación en tiempo de compilación: estas dos líneas no hacen nada al
+// ejecutar, pero si Doctor u Orderly dejaran de cumplir Attender (por ejemplo,
+// si alguien borra su método Role), el programa NO compilaría y el error
+// aparecería aquí mismo. El "_" significa que la variable no se usa.
+var (
+	_ Attender = (*Doctor)(nil)
+	_ Attender = (*Orderly)(nil)
+)

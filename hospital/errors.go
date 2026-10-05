@@ -32,6 +32,10 @@ var (
 	ErrPatientAwake = errors.New("patient is awake, there is no sleep emergency")
 	// ErrNotInHallway: se pidió cuarto para alguien que no está dormido en el pasillo.
 	ErrNotInHallway = errors.New("patient is not asleep in a hallway")
+	// ErrAlreadyAssigned: el paciente ya está a cargo de otro doctor.
+	ErrAlreadyAssigned = errors.New("patient is already under the care of another doctor")
+	// ErrDoctorFull: el doctor ya tiene el máximo de pacientes a su cargo.
+	ErrDoctorFull = errors.New("doctor cannot take more patients")
 	// ErrNoStaffAvailable: ningún miembro del personal puede atender ahora.
 	ErrNoStaffAvailable = errors.New("no staff member available")
 )
