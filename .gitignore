@@ -1,6 +1,10 @@
 # Configuración del IDE (GoLand)
 .idea/
 
+# Plan de trabajo personal (no va al repositorio)
+PLAN.md
+ENUNCIADO.md
+
 # Binarios compilados
 *.exe
 *.test
