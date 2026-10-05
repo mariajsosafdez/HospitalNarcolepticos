@@ -1,8 +1,8 @@
-// Programa principal del Hospital de los CosteÃ±os con Narcolepsia.
+// Programa principal del Hospital de los Costeños con Narcolepsia.
 //
-// Regla del enunciado: main SOLO arma el escenario y imprime. Toda la lÃ³gica
+// Regla del enunciado: main SOLO arma el escenario y imprime. Toda la lógica
 // de negocio (asignar cuartos, despachar personal, consultas) vive en el
-// paquete hospital; aquÃ­ Ãºnicamente se llaman sus mÃ©todos y se muestran
+// paquete hospital; aquí únicamente se llaman sus métodos y se muestran
 // los datos que devuelven.
 package main
 
@@ -19,12 +19,12 @@ import (
 	"costenos-narcolepsia/hospital"
 )
 
-const hospitalName = "Hospital de los CosteÃ±os con Narcolepsia"
+const hospitalName = "Hospital de los Costeños con Narcolepsia"
 
 func main() {
 	if _, err := runScenario(os.Stdout); err != nil {
-		// Solo llegamos aquÃ­ si los DATOS del escenario estÃ¡n mal escritos
-		// (por ejemplo, un ID repetido). No es una situaciÃ³n del hospital.
+		// Solo llegamos aquí si los DATOS del escenario están mal escritos
+		// (por ejemplo, un ID repetido). No es una situación del hospital.
 		log.Fatalf("could not build the scenario: %v", err)
 	}
 
@@ -68,10 +68,10 @@ func runSimulation(out io.Writer) error {
 	return nil
 }
 
-// runScenario ejecuta el escenario obligatorio de la secciÃ³n 6, en orden,
+// runScenario ejecuta el escenario obligatorio de la sección 6, en orden,
 // y escribe todo el texto en out. Recibir un io.Writer (en vez de usar
 // fmt.Println directo) permite mandar el texto a la consola, a un buffer
-// o a ninguna parte (io.Discard) sin cambiar esta funciÃ³n.
+// o a ninguna parte (io.Discard) sin cambiar esta función.
 func runScenario(out io.Writer) (*hospital.Hospital, error) {
 	// ---------------------------------------------------------------- Paso 1
 	h, err := buildHospital()
@@ -82,7 +82,7 @@ func runScenario(out io.Writer) (*hospital.Hospital, error) {
 
 	// ---------------------------------------------------------------- Paso 2
 	// Cuatro pacientes se duermen en lugares distintos. Solo hay 3 cuartos,
-	// asÃ­ que el cuarto paciente (P-004) debe quedarse en el pasillo.
+	// así que el cuarto paciente (P-004) debe quedarse en el pasillo.
 	fmt.Fprintln(out, "\n== Step 2: four sleep attacks ==")
 	attacks := []struct{ patientID, location string }{
 		{"P-001", "cafeteria (sancocho line)"},
@@ -135,7 +135,7 @@ func runScenario(out io.Writer) (*hospital.Hospital, error) {
 func buildHospital() (*hospital.Hospital, error) {
 	h := hospital.NewHospital(hospitalName)
 
-	// Slices de structs anÃ³nimos: una "tabla" de datos fÃ¡cil de leer.
+	// Slices de structs anónimos: una "tabla" de datos fácil de leer.
 	doctors := []struct {
 		id, name  string
 		age       int
@@ -193,7 +193,7 @@ func buildHospital() (*hospital.Hospital, error) {
 		}
 	}
 
-	// DiagnÃ³sticos iniciales: cada doctor toma a algunos pacientes Severe.
+	// Diagnósticos iniciales: cada doctor toma a algunos pacientes Severe.
 	diagnoses := []struct {
 		doctorIndex int
 		patientID   string
@@ -215,7 +215,7 @@ func buildHospital() (*hospital.Hospital, error) {
 }
 
 // ---------------------------------------------------------------------------
-// Funciones de impresiÃ³n: solo leen datos del hospital y los muestran.
+// Funciones de impresión: solo leen datos del hospital y los muestran.
 // ---------------------------------------------------------------------------
 
 func printStep1(out io.Writer, h *hospital.Hospital) {
@@ -224,8 +224,8 @@ func printStep1(out io.Writer, h *hospital.Hospital) {
 	fmt.Fprintf(out, "==================================================\n")
 	fmt.Fprintln(out, "\n== Step 1: hospital setup ==")
 
-	// h.Staff() devuelve []Attender: aquÃ­ hay Doctores y un Camillero mezclados
-	// y los recorremos igual, sin saber quÃ© tipo concreto es cada uno.
+	// h.Staff() devuelve []Attender: aquí hay Doctores y un Camillero mezclados
+	// y los recorremos igual, sin saber qué tipo concreto es cada uno.
 	fmt.Fprintln(out, "  Staff:")
 	for _, a := range h.Staff() {
 		fmt.Fprintf(out, "    %-6s %-20s %s\n", a.ID(), a.Name(), a.Role())
@@ -245,7 +245,7 @@ func printStep1(out io.Writer, h *hospital.Hospital) {
 	}
 }
 
-// printEpisodeResult muestra quÃ© pasÃ³ con un ataque de sueÃ±o. Usa errors.Is
+// printEpisodeResult muestra qué pasó con un ataque de sueño. Usa errors.Is
 // para reconocer el caso "no hay cuarto" y mostrar un mensaje legible.
 func printEpisodeResult(out io.Writer, h *hospital.Hospital, p *hospital.Patient, location string, err error) {
 	history := h.History()
@@ -305,7 +305,7 @@ func printQueries(out io.Writer, h *hospital.Hospital) {
 	}
 
 	// Consulta 5.3 (el resultado de AssignRoom ya se vio en los pasos 2 y 3;
-	// aquÃ­ se muestra cÃ³mo quedaron las camas).
+	// aquí se muestra cómo quedaron las camas).
 	fmt.Fprintln(out, "\n== Query 5.3: bed availability ==")
 	free := 0
 	for _, r := range h.Rooms() {
@@ -325,7 +325,7 @@ func printQueries(out io.Writer, h *hospital.Hospital) {
 	}
 	fmt.Fprintf(out, "  free rooms: %d of %d\n", free, len(h.Rooms()))
 
-	// Consulta 5.4. El map no tiene orden, asÃ­ que sacamos las claves a un
+	// Consulta 5.4. El map no tiene orden, así que sacamos las claves a un
 	// slice y lo ordenamos por ID para que la salida sea siempre igual.
 	fmt.Fprintln(out, "\n== Query 5.4: severity report (Severe patients) ==")
 	report := h.SevereReport()
