@@ -1,0 +1,352 @@
+# Lógica del juego (capa `game`)
+
+Especificación de **todo lo que el juego agrega a nivel de lógica** y de cómo usa el paquete `hospital`. Es la nota que hay que dominar para la defensa.
+
+> Estado: **borrador**. Los números marcados *(propuesto)* se ajustan al probar. Las decisiones confirmadas están en [[Game Design#Registro de decisiones]].
+
+---
+
+## 0. Principios
+
+1. **El paquete `hospital` no cambia ni una línea.** Lo exige el enunciado (sección 7) para el bonus de interfaz. Se puede comprobar con `git diff main -- hospital/`, que debe salir vacío.
+2. **`game` tiene las reglas, la vista solo dibuja.** La ventana del juego lee el estado de `game` y le manda acciones ("asignar", "dar de alta"). No toma decisiones.
+3. **El jugador es quien registra en el sistema.** El paquete `hospital` es "el sistema del hospital": solo se entera de las cosas cuando el jugador actúa. Por eso a veces el juego y el modelo muestran estados distintos (ver §3.1). Esa diferencia es intencional y se explica en la defensa.
+4. **Determinista.** El tiempo avanza por *ticks* y el azar usa una semilla. Con la misma semilla, la partida es igual: eso permite tests y un modo Demo reproducible.
+5. **Una sola goroutine para el juego.** Toda la lógica corre dentro del bucle del juego (`Update`), así que la capa `game` no necesita candados propios. El hospital igual tiene su `sync.Mutex`, que sigue protegiéndolo.
+
+---
+
+## 1. Paquetes
+
+```
+hospital/          modelo del enunciado            (SIN CAMBIOS)
+game/              reglas del juego                (NUEVO)
+  clock.go           reloj del turno
+  patient.go         GamePatient: paciente + estado de juego
+  staff.go           StaffMember: envoltorio que cumple hospital.Attender
+  world.go           cámaras, movimiento, aparición de pacientes
+  score.go           puntuación y estrellas
+  shift.go           Shift: une todo, recibe acciones, avanza el tiempo
+  days.go            configuración de cada día
+  demo.go            guion del modo Demo
+  game_test.go
+gameview/          dibujo pixel art y entrada con Ebitengine (NUEVO)
+main.go            + abre la ventana del juego al final (cambio mínimo)
+web/               como está hoy                     (SIN CAMBIOS)
+```
+
+✅ **Motor: Ebitengine** (`github.com/hajimehoshi/ebiten/v2`). Es la única dependencia de terceros, y el enunciado la permite porque es solo para la interfaz gráfica. Solo la importa `gameview`; `game` y `hospital` siguen usando únicamente la librería estándar.
+
+✅ **Se abre con `go run .`** Nuevo orden de `main`:
+
+1. Escenario obligatorio por consola (igual que hoy).
+2. Simulación concurrente (igual que hoy).
+3. El servidor web arranca **en una goroutine** (antes bloqueaba `main`).
+4. Se abre la ventana del juego con `ebiten.RunGame`. Ebitengine exige correr en la goroutine principal, por eso va de último.
+
+`main` sigue sin lógica de negocio: solo arranca cosas. Pendiente: qué pasa al cerrar la ventana (ver [[Game Design#Preguntas abiertas]]).
+
+---
+
+## 2. Reloj del turno (`clock.go`)
+
+| Concepto | Valor |
+|---|---|
+| Tick | 1/60 s real |
+| Turno | 12:00 → 18:00 de juego = 180 s reales = 10 800 ticks |
+| 1 tick | 2 s de juego |
+| 1 min de juego | 0,5 s real (30 ticks) |
+| 1 h de juego | 30 s reales |
+
+- `Clock.Advance()`: suma un tick, salvo si el juego está en pausa.
+- `Clock.Now()`: hora de juego (por ejemplo `14:15`).
+- `Clock.Over()`: `true` al llegar a las 18:00.
+
+**Ojo con las horas del reporte.** `EpisodeRecord` guarda `time.Now()` real. El juego guarda por su lado la hora de juego de cada episodio (un `map` de ID de episodio → hora de juego) y la usa al mostrar el reporte. No se toca `EpisodeRecord`.
+
+---
+
+## 3. Pacientes (`patient.go`)
+
+`GamePatient` contiene un `*hospital.Patient` y le agrega lo que solo existe en el juego: cámara actual, posición en pantalla, estado de juego, cronómetro de espera, hora en que debe despertar y sprite.
+
+### 3.1 Máquina de estados
+
+| Estado de juego | Estado en `hospital` | Qué ve el jugador | Pasa a… |
+|---|---|---|---|
+| `Arriving` | `Awake` (recién admitido con `AdmitPatient`) | Entra por Recepción (CAM 1A) | `Wandering` |
+| `Wandering` | `Awake` | Camina entre cámaras | `AsleepWaiting` cuando le da el ataque de sueño |
+| `AsleepWaiting` | **`Awake`** ⚠️ | Dormido en el suelo/silla, "zzz". Corre su espera | `Carried` cuando el jugador asigna personal; `NoBedWaiting` si no había cama |
+| `NoBedWaiting` | `AsleepInHallway` | Ya fue atendido pero no había cama: sigue dormido **en la misma cámara donde se durmió**. La espera sigue | `Carried` cuando hay cama y el jugador lo manda (manual) |
+| `Carried` | `AsleepInBed` | El personal se lo lleva en camilla (unos segundos) | `InBed` |
+| `InBed` | `AsleepInBed` | Durmiendo en su habitación | `AwakeInBed` al llegar su hora de despertar |
+| `AwakeInBed` | **`AsleepInBed`** ⚠️ | Sentado en la cama, despierto. Aparece el botón "Dar de alta" | `Wandering` cuando el jugador le da de alta |
+| `Gone` | `Awake` | Se fue del hospital | (fin) |
+
+⚠️ **Las dos filas donde juego y modelo no coinciden:**
+
+- **Dormido sin atender:** en el juego ya se durmió, pero el sistema no lo sabe hasta que el jugador lo reporta. `RegisterEpisode` exige que el paciente esté `Awake` en el modelo, y por eso se llama justo al asignar personal.
+- **Despierto sin alta:** en el juego ya se despertó, pero para el sistema la cama sigue ocupada hasta que alguien le da de alta. Ahí se llama a `WakeUpPatient`, que libera la cama.
+
+**Sobre el nombre `AsleepInHallway`:** en el modelo significa "dormido fuera de una cama", sea cual sea el lugar. Un paciente puede dormirse en **cualquier** zona común (cafetería, patio, sala de espera…), y si no hay cama se queda **ahí mismo**: el juego no lo lleva al pasillo. El lugar real está en `Patient.Location()`.
+
+### 3.2 Movimiento
+
+- Las cámaras forman un grafo: cada zona común conoce sus vecinas (ver [[Mapa de Cámaras]]).
+- ✅ **Movimiento por ticks aleatorios** (decisión de la autora, para que sea más difícil saber dónde está cada paciente). Cada paciente tiene su propio `nextMoveTick`. Al llegar ese tick, se mueve a una cámara vecina (o se queda), y se sortea el siguiente: entre 5 y 25 min de juego *(propuesto)*, o sea entre 2,5 y 12,5 s reales. Así no se mueven todos a la vez ni a ritmo fijo.
+- Dentro de la cámara también se mueven a puntos al azar (silla, mostrador, ventana…), para que no queden quietos.
+- Los pacientes no entran a las habitaciones por su cuenta: solo llegan ahí en camilla.
+
+### 3.3 Ataque de sueño
+
+- Cada *N* minutos de juego, un paciente en `Wandering` tira el dado: `probabilidad = base(nivel) × modificador(zona)`.
+- Base *(propuesto)*: Leve 3 %, Moderado 6 %, Severo 10 %.
+- Modificador de zona *(propuesto)*: Cafetería ×2 (el sancocho), Patio ×1,5, el resto ×1.
+- ✅ Un paciente recién dado de alta no puede dormirse otra vez durante **al menos 10 min de juego** (5 s), si no se ha ido del hospital.
+
+### 3.4 Despertar
+
+Al llegar a la cama se sortea cuánto va a dormir *(propuesto)*: Leve 30–60 min, Moderado 1–2 h, Severo 2–3 h de juego. Al cumplirse pasa a `AwakeInBed`. **No** se despierta solo en el pasillo.
+
+### 3.5 Después del alta
+
+✅ Al recibir el alta, el paciente **se queda o se va**:
+
+- **Se queda:** vuelve a `Wandering` y puede dormirse otra vez (después de 10 min). Eso le da números interesantes al `SevereReport`.
+- **Se va:** camina a Recepción (CAM 1A) y sale (`Gone`).
+
+Probabilidad de irse *(propuesto)*: Leve 60 %, Moderado 40 %, Severo 20 %. Los severos se quedan más porque necesitan más cuidado. Eso también hace que tengan más episodios en el reporte.
+
+---
+
+## 4. Personal (`staff.go`)
+
+### 4.1 El problema
+
+`RegisterEpisode` despacha personal **solo**: recorre `[]Attender` por turnos (round-robin) y toma al primero cuyo `IsAvailable()` dé `true`. En el juego, **el jugador elige** a quién mandar.
+
+### 4.2 La solución: `StaffMember`, un envoltorio que cumple `Attender`
+
+El juego no contrata directamente al `*Doctor` ni al `*Orderly`: contrata un `StaffMember` que los **contiene** y cumple la misma interfaz.
+
+```go
+// StaffMember envuelve a un miembro del personal del hospital y le agrega
+// lo que solo existe en el juego: el cooldown y la selección del jugador.
+type StaffMember struct {
+	inner         hospital.Attender // el *Doctor o *Orderly de verdad
+	doctor        *hospital.Doctor  // nil si es camillero (para cupo y reporte 5.2)
+	busyUntil     int               // tick en que termina traslado + descanso
+	selected      bool              // true SOLO durante el despacho elegido
+	now           func() int        // reloj del turno
+}
+
+func (s *StaffMember) ID() string   { return s.inner.ID() }
+func (s *StaffMember) Name() string { return s.inner.Name() }
+func (s *StaffMember) Role() string { return s.inner.Role() }
+
+// IsAvailable: el hospital solo "ve" disponible al que eligió el jugador,
+// y solo si no está en cooldown y su tipo real también está disponible
+// (por ejemplo, un doctor con cupo lleno no lo está).
+func (s *StaffMember) IsAvailable() bool {
+	return s.selected && s.now() >= s.busyUntil && s.inner.IsAvailable()
+}
+
+// Attend delega en el Doctor u Orderly real (polimorfismo dentro de polimorfismo).
+func (s *StaffMember) Attend(p *hospital.Patient, location string) (hospital.EpisodeRecord, error) {
+	return s.inner.Attend(p, location)
+}
+```
+
+Flujo de una asignación:
+
+1. El jugador elige paciente y personal.
+2. `game` valida (§5) y pone `selected = true` **solo** en ese `StaffMember`.
+3. Llama `h.RegisterEpisode(p, location)`. Como solo uno está disponible, el round-robin lo elige a él.
+4. Pone `selected = false` y le asigna su cooldown.
+
+Por qué es seguro: todo pasa en la goroutine del juego, en orden, así que nadie más puede ver `selected = true`.
+
+Por qué sirve en la defensa: es **otro tipo que cumple `Attender`** y que el hospital usa sin saber que existe. Es justo la pregunta del enunciado ("agregue un tipo nuevo que cumpla `Attender`").
+
+### 4.3 Consecuencia a tener en cuenta
+
+`HireStaff` usa *type assertion* `a.(*Doctor)` para llenar la lista de doctores. Como el juego contrata `*StaffMember`, **`h.Doctors()` saldrá vacío en el hospital del juego**. Por eso:
+
+- El juego guarda su propio puntero al `*hospital.Doctor` (campo `doctor`) y para el reporte 5.2 llama directamente `doctor.MyEpisodes()`. La consulta del enunciado se sigue usando igual.
+- Los episodios del historial guardan como `attender` al `*Doctor` real (porque `Doctor.Attend` crea el registro), no al envoltorio. El conteo por ID de `Snapshot` sigue funcionando.
+
+Alternativa descartada: contratar al `*Doctor` directo. El hospital elegiría por turnos y el jugador no podría decidir.
+
+### 4.4 Estados del personal (los que se ven en el panel)
+
+| Estado | Condición |
+|---|---|
+| Disponible | `now >= busyUntil` y (si es doctor) cupo < 4 |
+| En traslado | durante el viaje de la camilla |
+| Descansando | después del traslado, hasta `busyUntil` |
+| Sin cupo | doctor con 4/4 pacientes a cargo (no se puede elegir) |
+
+| Tiempos *(propuesto)* | Doctor | Camillero |
+|---|---|---|
+| Traslado | 10 min de juego (5 s) | **6 min de juego (3 s)** ✅ |
+| Descanso después | 30 min de juego (15 s) | 10 min de juego (5 s) |
+
+✅ Tiempos aprobados, con el cambio "que el camillero sea de 3s, no de 5s". Lo apliqué al **traslado** del camillero; falta confirmar si también aplica a su descanso.
+
+### 4.5 Cupo del doctor (regla del modelo)
+
+- `maxPatientsPerDoctor = 4`. Cuenta **pacientes distintos a cargo**, no episodios. Nunca se liberan durante el turno.
+- Si el doctor atiende a **su propio** paciente otra vez, **no** gasta cupo (`DiagnosePatient` devuelve `nil` sin agregar).
+- Si atiende a un paciente que ya es de **otro** doctor, tampoco gasta cupo: el paciente sigue siendo del primero (`AttendSleepEmergency` solo diagnostica si no tiene doctor).
+- El panel muestra `x/4` con `len(doctor.Patients())`.
+- **Exceso de trabajo:** cuando un doctor llega a 4/4 se descuentan puntos **una sola vez** por doctor (§7). Así conviene repartir pacientes entre los doctores y usar a los camilleros.
+
+---
+
+## 5. Acciones del jugador (`shift.go`)
+
+Cada acción es un método de `Shift` que devuelve `error` si no se puede hacer. La vista muestra ese error como un mensaje amable.
+
+### `Assign(patientID, staffID)`
+
+- Valida: el paciente está en `AsleepWaiting`, y el personal está Disponible.
+- Hace el flujo de §4.2.
+- Resultado:
+  - `nil` → paciente en `Carried`, con cama.
+  - `errors.Is(err, hospital.ErrNoRoomAvailable)` → el paciente queda en `NoBedWaiting`, en la misma cámara (y para el modelo, en `AsleepInHallway`). Se muestra el error legible, igual que en el escenario del enunciado. El personal **sí** atendió (el episodio quedó registrado con él), así que entra en cooldown.
+  - `errors.Is(err, hospital.ErrNoStaffAvailable)` → no debería pasar porque se valida antes. Si pasa es un bug y lo atrapa un test.
+
+### `MoveToBed(patientID, staffID)` ✅
+
+- Para un paciente en `NoBedWaiting` cuando ya hay cama libre. **Siempre es manual**: el paciente no pasa solo a la cama que se libera.
+- Necesita personal Disponible (cualquiera), que entra en cooldown corto.
+- Llama `h.AssignRoom(p)`. **No** crea un episodio nuevo: es el mismo episodio, solo se le consiguió cama. Coincide con el paso 3 del escenario obligatorio.
+
+### `Discharge(patientID)`
+
+- Solo si el paciente está en `AwakeInBed`.
+- Llama `h.WakeUpPatient(p)`, que libera la cama. El paciente vuelve a `Wandering`.
+
+### Otras
+
+`SwitchCamera(cam)`, `Pause()` / `Resume()`.
+
+---
+
+## 6. Días y aparición de pacientes (`days.go`, `world.go`)
+
+**Regla de la autora:** el número de pacientes de cada partida no debe pasar mucho del cupo total de los doctores, para que los doctores se usen y los camilleros sean el apoyo.
+
+Fórmula *(propuesta)*: `pacientes = doctores × 4 + 2`.
+
+| Día | Doctores | Camilleros | Habitaciones | Cámaras comunes | Pacientes |
+|---|---|---|---|---|---|
+| 1 | 2 | 1 | 3 | 1A, 1B, 2, 3 | 10 |
+| 2 | 2 | 1 | 4 | + 4 | 10 |
+| 3 | 3 | 1 | 4 | + 5 | 14 |
+| 4 | 3 | 2 | 5 | + 6 | 14 |
+| 5 | 3 | 2 | 6 | todas | 14 |
+
+- Los pacientes llegan repartidos entre 12:00 y ~16:00. Al llegar se llama `h.AdmitPatient(p)`.
+- Reparto de niveles *(propuesto)*: 40 % Leve, 35 % Moderado, 25 % Severo (al menos 2 severos, como el enunciado).
+- Nombres costeños de una lista fija.
+
+---
+
+## 7. Puntuación (`score.go`)
+
+**Espera** = desde que el paciente se duerme hasta que llega a una cama *(propuesto: si se queda en el pasillo, sigue contando)*.
+
+| Evento | Puntos *(propuesto)* |
+|---|---|
+| Espera ≤ 20 min de juego | +100 (Excelente) |
+| Espera ≤ 45 min | +70 (Bien) |
+| Espera ≤ 90 min | +40 (Regular) |
+| Espera > 90 min | +10 (Mal) |
+| Severo atendido por doctor | +20 |
+| Despierto en cama sin alta | −2 por cada 10 min de juego, después de 15 min de gracia |
+| Doctor llega a 4/4 (exceso de trabajo) | −50, una vez por doctor |
+| Paciente dormido sin atender al terminar el turno | cuenta como Mal (+10) |
+
+✅ Tabla aprobada.
+
+**Las penalizaciones suben con el día** (decisión de la autora). Multiplicador de las filas que restan *(propuesto)*:
+
+| Día | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| × penalización | 1,0 | 1,25 | 1,5 | 1,75 | 2,0 |
+
+Ejemplo: en el Día 5, el exceso de trabajo de un doctor resta 100 en vez de 50.
+
+**Estrellas:** `porcentaje = puntos / (episodios × 120)`. 1★ < 30 %, 2★ < 50 %, 3★ < 70 %, 4★ < 85 %, 5★ el resto. Si el resultado es negativo, se queda en 1★ (nunca 0).
+
+✅ **Con 1★ aparece un mensaje divertido del Director** regañando por la mala administración (varios textos al azar). Con 5★, uno de felicitación.
+
+---
+
+## 8. Fin del turno
+
+Al llegar las 18:00 el turno se congela y se muestra el reporte, armado con **las 4 consultas del enunciado**:
+
+| Sección del reporte | Llamada |
+|---|---|
+| Dormidos en el pasillo | `h.PatientsInHallway()` |
+| Episodios por doctor | `doctor.MyEpisodes()` de cada doctor (§4.3) |
+| Camas | estado de `h.Rooms()` + cuántas veces no hubo cama |
+| Pacientes severos | `h.SevereReport()` |
+
+Más: estrellas, puntos, desglose y los doctores que hicieron exceso de trabajo.
+
+---
+
+## 9. Modo Demo (`demo.go`)
+
+Un turno sin azar que sigue un guion fijo con **los mismos datos que `runScenario` en `main.go`**:
+
+1. 2 doctores, 1 camillero, 3 habitaciones de capacidad 1, 5 pacientes (2 severos).
+2. 4 pacientes se duermen en lugares distintos. 3 consiguen cama; el 4.º se queda en el pasillo y aparece el error.
+3. Uno se despierta, se le da de alta y el del pasillo pasa a esa cama (`MoveToBed`).
+4. Se muestra el reporte con las 4 consultas.
+
+Se avanza con **Siguiente paso** o **Auto**. Usa las mismas acciones de §5, así que la demo también prueba la lógica real.
+
+---
+
+## 10. Ajustes y guardado
+
+| Ajuste | Por defecto |
+|---|---|
+| Parpadeo de cámara cuando alguien se duerme | **apagado** |
+| Parpadeo de cámara cuando alguien se despierta | **apagado** |
+| Volumen música / efectos | 70 % / 80 % *(propuesto)* |
+| Pantalla completa | apagado |
+
+✅ **Autoguardado**: un archivo JSON pequeño con el último día desbloqueado, las mejores estrellas por día y los ajustes. Se guarda solo al terminar cada turno y al cambiar un ajuste.
+
+✅ **Cada día es un hospital nuevo** (`hospital.NewHospital`). Así el cupo de los doctores es **diario**, como dijo la autora, y el reporte de cada turno solo muestra ese día.
+
+---
+
+## 11. Tests que debería tener `game`
+
+| Test | Qué comprueba |
+|---|---|
+| El elegido es el despachado | Con 3 `StaffMember`, `Assign` hace que el episodio quede con el elegido, aunque el round-robin apunte a otro |
+| Sin cama → se queda donde está | `Assign` con todas las camas ocupadas deja al paciente en `NoBedWaiting` en su misma cámara y en `AsleepInHallway` en el modelo |
+| Alta libera cama | `Discharge` deja la habitación `Available` |
+| No se da de alta dormido | `Discharge` en `InBed` devuelve error |
+| Cooldown | Un `StaffMember` recién usado no es elegible hasta `busyUntil` |
+| Exceso de trabajo una vez | Al llegar a 4/4 se descuenta una sola vez |
+| Reloj | 10 800 ticks = 18:00, y la pausa no avanza |
+| Demo = escenario | Al final de la demo, las 4 consultas dan lo mismo que el escenario de `main.go` |
+| Modelo intacto | (manual) `git diff main -- hospital/` vacío |
+
+---
+
+## 12. Preguntas probables en la defensa
+
+- **¿Por qué el paciente sale `Awake` en el modelo si en pantalla está dormido?** Porque el modelo es el sistema del hospital y solo registra lo que el jugador reporta (§3.1).
+- **¿Cómo eliges al personal sin cambiar `hospital`?** Con `StaffMember`, que cumple `Attender` y solo se muestra disponible si fue elegido (§4.2).
+- **¿Por qué `h.Doctors()` sale vacío en el juego?** Por la *type assertion* de `HireStaff` (§4.3).
+- **¿Hay data races?** La lógica del juego corre en una sola goroutine y el hospital tiene su propio mutex.
+- **¿Qué pasa si un doctor llena su cupo?** `IsAvailable()` del `*Doctor` da `false`, y por eso el del envoltorio también. El panel lo muestra "Sin cupo" y hay penalización (§4.5).

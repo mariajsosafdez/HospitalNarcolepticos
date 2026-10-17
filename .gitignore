@@ -9,3 +9,6 @@ ENUNCIADO.md
 *.exe
 *.test
 *.out
+
+# Obsidian: estado personal del editor
+docs/**/.obsidian/workspace.json
