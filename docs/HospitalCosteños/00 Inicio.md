@@ -16,7 +16,7 @@ Bóveda de ideas del juego de cámaras. Aquí se decide **qué** es el juego ant
 - [x] Idea inicial escrita (2026-10-17)
 - [x] Primera ronda de preguntas respondida (2026-10-17)
 - [x] Segunda ronda de preguntas respondida (2026-10-17)
-- [ ] Tercera ronda (ver [[Game Design#Preguntas abiertas]])
+- [x] Tercera ronda respondida (2026-10-17); falta confirmar el dashboard aparte
 - [ ] Dirección de arte (paleta, estilo, resolución) → luego Figma
 - [ ] Pantallas aprobadas en Figma
 - [ ] Código

@@ -3,7 +3,7 @@
 Especificación de **todo lo que el juego agrega a nivel de lógica** y de cómo usa el paquete `hospital`. Es la nota que hay que dominar para la defensa.
 
 > Estado: **borrador**. Los números marcados *(propuesto)* se ajustan al probar. Las decisiones confirmadas están en [[Game Design#Registro de decisiones]].
-
+	
 ---
 
 ## 0. Principios
@@ -41,10 +41,12 @@ web/               como está hoy                     (SIN CAMBIOS)
 
 1. Escenario obligatorio por consola (igual que hoy).
 2. Simulación concurrente (igual que hoy).
-3. El servidor web arranca **en una goroutine** (antes bloqueaba `main`).
+3. *(Solo con `go run . -web`, por confirmar)* El dashboard web, como antes, y **sin** juego. Con `go run .` no hay dashboard.
 4. Se abre la ventana del juego con `ebiten.RunGame`. Ebitengine exige correr en la goroutine principal, por eso va de último.
 
-`main` sigue sin lógica de negocio: solo arranca cosas. Pendiente: qué pasa al cerrar la ventana (ver [[Game Design#Preguntas abiertas]]).
+`main` sigue sin lógica de negocio: solo arranca cosas. Al cerrar la ventana del juego, el programa termina.
+
+**Sprites sin Aseprite** ✅: cada sprite se describe como una cuadrícula de texto (un carácter = un color de la paleta) y un script pequeño en Go (`tools/sprites`) la convierte en PNG. Así el arte queda en el repo como texto, se revisa en git y se puede regenerar. Si quieres retocar a mano, LibreSprite y Piskel son editores pixel art gratuitos que abren esos PNG.
 
 ---
 

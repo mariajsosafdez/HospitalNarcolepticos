@@ -131,16 +131,9 @@ Todo se trabaja en la rama **`game`**. Entrega del enlace del repo: 19/10, 23:59
 
 ## Preguntas abiertas
 
-Rondas 1 y 2 respondidas (ver el registro). Ronda 3, con mi recomendación en **negrita**:
+Rondas 1, 2 y 3 respondidas (ver el registro). Queda una por confirmar:
 
-1. **Al cerrar la ventana del juego**, ¿termina todo el programa (incluido el dashboard web)? **Sí**: un solo programa, una sola forma de cerrarlo. El dashboard se usa mientras la ventana está abierta.
-2. **Camillero 3 s**: ¿aplica al traslado (5 s → 3 s), al descanso (5 s → 3 s) o a ambos? Lo dejé en el **traslado**.
-3. **Probabilidad de irse tras el alta**: **Leve 60 %, Moderado 40 %, Severo 20 %**.
-4. **Movimiento aleatorio**: **cada paciente se mueve cada 5–25 min de juego (2,5–12,5 s), sorteado cada vez**.
-5. **Multiplicador de penalizaciones por día**: **×1,0 / ×1,25 / ×1,5 / ×1,75 / ×2,0**.
-6. **Título en el menú**: **"Hospital de los Costeños con Narcolepsia"** con un subtítulo tipo *"Turno de la tarde"*. ¿O un nombre más corto de juego?
-7. **Herramientas de arte**: ¿tienes **Figma** (con el plugin Figwright abierto) y **Aseprite** instalados? Si no hay Aseprite, los sprites se pueden hacer como PNG por código. Es más lento de ajustar, pero funciona.
-8. **Fuente pixel**: **una fuente pixel libre (licencia OFL) que tenga tildes y ñ**.
+1. **Dashboard web aparte.** Recomiendo que **`go run .`** muestre el escenario y la simulación por consola y luego abra el juego, **sin** dashboard. **`go run . -web`** haría lo de antes (escenario + simulación + dashboard en `localhost:8080`), sin juego. El paquete `web` se queda en el repo: ya está hecho, funciona y sirve de respaldo si algo falla con el juego en la defensa. Al cerrar la ventana del juego, el programa termina.
 
 ## Registro de decisiones
 
@@ -174,3 +167,9 @@ Rondas 1 y 2 respondidas (ver el registro). Ronda 3, con mi recomendación en **
 | 2026-10-17 | Volver a dormirse: mínimo 10 min después del alta | — | "un paciente dado de alta puede dormirse a los 10 min mínimo (si no se va del hospital)" |
 | 2026-10-17 | Tiempos de personal aprobados; camillero 3 s | — | "solo cambia que el camillero sea de 3s, no de 5s" |
 | 2026-10-17 | Aprobados: tiempo, personal, pacientes, rating, puntos, menú, días, pausa, fin de turno, demo, ajustes, autoguardado, ambiente (16–21) | — | "me gusta el fin del turno, me gusta tu plantemiento del demo. me gusta la parte de ajustes y autoguardado" |
+| 2026-10-17 | El descanso del camillero se queda en 5 s (solo el traslado baja a 3 s) | — | "nah, no le cambies el descanso al camillero" |
+| 2026-10-17 | Aprobados: irse tras el alta 60/40/20 %, movimiento cada 5–25 min de juego, penalizaciones ×1,0–×2,0, fuente pixel libre con tildes y ñ | Ronda 3 | "3, 4, 5, 6 y 8 aprobados con tu recomendación" |
+| 2026-10-17 | Título: **Hospital de los Costeños con Narcolepsia**, subtítulo **"El hueco más profundo de Montería"** | — | "para el título, cambia turno de la tarde por 'El hueco más profundo de Montería'" |
+| 2026-10-17 | No hay Aseprite: sprites como PNG generados por código (ver [[Lógica del juego]] → arte); Figma + Figwright para las pantallas | Herramientas disponibles | "Aseprite no lo tengo, pero si figma con figwright abierto" |
+| 2026-10-17 | No se usará el dashboard web; separarlo del juego | — | "Hay manera de tener el dashboard web por aparte del juego externo? no creo que vayamos a usar el dashboard la verdad." |
+| 2026-10-17 | Aprobados: dirección de arte, manillas verde/amarillo/rojo, elenco fijo, textos del Director, lista de pantallas de Figma | — | "me gusta la dirección de arte, la manilla de cada nivel como la recomendaste. me gusta el elenco fijo, los textos de recomendación y las pantallas de figma" |
