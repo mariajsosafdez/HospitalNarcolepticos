@@ -41,7 +41,7 @@ web/               como está hoy                     (SIN CAMBIOS)
 
 1. Escenario obligatorio por consola (igual que hoy).
 2. Simulación concurrente (igual que hoy).
-3. *(Solo con `go run . -web`, por confirmar)* El dashboard web, como antes, y **sin** juego. Con `go run .` no hay dashboard.
+3. *(Solo con `go run . -web`)* ✅ El dashboard web, como antes, y **sin** juego. Con `go run .` no hay dashboard.
 4. Se abre la ventana del juego con `ebiten.RunGame`. Ebitengine exige correr en la goroutine principal, por eso va de último.
 
 `main` sigue sin lógica de negocio: solo arranca cosas. Al cerrar la ventana del juego, el programa termina.

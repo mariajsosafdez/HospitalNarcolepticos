@@ -131,9 +131,7 @@ Todo se trabaja en la rama **`game`**. Entrega del enlace del repo: 19/10, 23:59
 
 ## Preguntas abiertas
 
-Rondas 1, 2 y 3 respondidas (ver el registro). Queda una por confirmar:
-
-1. **Dashboard web aparte.** Recomiendo que **`go run .`** muestre el escenario y la simulación por consola y luego abra el juego, **sin** dashboard. **`go run . -web`** haría lo de antes (escenario + simulación + dashboard en `localhost:8080`), sin juego. El paquete `web` se queda en el repo: ya está hecho, funciona y sirve de respaldo si algo falla con el juego en la defensa. Al cerrar la ventana del juego, el programa termina.
+Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y textos están en [[Elenco]] y [[Textos del Director]].
 
 ## Registro de decisiones
 
@@ -173,3 +171,5 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Queda una por confirmar:
 | 2026-10-17 | No hay Aseprite: sprites como PNG generados por código (ver [[Lógica del juego]] → arte); Figma + Figwright para las pantallas | Herramientas disponibles | "Aseprite no lo tengo, pero si figma con figwright abierto" |
 | 2026-10-17 | No se usará el dashboard web; separarlo del juego | — | "Hay manera de tener el dashboard web por aparte del juego externo? no creo que vayamos a usar el dashboard la verdad." |
 | 2026-10-17 | Aprobados: dirección de arte, manillas verde/amarillo/rojo, elenco fijo, textos del Director, lista de pantallas de Figma | — | "me gusta la dirección de arte, la manilla de cada nivel como la recomendaste. me gusta el elenco fijo, los textos de recomendación y las pantallas de figma" |
+| 2026-10-17 | `go run .` abre el juego sin dashboard; `go run . -web` abre el dashboard sin juego; `web/` se queda en el repo | Respaldo para la defensa | "Sip" |
+| 2026-10-17 | Equipo de agentes (arte, builder, tester) en la rama `game` | Flujo de trabajo | "Sí, me parece bien :D" |
