@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"cmp"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -28,6 +29,11 @@ const hospitalName = "Hospital de los Costeños con Narcolepsia"
 const serverAddress = "localhost:8080"
 
 func main() {
+	// Sin banderas se abre el juego; con -web, el dashboard web de antes
+	// (y no se abre el juego).
+	webMode := flag.Bool("web", false, "serve the old web dashboard instead of opening the game window")
+	flag.Parse()
+
 	// 1. Escenario obligatorio. io.MultiWriter es un Writer que copia todo
 	//    lo que recibe a VARIOS destinos: la consola y un buffer en memoria.
 	//    Así el mismo texto se muestra luego en la pestaña 1 de la web.
@@ -44,15 +50,26 @@ func main() {
 		log.Fatalf("could not run the simulation: %v", err)
 	}
 
-	// 3. Bono: interfaz web. El hospital "vivo" de la web empieza con los
-	//    datos del paso 1 (buildHospital) y el botón Reset vuelve a crearlo.
-	server, err := web.NewServer(scenario, scenarioLog.String(), buildHospital)
-	if err != nil {
-		log.Fatalf("could not create the web server: %v", err)
+	// 3. Con -web: bono de interfaz web. El hospital "vivo" de la web empieza
+	//    con los datos del paso 1 (buildHospital) y el botón Reset vuelve a
+	//    crearlo.
+	if *webMode {
+		server, err := web.NewServer(scenario, scenarioLog.String(), buildHospital)
+		if err != nil {
+			log.Fatalf("could not create the web server: %v", err)
+		}
+		fmt.Printf("\n== Web interface ==\n  Open http://%s in your browser (press Ctrl+C to stop)\n", serverAddress)
+		if err := web.Start(serverAddress, server); err != nil {
+			log.Fatalf("web server stopped: %v", err)
+		}
+		return
 	}
-	fmt.Printf("\n== Web interface ==\n  Open http://%s in your browser (press Ctrl+C to stop)\n", serverAddress)
-	if err := web.Start(serverAddress, server); err != nil {
-		log.Fatalf("web server stopped: %v", err)
+
+	// 4. Sin -web: se abre la ventana del juego. Debe ir de último porque
+	//    Ebitengine exige correr en la goroutine principal. runGame está en
+	//    game_on.go (con Ebitengine) o game_off.go (etiqueta nogame).
+	if err := runGame(); err != nil {
+		log.Fatalf("the game stopped: %v", err)
 	}
 }
 
