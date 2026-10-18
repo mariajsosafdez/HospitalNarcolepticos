@@ -426,11 +426,18 @@ func labelPosition(sprite rect, area rect) rect {
 // ---------------------------------------------------------------------------
 
 // noticeY elige la altura del aviso: la primera de options en que la caja
-// (box, con su alto y su ancho) no toca el rectángulo avoid (el paciente del
-// que habla). Si ninguna sirve, la última. Pura, para probarla con una tabla.
-func noticeY(options []int, box rect, avoid rect) int {
+// (box, con su alto y su ancho) no toca ninguno de los rectángulos de avoid
+// (el paciente del que habla, y el botón si lo hay). Si ninguna sirve, la
+// última. Pura, para probarla con una tabla.
+func noticeY(options []int, box rect, avoid []rect) int {
 	for _, y := range options {
-		if overlapArea(rect{box.x, y, box.w, box.h}, avoid) == 0 {
+		free := true
+		for _, r := range avoid {
+			if overlapArea(rect{box.x, y, box.w, box.h}, r) > 0 {
+				free = false
+			}
+		}
+		if free {
 			return y
 		}
 	}

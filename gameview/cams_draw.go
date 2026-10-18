@@ -24,11 +24,13 @@ var (
 	noticeDemoY  = 140 // en la Demo se sube para no tapar la caja de controles
 )
 
-// dischargeRect es el botón "Dar de alta", centrado bajo la cama (con la cama
-// en x = 34..66 del fondo, o sea 72..136 en pantalla, queda en x = 74).
+// dischargeRect es el botón "Dar de alta", centrado bajo la cama. Va en y = 208
+// (94 del fondo): entre la cama (termina en 84 a 86) y las alfombras de las
+// habitaciones 101 y 103 (empiezan en 103 y 109), o sea sobre piso liso en las
+// seis habitaciones.
 func dischargeRect(bed point) rect {
 	sx, _ := feedToScreen(bed.x+bedW/2, 0)
-	return rect{sx - 30, 242, 60, 13}
+	return rect{sx - 30, 208, 60, 13}
 }
 
 // bed devuelve la cama de la habitación que se está mirando.

@@ -491,7 +491,11 @@ func (c *camsScene) noticeYFor(g *game.GamePatient) int {
 	}
 	for _, p := range c.placements() {
 		if p.patient == g {
-			return noticeY(options, noticeRect, p.screenRect())
+			avoid := []rect{p.screenRect()}
+			if c.roomPatient() == g {
+				avoid = append(avoid, dischargeRect(c.bed())) // tampoco tapa "Dar de alta"
+			}
+			return noticeY(options, noticeRect, avoid)
 		}
 	}
 	return options[0]

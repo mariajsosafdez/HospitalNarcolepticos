@@ -55,3 +55,18 @@ func TestRoomLayoutDefault(t *testing.T) {
 		t.Errorf("roomLayout(999) = %v", got)
 	}
 }
+
+// El botón "Dar de alta" va debajo de la cama (sin tocarla) y dentro de la
+// cámara, en las seis habitaciones.
+func TestDischargeRectBelowBed(t *testing.T) {
+	for n, art := range roomArts {
+		r := dischargeRect(art.bed)
+		_, bedBottom := feedToScreen(0, art.bed.y+bedH)
+		if r.y < bedBottom+8 {
+			t.Errorf("habitación %d: el botón (y=%d) está muy pegado a la cama (termina en %d)", n, r.y, bedBottom)
+		}
+		if r.x < feedRect.x || r.x+r.w > feedRect.x+feedRect.w || r.y+r.h > feedRect.y+feedRect.h {
+			t.Errorf("habitación %d: el botón %+v se sale de la cámara", n, r)
+		}
+	}
+}

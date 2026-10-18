@@ -182,7 +182,7 @@ key 7                  # cámara 7A
 wake P-001
 wait 3
 shot4 out/3-despierto.png
-click 96 248           # botón "Dar de alta"
+click 172 214          # botón "Dar de alta" (habitación 101: centrado bajo la cama, y = 208 a 221)
 dump out/final.json
 ```
 
