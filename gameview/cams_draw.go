@@ -20,6 +20,8 @@ var (
 	demoNextRect = rect{210, 244, 70, 13}
 	demoAutoRect = rect{286, 244, 42, 13}
 	noticeRect   = rect{60, 203, 220, 46}
+	noticeTopY   = 36  // arriba: debajo del rótulo REC
+	noticeDemoY  = 140 // en la Demo se sube para no tapar la caja de controles
 )
 
 // dischargeRect es el botón "Dar de alta", centrado bajo la cama (con la cama
@@ -596,9 +598,7 @@ func (c *camsScene) drawMap(dst *ebiten.Image) {
 // drawNotice pinta el aviso amable (por ejemplo "No hay cama libre!").
 func (c *camsScene) drawNotice(dst *ebiten.Image) {
 	box := noticeRect
-	if c.demo != nil {
-		box.y = 140 // en la Demo se sube para no tapar la caja de controles
-	}
+	box.y = c.notice.y
 	e := c.env
 	drawBox(e, dst, box)
 	e.Text(dst, c.notice.title, box.x+8, box.y+5, textStyle{fontPixelBold, 10, '2', alignLeft})

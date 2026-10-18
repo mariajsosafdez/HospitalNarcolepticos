@@ -37,6 +37,7 @@ type notice struct {
 	title string
 	lines []string
 	until int // tick de la interfaz en que se va
+	y     int // arriba del aviso en el lienzo (arriba o abajo, ver noticeY)
 }
 
 // camsScene es la pantalla de cámaras.
@@ -201,6 +202,7 @@ func (c *camsScene) update(in *Input) Scene {
 // showMessage abre un mensaje del Director y detiene el reloj del turno.
 // start es la línea con la que empieza (0 = la primera).
 func (c *camsScene) showMessage(kind messageKind, lines []string, start int) {
+	c.notice = nil // la caja del Director no comparte pantalla con un aviso
 	c.msg = newMessage(kind, lines, start)
 	c.shift.Pause()
 }
@@ -449,10 +451,13 @@ func (c *camsScene) assign(m *game.StaffMember) {
 	} else {
 		err = c.shift.Assign(c.selected, m.ID())
 	}
-	c.selected = ""
-	c.cursor = -1
 	if err != nil {
-		c.showError(err, g.Patient().Name())
+		// Un aviso (personal ocupado, cupo lleno...) no suelta al paciente:
+		// se queda elegido para probar con otra persona del panel.
+		c.showError(err, g)
+	} else {
+		c.selected = ""
+		c.cursor = -1
 	}
 	// Un doctor que llega a 4/4 (con o sin cama para el paciente) recibe el
 	// regaño del director.
@@ -467,14 +472,29 @@ func (c *camsScene) assign(m *game.StaffMember) {
 // discharge da de alta al paciente despierto de la habitación.
 func (c *camsScene) discharge(g *game.GamePatient) {
 	if err := c.shift.Discharge(g.Patient().ID()); err != nil {
-		c.showError(err, g.Patient().Name())
+		c.showError(err, g)
 	}
 }
 
 // showError muestra el aviso amable de un error de game.
-func (c *camsScene) showError(err error, patientName string) {
-	title, lines := friendlyError(err, patientName)
-	c.notice = &notice{title, lines, c.env.Tick + noticeTicks}
+func (c *camsScene) showError(err error, g *game.GamePatient) {
+	title, lines := friendlyError(err, g.Patient().Name())
+	c.notice = &notice{title, lines, c.env.Tick + noticeTicks, c.noticeYFor(g)}
+}
+
+// noticeYFor elige dónde va el aviso para que no tape al paciente del que
+// habla: abajo si se puede y, si el paciente está ahí, arriba.
+func (c *camsScene) noticeYFor(g *game.GamePatient) int {
+	options := []int{noticeRect.y, noticeTopY}
+	if c.demo != nil {
+		options[0] = noticeDemoY // la caja de la Demo ocupa el fondo
+	}
+	for _, p := range c.placements() {
+		if p.patient == g {
+			return noticeY(options, noticeRect, p.screenRect())
+		}
+	}
+	return options[0]
 }
 
 // roomPatient devuelve el paciente despierto en la cama de la habitación
@@ -578,7 +598,7 @@ func (c *camsScene) updatePause(in *Input) Scene {
 // stepDemo pasa al siguiente de los 4 pasos de la Demo.
 func (c *camsScene) stepDemo() {
 	if err := c.nextDemoStep(); err != nil {
-		c.notice = &notice{"Algo salió mal", []string{err.Error()}, c.env.Tick + noticeTicks}
+		c.notice = &notice{"Algo salió mal", []string{err.Error()}, c.env.Tick + noticeTicks, noticeRect.y}
 	}
 }
 
@@ -598,7 +618,7 @@ func (c *camsScene) nextDemoStep() error {
 	c.notice = nil
 	for _, g := range c.shift.Patients() {
 		if g.State() == game.NoBedWaiting {
-			c.showError(hospital.ErrNoRoomAvailable, g.Patient().Name())
+			c.showError(hospital.ErrNoRoomAvailable, g)
 			break
 		}
 	}

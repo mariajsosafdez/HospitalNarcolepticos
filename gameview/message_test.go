@@ -55,3 +55,23 @@ func TestWrapMessageFitsThreeLines(t *testing.T) {
 		}
 	}
 }
+
+func TestNoticeY(t *testing.T) {
+	box := rect{60, 203, 220, 46}
+	options := []int{203, 36}
+	tests := []struct {
+		name  string
+		avoid rect
+		want  int
+	}{
+		{"paciente arriba: el aviso va abajo", rect{100, 120, 60, 30}, 203},
+		{"paciente abajo: el aviso sube", rect{100, 190, 60, 30}, 36},
+		{"paciente a la izquierda de la caja: abajo", rect{4, 210, 40, 30}, 203},
+		{"paciente en ambos: queda arriba (la última)", rect{60, 0, 220, 270}, 36},
+	}
+	for _, tt := range tests {
+		if got := noticeY(options, box, tt.avoid); got != tt.want {
+			t.Errorf("%s: noticeY = %d, quiero %d", tt.name, got, tt.want)
+		}
+	}
+}

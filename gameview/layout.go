@@ -425,6 +425,18 @@ func labelPosition(sprite rect, area rect) rect {
 // Textos
 // ---------------------------------------------------------------------------
 
+// noticeY elige la altura del aviso: la primera de options en que la caja
+// (box, con su alto y su ancho) no toca el rectángulo avoid (el paciente del
+// que habla). Si ninguna sirve, la última. Pura, para probarla con una tabla.
+func noticeY(options []int, box rect, avoid rect) int {
+	for _, y := range options {
+		if overlapArea(rect{box.x, y, box.w, box.h}, avoid) == 0 {
+			return y
+		}
+	}
+	return options[len(options)-1]
+}
+
 // friendlyError convierte un error de game en el aviso de la vista: un
 // título y las líneas de texto. El de "sin cama" sale de la vista aprobada.
 func friendlyError(err error, patientName string) (title string, lines []string) {
