@@ -1,5 +1,7 @@
 package gameview
 
+import "strings"
+
 // staffText es el nombre y la especialidad que se MUESTRAN de un miembro del
 // personal. El escenario del enunciado (la Demo) trae los datos en inglés
 // ("Dr. Karen Ospina", "Neurology") y no se puede tocar, así que la vista
@@ -53,4 +55,27 @@ func shortRole(id, modelRole string) string {
 		return t.shortRole
 	}
 	return modelRole
+}
+
+// patientShortNames son los nombres cortos de los pacientes para la etiqueta
+// del paciente elegido (cabe en 60 px). El reporte usa el nombre completo.
+// Los demás pacientes salen como primer nombre + primer apellido.
+var patientShortNames = map[string]string{
+	"P-007": "Mañe Julio",
+	"P-005": "Marelvis", // "Marelvis Ortega" mide 64 px y no cabe
+	"P-008": "Kelly Ruiz",
+}
+
+// patientLabelName devuelve el nombre corto de un paciente por su ID; si no
+// está en la tabla, el primer nombre y el último apellido del nombre completo
+// ("Yesid Pacheco" se queda igual y "Kelly Johana Ruiz" pasa a "Kelly Ruiz").
+func patientLabelName(id, fullName string) string {
+	if n, ok := patientShortNames[id]; ok {
+		return n
+	}
+	words := strings.Fields(fullName)
+	if len(words) <= 2 {
+		return fullName
+	}
+	return words[0] + " " + words[len(words)-1]
 }

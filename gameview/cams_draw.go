@@ -398,7 +398,7 @@ func (c *camsScene) drawSelectedLabel(dst *ebiten.Image, g *game.GamePatient) {
 	box := labelPosition(sprite, feedRect)
 	e.FillRect(dst, box, 'W', 1)
 	e.StrokeRect(dst, box, '0', 1)
-	name := g.Patient().Name()
+	name := patientLabelName(g.Patient().ID(), g.Patient().Name())
 	measure := func(s string) int { return e.Fonts.Width(s, fontPixel, 8) }
 	name = fitText(name, 60, measure)
 	e.Text(dst, name, box.x+4, box.y+2, textStyle{fontPixel, 8, '1', alignLeft})
