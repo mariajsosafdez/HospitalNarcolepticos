@@ -21,6 +21,7 @@ Registro honesto de errores reales que cometieron Claude y sus agentes durante e
 | 2026-10-18 | Builder | Python en Windows escribió finales de línea CRLF en archivos `.go` | `gofmt -l` | `gofmt -w` antes de cada commit |
 | 2026-10-18 | Builder | Corrió `git stash` por error mientras probaba, y guardó temporalmente los cambios sin commit del agente de arte | El mismo agente | `git stash pop` inmediato; los cambios quedaron intactos. Lección: con agentes en paralelo, nunca comandos de git que toquen el árbol completo |
 | 2026-10-18 | Fuente + builder | La fuente Pixelify une "fi" y "fl" en un solo símbolo (ligadura): "fila" se leía "Ala" | El agente tester, leyendo las capturas | Desactivar las ligaduras (`liga`, `clig`, `dlig`) con un test |
+| 2026-10-18 | Builder | Escribió un test que llamaba a la misma función que debía probar (`sleepWindowOpen`), así que pasaba aunque se quitara la regla | El mismo agente, al revisar el test | Compararlo contra un número fijo (600 ticks) y comprobar que el test falla si se quita la regla |
 | 2026-10-17 | Sesión principal | Un `python -` en un comando quedó esperando entrada y colgó la terminal | El comando no terminó en 2 minutos | Detenerlo y hacer las ediciones a mano |
 
 ## Otros datos para AI_USAGE.md
