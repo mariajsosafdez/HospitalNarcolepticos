@@ -38,7 +38,7 @@ Then they differ:
 
 | Command | Third step |
 |---|---|
-| `go run .` | Opens the game window (480x270 pixel art scaled x3). Closing the window ends the program. There is no web server. |
+| `go run .` | Opens the game window (480x270 pixel art scaled x2) on the main menu: New shift, Continue, Demo (the enunciado scenario, step by step) and more. Closing the window ends the program. There is no web server. |
 | `go run . -web` | **Bonus: web interface.** It starts a server and prints `Open http://localhost:8080`. Open that URL in a browser. Press `Ctrl+C` to stop. No game window. |
 | `go run -tags nogame .` | Prints a short message saying the game was compiled out and exits. The `nogame` build never imports Ebitengine, so it works on a machine without the graphics libraries. Use it to run the mandatory scenario anywhere. |
 
@@ -102,6 +102,7 @@ go.mod                 module costenos-narcolepsia
 main.go                builds the scenario, prints it, then opens the game or (-web) the web server (no business logic)
 game_on.go             `!nogame`: opens the game window (the only file in main that reaches Ebitengine)
 game_off.go            `nogame`: prints that the game was compiled out
+art/                   sprite grids (sprites/*.txt), generated PNGs (png/) and art.go, which embeds the PNGs into the executable
 hospital/              THE MODEL: pure logic, no printing, no display code
   person.go            Person (embedded in Patient, Doctor and Orderly)
   patient.go           Patient + NarcolepsyLevel + PatientState
@@ -116,7 +117,8 @@ hospital/              THE MODEL: pure logic, no printing, no display code
   simulation.go        bonus: one goroutine per patient
   hospital_test.go     tests
 game/                  GAME RULES (standard library only): clock, patients, staff, score, days, report, demo
-gameview/              GAME WINDOW: the only package that imports Ebitengine
+gameview/              GAME WINDOW: menu, camera screen, Demo and the -agent test backdoor; the only package that imports Ebitengine
+  assets/fonts/        Pixelify Sans and VT323 (.ttf) with their OFL licences
 web/                   THE VIEW: REST API + static HTML/CSS/JS
   server.go            routes and handlers
   dto.go               JSON structs and conversion from hospital.Snapshot
@@ -167,3 +169,20 @@ Errors are returned as `{"error": "..."}` with status 400, 404 or 409, chosen wi
 ## AI usage
 
 See [AI_USAGE.md](AI_USAGE.md).
+
+## Credits
+
+- **Fonts** (both under the [SIL Open Font License 1.1](https://openfontlicense.org), embedded in `gameview/assets/fonts/` together with their `OFL-*.txt` files):
+  - **Pixelify Sans** by Stefie Justprince, from [Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans). Used for the menu and every interface text.
+  - **VT323** by Peter Hull, from [Google Fonts](https://fonts.google.com/specimen/VT323). Used only for the camera stamp, the clock and the map buttons.
+- **Game engine:** [Ebitengine](https://ebitengine.org) (Apache 2.0).
+- **Pixel art:** drawn for this project from text grids (`art/sprites/`).
+
+## Test backdoor (`-agent`)
+
+For checking the game without a person looking at the window. Full table of flags and an example script in `docs/HospitalCosteños/Arquitectura.md`.
+
+```
+go run . -agent -scene menu -input script.txt -quit
+go run . -agent -scene demo -step 3 -cam 7B -input script.txt -quit
+```

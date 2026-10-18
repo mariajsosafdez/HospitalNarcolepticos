@@ -7,7 +7,8 @@ Cómo está armado el código del juego y por qué. La lógica detallada está e
 ```
 hospital/    el modelo del enunciado          SIN CAMBIOS (git diff main -- hospital/ vacío)
 game/        reglas del juego                 solo librería estándar + hospital
-gameview/    ventana, dibujo y entrada        ÚNICO paquete que importa Ebitengine
+gameview/    ventana, pantallas, dibujo, entrada y puerta de pruebas   ÚNICO paquete que importa Ebitengine
+art/         PNG y paleta embebidos (art/art.go)                          solo go:embed
 web/         dashboard viejo                  SIN CAMBIOS, solo con -web
 main.go      arma el escenario y arranca cosas (sin lógica de negocio)
 game_on.go   etiqueta !nogame: abre la ventana (importa gameview)
@@ -19,7 +20,7 @@ Dependencias permitidas (la flecha es "importa a"):
 ```
 main ──► hospital, web
 main ──► game, gameview      (solo en game_on.go)
-gameview ──► game, Ebitengine
+gameview ──► game, hospital, art, Ebitengine
 game ──► hospital
 web ──► hospital
 hospital ──► (nada)
@@ -64,31 +65,97 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 
 `game.SaveStore` recibe la ruta del archivo al crearse (`NewSaveStore(path)`). El valor por defecto de `DefaultSavePath()` es `%AppData%\HospitalCostenos\save.json`. Los tests y la puerta de pruebas usan una carpeta temporal y **nunca** tocan el guardado real.
 
+## La vista (`gameview/`)
+
+| Archivo | Qué tiene |
+|---|---|
+| `app.go` | `App` (lo que Ebitengine llama: `Update`, `Draw`, `Layout`), `Env` (arte, fuentes, guardado, reloj de interfaz), la interfaz `Scene` y `Run` |
+| `menu.go` | Pantalla del menú |
+| `cams.go`, `cams_draw.go` | Pantalla de cámaras (turno y Demo): lógica de entrada y dibujo por capas |
+| `walkers.go` | Cómo caminan los pacientes dentro de una sala (la lógica solo sabe la cámara) |
+| `layout.go`, `textfit.go` | **Funciones puras** con tests de tabla: medidas de las vistas, luz por hora, cuadro de cada sprite, a qué botón le da clic el mouse, reporte en líneas, ajuste de texto |
+| `assets.go`, `text.go` | Carga de PNG, paleta y fuentes; dibujo de texto (sombra, borde) y rectángulos |
+| `input.go` | `Input`: lo único que las pantallas saben del teclado y el mouse |
+| `options.go`, `script.go`, `agent.go` | La puerta de pruebas |
+
+**Arte embebido.** `go:embed` solo puede leer archivos que estén en la carpeta del paquete o debajo, y `gameview/` no puede alcanzar `../art`. Por eso hay un paquete diminuto `art` (`art/art.go`) que embebe `png/*.png` y `palette.hex` y expone un `embed.FS`. Los PNG se leen solo a 1x. Para que el juego vea un PNG nuevo hay que volver a compilar (`go run .` lo hace solo). Los fondos de cámara se buscan por nombre (`fondo_cam<id>_*`), así que cuando el arte agrega uno, la cámara lo recoge sin tocar código; mientras no exista, se pinta un relleno liso con el rótulo. Lo mismo con los sprites de personajes (`pac_<nombre>_*`, `doc_*`, `cam_*`): sin PNG sale una figura simple.
+
+**Fuentes.** Pixelify Sans (variable, eje `wght` con `SetVariation`) y VT323, embebidas con `go:embed` y dibujadas con `text/v2` de Ebitengine. Las dos son SIL OFL 1.1 y sus `OFL-*.txt` están junto a los `.ttf`.
+
+**Texto en pantalla sin ¡.** Decisión de la autora (2026-10-17): lo que se ve en el juego pierde el `¡` de apertura y conserva el `!` del cierre, porque en Pixelify Sans el `¡` parece una `i`. Se hace en un solo lugar: `screenText` (en `layout.go`, con test de tabla) lo usan `drawText` y la medición de ancho. Los textos del código y de las notas conservan el español correcto.
+
+**Dos relojes.** `game.Clock` cuenta los ticks del turno y se detiene en la pausa. `Env.Tick` cuenta los ticks de la interfaz (parpadeos, animaciones) y sigue corriendo. Nada lee el reloj del computador, por eso las capturas de la puerta de pruebas son iguales cada vez.
+
+**Adiciones pequeñas a `game/`** (con tests): `StaffMember.CooldownFraction()` (la barra del panel crece en el traslado y baja en el descanso), `GamePatient.Carrier()` (quién empuja la camilla, para dibujar a la persona correcta) y `SaveStore.Exists()` (para dejar "Continuar" gris sin partida).
+
+**Guardado.** En el juego de verdad la vista usa `game.DefaultSavePath()`. En `-agent` no hay `SaveStore` (es `nil`): el progreso vive solo en memoria y el guardado real no se toca.
+
 ## Puerta de pruebas (-agent)
 
-> Estado: **planeada, aún no existe.** Se implementa junto con la primera pantalla (el menú), porque una puerta sin pantallas no tiene nada que mostrar.
+Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas, sacar capturas y volcar el estado sin mirar la ventana. Con `-agent` **no se imprime el escenario ni la simulación** (silencio total, solo errores) y no se escribe el guardado real.
 
-Objetivo: que un agente tester pueda revisar el juego sin una persona mirando. Se activa con banderas en `main` y corre sin ventana visible y en silencio (solo escribe los archivos que se le pidan).
+**Dónde viven las banderas.** `gameview.RegisterFlags` las define y `game_on.go` las registra en una variable global (`agentOpts`) antes de `flag.Parse()`. `main.go` solo hace `if agentMode() { runAgent(); return }`: sin lógica. Con la etiqueta `nogame` no existen (`game_off.go`).
 
 | Bandera | Qué hace |
 |---|---|
 | `-agent` | Activa el modo de pruebas. Sin esta bandera las demás se ignoran |
-| `-scene <nombre>` | Salta directo a una escena (`menu`, `demo`, `day1`...) |
-| `-seed <n>` | Semilla del azar: la misma semilla da la misma partida |
-| `-day <1-5>` | Día que se juega |
-| `-input "<guion>"` | Lista de pasos separados por `;` o saltos de línea. Pasos: `wait N` (N ticks), `click x,y`, `key <tecla>`, `shot <archivo>` (captura a 1×), `shot4 <archivo>` (captura a 4×), `dump <archivo>` (JSON de `game.Snapshot`) |
-| `-frames N` | Cuántos ticks correr antes de terminar |
-| `-quit` | Cierra al terminar el guion |
+| `-scene` | `menu`, `cams`, `demo` o `day` (tabla abajo) |
+| `-day N` | Día que se juega (1 a 5) en `-scene day` |
+| `-seed N` | Semilla del azar del turno y de la vista (por defecto 1) |
+| `-cam ID` | Cámara con la que empieza (`2`, `7A`...) |
+| `-step N` | Solo `demo`: paso de la Demo (1 a 4) con el que empieza (ejecuta los anteriores sin mostrarlos) |
+| `-input archivo` | Guion (ver abajo) |
+| `-frames N` | Ticks extra que corren después del guion |
+| `-quit` | Cierra al terminar (con `-quit` la ventana se saca de la pantalla). Sin `-quit` la ventana sigue abierta |
+| `-saved N` | Finge una partida guardada con último día desbloqueado N (activa "Continuar") |
 
-Reglas de la puerta:
+| `-scene` | Qué abre |
+|---|---|
+| `menu` | El menú. Sin `-saved`, "Continuar" sale gris |
+| `day` | Turno normal del `-day`, con azar de `-seed` (los pacientes llegan, caminan y se duermen solos) |
+| `cams` | La pantalla de cámaras con el escenario de la Demo (5 pacientes, 3 habitaciones, sin azar y sin caja de la Demo). Ideal para probar con `sleep`/`wake` |
+| `demo` | La Demo con su caja de controles, arrancando en el paso `-step` |
 
-- **Determinista:** misma semilla y mismo guion producen las mismas capturas y el mismo JSON. Nada lee el reloj del computador.
-- **Silenciosa:** sin sonido ni mensajes en consola, salvo errores.
-- **Nunca escribe el guardado real:** usa una ruta temporal inyectada en `SaveStore`.
-- El volcado JSON es `game.Snapshot` (reloj, estado de juego y del modelo de cada paciente, cámara, espera, estado del personal y su cooldown, cupos, habitaciones, desglose de puntos y mensajes). Ya existe y está probado.
+**Guion.** Un paso por línea (o varios con `;`); `#` empieza un comentario. Un paso desconocido o con argumentos mal escritos **hace fallar el arranque** con el número de línea.
 
-Ejemplo previsto:
+| Paso | Qué hace |
+|---|---|
+| `wait N` | Corre N ticks |
+| `move X Y` | Pone el mouse en (X, Y) del lienzo de 480x270 (gasta 1 tick) |
+| `click X Y` | Mueve el mouse y hace clic (1 tick) |
+| `key Nombre` | Pulsa una tecla: `Up Down Left Right Enter Escape Space M 1`..`8` |
+| `shot ruta` | Captura PNG a 1x (480x270) |
+| `shot4 ruta` | Captura PNG a 4x (1920x1080) |
+| `dump ruta` | JSON: `ui` (escena, cámara, paciente elegido, botón bajo el mouse, aviso, pausa o reporte, paso de la Demo...) y `game` (`game.Snapshot` completo) |
+| `sleep ID CAM` | Duerme al paciente en esa cámara (`ForceSleep`, la misma ayuda de la Demo) |
+| `wake ID` | Despierta a un paciente que duerme en cama (`ForceWake`) |
+
+Reglas: **determinista** (misma semilla y mismo guion dan las mismas capturas y el mismo JSON), **silenciosa**, y la captura se toma cuando el cuadro ya está pintado (el motor no avanza mientras espera). Todo corre lo más rápido que da la máquina: el tiempo del juego son ticks, no segundos.
+
+**Ejemplo** (`out/ejemplo.txt`): duerme a Yesid en la cafetería, lo elige con un clic, escoge a la Dra. Karen, espera a que llegue a la cama, mira la habitación 101, lo despierta y lo da de alta.
 
 ```
-go run . -agent -scene demo -seed 1 -input "wait 120; shot out/demo-1.png; dump out/demo.json" -quit
+sleep P-001 2
+wait 30
+shot4 out/1-dormido.png
+click 178 205          # clic sobre el paciente (con la semilla 1 cae ahí)
+shot4 out/2-elegido.png
+click 400 50           # tarjeta de la Dra. Karen
+wait 400               # traslado de 5 s = 300 ticks
+key 7                  # cámara 7A
+wake P-001
+wait 3
+shot4 out/3-despierto.png
+click 96 248           # botón "Dar de alta"
+dump out/final.json
 ```
+
+```
+go run . -agent -scene cams -cam 2 -input out/ejemplo.txt -quit
+go run . -agent -scene demo -step 4 -input script.txt -quit     # reporte de la Demo
+go run . -agent -scene menu -saved 3 -input script.txt -quit    # "Continuar" activo
+```
+
+**Estados alcanzables.** Menú (normal, Demo elegida con `key Down`, sin y con partida, "Próximamente"), cámaras (zona común, paciente elegido, aviso sin cama, habitación con dormido y con despierto, candado en cámara bloqueada con `move`), panel de personal (los 4 estados), Demo (pasos 1 a 4, Auto), pausa (`key Escape`) y reporte (paso 4 de la Demo, o al terminar un turno con `wait 10800`).
+
+**Pendiente de diseño.** Un paso de la vista no está en Figma: con más de 3 personas (días 3 a 5) el panel muestra 3 tarjetas por página y un botón "Más >" (en la vista aprobada solo caben 3).
