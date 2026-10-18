@@ -181,3 +181,10 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-17 | Días 3–5 con 10 pacientes (el elenco tiene 10); subir a 12 con personajes extra si sobra tiempo | Elenco fijo | "okeyyy" |
 | 2026-10-17 | Aprobadas las decisiones del builder: nivel según el elenco, CAM 2 conectada al Pasillo Este, `MoveToBed` = traslado + medio descanso, errores internos en inglés | Revisión | "sip" / "ok" |
 | 2026-10-17 | Dormido sin atender al final del turno resta 10 (× multiplicador del día) en vez de sumar | No fueron atendidos | "cambiemoslo mejor por -10, porque realmente no se atendieron" |
+| 2026-10-17 | Pantalla de cámaras aprobada, con retoques (ver Art log) | Revisión de la vista | "si" |
+| 2026-10-17 | La cámara se dibuja a ×2; panel y mapa a ×1 | Que los personajes no queden diminutos | "mantenlo así" |
+| 2026-10-17 | Una sola cama por habitación (capacidad 1, como el modelo), con más decoración | — | "ok, una sola cama por habitación, pon también más decoración en la habitación" |
+| 2026-10-17 | Cámara bloqueada: candado rojo al pasar el mouse | — | "Hay manera de que cuando el usuario haga hover en la cámara aparezca un candado rojo?" |
+| 2026-10-17 | Textos nuevos del agente de arte aprobados (pantalla de cámaras y pasos de la Demo) | — | "me gustan" |
+| 2026-10-17 | Se dibujan todas las salas que faltan | — | "dibuja también las salas faltantes" |
+| 2026-10-17 | La línea de ayuda queda "Enter: dale" sin ¡! | La ¡ de Pixelify parece una i | "quita los ¡!" |
