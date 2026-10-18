@@ -61,7 +61,7 @@ func TestDemoReportCards(t *testing.T) {
 	r := demoReport(t)
 
 	noBed := noBedLines(r)
-	want := []string{"Al cerrar el turno: nadie.", "Durante el turno: 1 vez.", "Wilfrido Berrio, hallway 2, second floor", "(después pasó a la 101)"}
+	want := []string{"Al cerrar el turno: nadie.", "Durante el turno: 1 vez.", "Wilfrido Berrio, Pasillo Oeste", "(después pasó a la 101)"}
 	if len(noBed) != len(want) {
 		t.Fatalf("noBedLines = %+v", noBed)
 	}
@@ -123,5 +123,21 @@ func TestNoBedStillInHallway(t *testing.T) {
 	lines := noBedLines(r)
 	if lines[0].left != "Al cerrar el turno: 1 paciente." || len(lines) != 3 {
 		t.Errorf("noBedLines = %+v", lines)
+	}
+}
+
+func TestLocationText(t *testing.T) {
+	tests := []struct{ in, want string }{
+		{"cafeteria (sancocho line)", "Cafetería"},
+		{"champeta dance hall", "Salón de champeta"},
+		{"radiology queue", "Fila de radiología"},
+		{"hallway 2, second floor", "Pasillo Oeste"},
+		{"Patio de las palmeras", "Patio de las palmeras"}, // turno normal: ya está en español
+		{"", ""},
+	}
+	for _, tt := range tests {
+		if got := locationText(tt.in); got != tt.want {
+			t.Errorf("locationText(%q) = %q, want %q", tt.in, got, tt.want)
+		}
 	}
 }

@@ -102,12 +102,31 @@ func noBedLines(r game.Report) []rline {
 	times := fmt.Sprintf("Durante el turno: %s.", countText(len(r.NoBed), "vez", "veces"))
 	lines := []rline{{left: closing}, {left: times}}
 	for _, p := range r.NoBed {
-		lines = append(lines, rline{left: p.Name + ", " + p.Location})
+		lines = append(lines, rline{left: p.Name + ", " + locationText(p.Location)})
 		if p.LaterRoom > 0 {
 			lines = append(lines, rline{left: fmt.Sprintf("(después pasó a la %d)", p.LaterRoom)})
 		}
 	}
 	return capWithMore(lines, reportCardLines)
+}
+
+// demoLocations traduce los cuatro lugares en inglés del escenario del
+// enunciado (la Demo, que no se puede tocar) al nombre en español de la
+// cámara donde ocurren. Solo es de la vista: el dato del modelo no cambia.
+// En un turno normal el lugar ya es el nombre de la cámara en español.
+var demoLocations = map[string]string{
+	"cafeteria (sancocho line)": "Cafetería",
+	"champeta dance hall":       "Salón de champeta",
+	"radiology queue":           "Fila de radiología",
+	"hallway 2, second floor":   "Pasillo Oeste",
+}
+
+// locationText devuelve el lugar para mostrar en el reporte.
+func locationText(location string) string {
+	if es, ok := demoLocations[location]; ok {
+		return es
+	}
+	return location
 }
 
 // firstName es la primera palabra del nombre ("Wilfrido Berrio" -> "Wilfrido").
