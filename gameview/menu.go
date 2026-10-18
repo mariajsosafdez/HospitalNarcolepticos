@@ -152,9 +152,8 @@ func (m *menuScene) activate() Scene {
 			return nil
 		}
 		return scene
-	default:
-		// Créditos todavía no tiene vista aprobada.
-		m.overlay = menuItems[m.selected].label
+	case optCredits:
+		return newCredits(m.env, m)
 	}
 	return nil
 }
@@ -229,8 +228,8 @@ func (m *menuScene) Draw(dst *ebiten.Image) {
 	}
 }
 
-// drawComingSoon pinta el aviso provisional de las pantallas sin vista
-// aprobada todavía (por ahora solo Créditos).
+// drawComingSoon pinta el aviso provisional que sale en el menú cuando una
+// opción falla al abrirse (con el mensaje de error como título).
 func drawComingSoon(e *Env, dst *ebiten.Image, title string) {
 	box := rect{140, 100, 200, 56}
 	drawBox(e, dst, box)

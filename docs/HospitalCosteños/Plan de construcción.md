@@ -38,4 +38,4 @@ Transversal: la **puerta de pruebas** (`-agent`, ver [[Arquitectura#Puerta de pr
 
 **Nota de esta ronda:** Figwright no conectó en la sesión del builder; las medidas de las 5 pantallas del turno salen de `preview/turno/*.png` comparadas con capturas del juego a -scale 4 (diferencia ≤ 1 px). Hay que revisarlas contra las notas de Figma 18:533 a 18:536 y 18:655.
 
-Provisionales hasta que haya vista aprobada: "Créditos" (aviso "Próximamente"), avisos de error distintos al de "sin cama".
+Provisionales hasta que haya vista aprobada: avisos de error distintos al de "sin cama".

@@ -64,6 +64,11 @@ func startScene(env *Env) (Scene, error) {
 		menu := newMenu(env)
 		menu.settings = newSettingsView(env)
 		return menu, nil
+	case "credits":
+		// Los Créditos, con el menú detrás para volver (como al elegir la opción).
+		menu := newMenu(env)
+		menu.selected = optCredits
+		return newCredits(env, menu), nil
 	case "director":
 		// El regaño por exceso de trabajo, con la Dra. Karen, sobre un Día 1.
 		scene, err := newShiftScene(env, 1, opts.Seed, false, game.CameraID(opts.Camera))

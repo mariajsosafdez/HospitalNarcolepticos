@@ -129,7 +129,7 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | Bandera | Qué hace |
 |---|---|
 | `-agent` | Activa el modo de pruebas. Sin esta bandera las demás se ignoran |
-| `-scene` | `menu`, `cams`, `demo` o `day` (tabla abajo) |
+| `-scene` | `menu`, `cams`, `demo`, `day`... o `credits` (tabla abajo) |
 | `-day N` | Día que se juega (1 a 5) en `-scene day` |
 | `-seed N` | Semilla del azar del turno y de la vista (por defecto 1) |
 | `-cam ID` | Cámara con la que empieza (`2`, `7A`...) |
@@ -153,6 +153,7 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | `report` | Juega el día `-day` entero con `game.AutoStep` (jugador automático), guarda como un turno real y abre el reporte |
 | `pause` | Un Día 1 en la pausa (`key Down`, `key Enter` abre los Ajustes) |
 | `settings` | El menú con los Ajustes abiertos (usar con `-savepath`) |
+| `credits` | Los Créditos (`credits.go`), con el menú detrás: `key Escape`, `key Enter` o `click` vuelven al menú con "Créditos" elegido. El desfile depende solo de los ticks: `wait N` antes del `shot` lo mueve (16 px/s, 60 ticks = 16 px) |
 | `demo` | La Demo con su caja de controles, arrancando en el paso `-step` |
 
 **Guion.** Un paso por línea (o varios con `;`); `#` empieza un comentario. Un paso desconocido o con argumentos mal escritos **hace fallar el arranque** con el número de línea.
@@ -196,6 +197,6 @@ go run . -agent -scene demo -step 4 -input script.txt -quit     # reporte de la 
 go run . -agent -scene menu -saved 3 -input script.txt -quit    # "Continuar" activo
 ```
 
-**Estados alcanzables.** Menú (normal, Demo elegida con `key Down`, sin y con partida, "Próximamente"), cámaras (zona común, paciente elegido, aviso sin cama, habitación con dormido y con despierto, candado en cámara bloqueada con `move`), panel de personal (los 4 estados; 4 y 5 personas con `-scene day -day 3` o `-day 4`), Demo (pasos 1 a 4, Auto), pausa (`key Escape` o `-scene pause`), ajustes, mensajes del Director, reporte (`-scene report`, paso 4 de la Demo, o al terminar un turno) y parpadeo de los botones del mapa (con los ajustes prendidos en un `-savepath`, `wait 2; sleep P-001 8; wait 20; dump`: el dump lista `blinking`). El volcado trae también `save` (ajustes, día desbloqueado, estrellas), `message` y `blinking`.
+**Estados alcanzables.** Menú (normal, Demo elegida con `key Down`, sin y con partida), cámaras (zona común, paciente elegido, aviso sin cama, habitación con dormido y con despierto, candado en cámara bloqueada con `move`), panel de personal (los 4 estados; 4 y 5 personas con `-scene day -day 3` o `-day 4`), Demo (pasos 1 a 4, Auto), pausa (`key Escape` o `-scene pause`), ajustes, créditos (`-scene credits`, o desde el menú con `key Up; key Enter`), mensajes del Director, reporte (`-scene report`, paso 4 de la Demo, o al terminar un turno) y parpadeo de los botones del mapa (con los ajustes prendidos en un `-savepath`, `wait 2; sleep P-001 8; wait 20; dump`: el dump lista `blinking`). El volcado trae también `save` (ajustes, día desbloqueado, estrellas), `message` y `blinking`.
 
 **Panel de 4 o 5 personas.** Con más de 3 personas (días 3 a 5) las tarjetas son `ui_tarjeta_compacta` (132x24), sin páginas.

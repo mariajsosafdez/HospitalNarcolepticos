@@ -31,7 +31,7 @@ type Options struct {
 func RegisterFlags(fs *flag.FlagSet) *Options {
 	o := &Options{}
 	fs.BoolVar(&o.Agent, "agent", false, "test mode: silent, never writes the real save file")
-	fs.StringVar(&o.Scene, "scene", "menu", "with -agent: menu | cams | demo | day | dayintro | tutorial | director | report | pause | settings")
+	fs.StringVar(&o.Scene, "scene", "menu", "with -agent: menu | cams | demo | day | dayintro | tutorial | director | report | pause | settings | credits")
 	fs.IntVar(&o.Day, "day", 1, "with -agent: day to play (1-5)")
 	fs.Int64Var(&o.Seed, "seed", 1, "with -agent: random seed (same seed, same game)")
 	fs.StringVar(&o.Camera, "cam", "", "with -agent: camera to look at, e.g. 2 or 7A")
@@ -49,9 +49,9 @@ func RegisterFlags(fs *flag.FlagSet) *Options {
 // validate revisa las opciones del modo pruebas y falla con un mensaje claro.
 func (o Options) validate() error {
 	switch o.Scene {
-	case "menu", "cams", "demo", "day", "dayintro", "tutorial", "director", "report", "pause", "settings":
+	case "menu", "cams", "demo", "day", "dayintro", "tutorial", "director", "report", "pause", "settings", "credits":
 	default:
-		return fmt.Errorf("unknown scene %q (menu, cams, demo, day, dayintro, tutorial, director, report, pause, settings)", o.Scene)
+		return fmt.Errorf("unknown scene %q (menu, cams, demo, day, dayintro, tutorial, director, report, pause, settings, credits)", o.Scene)
 	}
 	if o.Day < 1 || o.Day > 5 {
 		return fmt.Errorf("day %d out of range (1-5)", o.Day)
