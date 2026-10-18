@@ -247,10 +247,72 @@ Sí. `net/http` atiende **cada petición en su propia goroutine**. Por eso el ho
 
 ---
 
-## 6. Comandos para tener a mano
+## 6. El juego (bono de interfaz gráfica)
+
+> Borrador del 2026-10-18. La especificación completa está en `docs/HospitalCosteños/Lógica del juego.md` (sección 12: preguntas probables) y `Arquitectura.md`.
+
+### 6.1 Mapa del juego
+
+| Paquete | Qué hace | Por qué así |
+|---|---|---|
+| `hospital/` | El modelo del enunciado | **No cambió ni una línea.** El enunciado exige que la lógica no cambie al agregar la interfaz. Se comprueba con `git diff main -- hospital/` |
+| `game/` | Reglas del juego: reloj del turno, pacientes, personal, puntos, días, Demo | Solo librería estándar. Usa `hospital` como cualquier otro cliente |
+| `gameview/` | Dibujo y entrada con Ebitengine | Es el **único** paquete que importa Ebitengine (la única librería de terceros) |
+| `main.go` + `game_on.go` / `game_off.go` | Arranque | `go run .` abre el juego; `go run . -web` el dashboard; `go run -tags nogame .` compila sin Ebitengine |
+
+### 6.2 La pregunta más importante: ¿cómo elige el jugador al personal sin tocar `hospital`?
+
+`RegisterEpisode` despacha **solo**: recorre el `[]Attender` por turnos (round-robin) y toma el primero cuyo `IsAvailable()` da `true`. En el juego el jugador elige.
+
+La solución está en `game/staff.go`: **`StaffMember`**, un tipo nuevo que **cumple `hospital.Attender`** y envuelve al `*Doctor` o `*Orderly` real.
+
+```go
+func (s *StaffMember) IsAvailable() bool {
+	return s.selected && s.Free() // solo el elegido, y si no está en cooldown
+}
+```
+
+En `Shift.Assign` (`game/shift.go`):
+
+```go
+m.selected = true
+regErr := s.h.RegisterEpisode(g.patient, g.sleepLocation)
+m.selected = false
+```
+
+Como solo el elegido se ve disponible, el round-robin lo encuentra a él. **Es justo lo que pregunta el enunciado: "agregue un tipo nuevo que cumpla `Attender` y haga que el hospital lo despache".** El hospital lo usa sin saber que existe.
+
+**Pregunta trampa:** *"¿Por qué `h.Doctors()` sale vacío en el juego?"* Porque `HireStaff` llena la lista de doctores con una *type assertion* `a.(*Doctor)`, y el juego contrata `*StaffMember`, no `*Doctor`. Por eso `StaffMember` guarda su propio `*Doctor`, y el reporte 5.2 llama `doctor.MyEpisodes()` directamente.
+
+### 6.3 ¿Por qué a veces el juego y el modelo muestran estados distintos?
+
+| En pantalla | En `hospital` | Por qué |
+|---|---|---|
+| Dormido, esperando | `Awake` | El sistema del hospital solo se entera cuando **el jugador lo reporta** (asignando personal). `RegisterEpisode` exige que el paciente esté `Awake` |
+| Despierto en la cama | `AsleepInBed` | La cama sigue ocupada en el sistema hasta que el jugador le da de alta (`WakeUpPatient`) |
+
+Idea para decirlo en una frase: **"`hospital` es el sistema de registro; el jugador es quien registra."**
+
+### 6.4 ¿Hay data races en el juego?
+
+No. Toda la lógica del juego corre en **una sola goroutine**: el bucle `Update` de Ebitengine, 60 veces por segundo. El tiempo avanza por *ticks* y no se lee el reloj real, así que con la misma semilla la partida es idéntica (hay un test de eso). El hospital conserva su `sync.Mutex`, y `go test -race ./...` pasa.
+
+### 6.5 Las 4 consultas en el juego
+
+El **reporte de fin de turno** es el resultado de las 4 consultas del enunciado: `PatientsInHallway`, `MyEpisodes`, el estado de las camas y `SevereReport`. La **Demo** reproduce el escenario de la sección 6 con los mismos datos de `main.go`, y el test `TestDemoEndStateMatchesTheConsoleScenario` comprueba que sus 4 consultas dan lo mismo que la consola.
+
+### 6.6 Una buena historia para contar: "los tests pasaban, pero el juego fallaba"
+
+Después de un cambio en la forma de dibujar, el mouse quedó corrido: el hover del menú marcaba otra opción y los clics no funcionaban. Los tests no lo vieron porque el modo de prueba hacía clic directamente en coordenadas del juego, **sin pasar por la conversión del mouse real**. Lo encontré jugando. El arreglo fue una sola función pura, `windowToGame` (en `gameview/input.go`), con un test de tabla para escalas 1 a 4, y hacer que el modo de prueba pase por ella. Lección: probar por el mismo camino que usa el usuario.
+
+---
+
+## 7. Comandos para tener a mano
 
 ```
-go run .                 # escenario + simulación + web (http://localhost:8080)
+go run .                 # escenario + simulación por consola, y luego abre el juego
+go run . -web            # escenario + simulación + dashboard (http://localhost:8080), sin juego
+go run -tags nogame .    # compila sin Ebitengine (por ejemplo, en Linux sin librerías gráficas)
 go test ./...            # pruebas
 go test -v ./...         # pruebas, mostrando cada una
 go test -race ./...      # pruebas con el detector de carreras (necesita gcc)

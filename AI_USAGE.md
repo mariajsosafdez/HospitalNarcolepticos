@@ -38,6 +38,46 @@ How we worked:
 7. **Windows line endings broke `gofmt`.** After a `git checkout` of a file, Git for Windows (`core.autocrlf=true`) rewrote it with CRLF endings, and `gofmt -l` flagged it. Anyone cloning the repository on Windows would have seen every file flagged. The fix was a `.gitattributes` with `* text=auto eol=lf`, then checking a fresh clone from GitHub: `gofmt`, `go vet` and `go test` were all clean.
 8. **Design adjustment: circular dependency.** `Patient` needs `*Doctor` and `Doctor` needs `*Patient`, so the planned "Patient/Room/Episode first, Doctor later" phases did not compile on their own. The `assignedDoctor` field was added to `Patient` in the same phase as `Doctor`.
 
+## Part 2: the camera game (graphical interface bonus)
+
+> *Draft written by Claude on 2026-10-18 from the project's design log and mistakes log (`docs/HospitalCosteños/`). To be reviewed by me before submitting.*
+
+After the base project was finished, I designed a small pixel-art game on top of the `hospital` model: you watch security cameras of the hospital, assign a doctor or orderly to each patient who falls asleep, and discharge them when they wake up. The `hospital` package was **not changed at all** (`git diff main -- hospital/` is empty), as Section 7 requires.
+
+### How AI was used
+
+| Tool | Used for |
+|---|---|
+| **Claude Code** (main session, Claude Opus 5.5) | Turning my idea into a written design (Obsidian notes in `docs/HospitalCosteños/`), asking me design questions with a recommended answer each time, logging every decision with my own words, coordinating the agents below, reviewing their work (checks, screenshots) and making the commits. |
+| **Art agent** (Claude Opus 5.5, subagent) | Palette, pixel-art sprites (written as text grids in `art/sprites/` and converted to PNG by `tools/sprites`), and every screen as a mock-up in Figma before any code. |
+| **Builder agent** (Claude Sonnet 5.5, subagent) | The `game/` rules package, the `gameview/` Ebitengine view, the `-agent` test mode and the tests. |
+| **Tester agent** (Claude Sonnet 5.5, subagent) | Driving the game through the `-agent` test mode, comparing screenshots with the approved designs and reporting bugs (it does not fix them). |
+| **Figma + Figwright** | Every screen was approved by me as a picture (a Figma frame, or a review image when the Figma plugin was disconnected) before it was programmed. |
+
+How we worked: idea → design notes and decision log → I approve each screen as a picture → the builder programs it → screenshots are checked against the design → I play it and report what feels wrong.
+
+The art agents generated the large sprite grids (backgrounds, characters) with **throwaway Python scripts that are not in the repository**. The `.txt` grids are the real source, and each generated one says so in a comment.
+
+### Decisive prompts (game)
+
+1. *"La idea es que sea de tipo revisión de cámaras de seguridad, donde cada cámara es una habitación del hospital, a un lado, habrá un panel con la información reducida de camilleros y doctores (…) el rol del jugador es asignarle a esos pacientes que se duerman un doctor/camillero disponible (…) la parte visual quiero que sea de ambiente cálido (…) el juego busca ser algo más de ambiente relajado."*
+   This defined the whole game and its warm, non-horror look.
+2. *"Los cambios que dices de la parte lógica hay que documentarlos muy bien, podrías específicarmelos en un md aparte dentro de obsidian?"*
+   This produced `Lógica del juego.md`, the spec of the `game/` layer, including how the player chooses the staff member without changing `hospital/`.
+3. *"si un doctor llena su cupo diario, baje un poco los puntos del hospital por 'exceso de trabajo'"*
+   This turned a limit of the model (`maxPatientsPerDoctor = 4`) into a game mechanic.
+
+### Cases where the generated code was wrong, and how it was fixed
+
+The full list (about 20 cases) is in `docs/HospitalCosteños/Errores de la IA.md`. The most instructive ones:
+
+1. **The tests passed but the real game did not work (found by me, playing).** After changing how the game is drawn (to fix blurry text), mouse hover and clicks landed in the wrong place: pointing at "Nuevo turno" highlighted "Créditos", and the map, pause and Demo buttons did not respond. The cause: `ebiten.CursorPosition()` now returned coordinates in a 2× space, but hit-testing still used 480×270 game pixels. The automated test mode did not catch it because it injected clicks directly in game coordinates, **bypassing the real mouse conversion**. Fix: one pure function `windowToGame` with a table test for scales 1–4, and the test mode now clicks through that same function.
+2. **A character drawn as a placeholder rectangle (found by me, playing).** The view looked up each patient's sprite by the first word of the name, so `Abelardo "Mañe" Julio` searched for `pac_abelardo_*` while the files were `pac_mane_*`. Fix: sprites are looked up by ID, and a test fails if any cast member has no sprite.
+3. **Blurry text.** Everything was drawn into a 480×270 image and then enlarged, so the vector fonts were smeared. Found by the main session reviewing 4× screenshots. Fix: draw at the real window resolution (sprites scaled without smoothing, text at the final size).
+4. **A silent dependency change.** `go get` of Ebitengine raised the `go` directive in `go.mod` from 1.22 to 1.25 without warning. Fix: pin Ebitengine v2.8.8, which keeps "Go 1.22 or later".
+5. **An invented API.** The builder called `ebiten.SetRunnableOnUnfocusedWindow`, which does not exist (the real one is `SetRunnableOnUnfocused`). The compiler caught it.
+6. **Agents working in parallel mixed their commits.** Two builder agents shared Git's staging area, so one agent's commit included the other's files. History was not rewritten; the lesson is to commit with explicit paths or separate worktrees.
+
 ## What I learned
 
 > *This section must be written by me (Maria José) in my own words before submitting.*
