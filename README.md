@@ -12,20 +12,35 @@ Object-Oriented Programming applied exercise, Universidad EIA. Instructor: Sebas
 ## Requirements
 
 - Go **1.22 or later** (the enunciado asks for 1.21+. 1.22 is needed for the HTTP route patterns used by the web interface).
-- Only the standard library. There are no third-party modules.
+- The model (`hospital/`), the game rules (`game/`) and the web dashboard (`web/`) use **only the standard library**.
+- The one third-party module is **Ebitengine** (`github.com/hajimehoshi/ebiten/v2`, pinned to v2.8.8 so the `go` directive stays at 1.22). Only the `gameview/` package imports it, and only to draw the game window. It is downloaded by `go` on the first run.
+- Ebitengine needs, to open the window:
+  - **Windows:** nothing extra (no cgo).
+  - **macOS:** nothing extra with the Xcode command line tools installed.
+  - **Linux:** cgo plus the X11/OpenGL development packages. On Debian/Ubuntu: `sudo apt install gcc libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config`.
+- If your machine cannot build Ebitengine, use the `nogame` tag (see below): the game is compiled out and everything the enunciado asks for still runs.
 - *Optional, only for the race detector on Windows:* a C compiler (gcc) in the `PATH`. See [Race detector](#race-detector).
 
 ## How to run
 
 ```
-go run .
+go run .                  # scenario + simulation in the console, then the game window opens
+go run . -web             # scenario + simulation + the web dashboard (no game window)
+go run -tags nogame .     # scenario + simulation only; builds WITHOUT Ebitengine
 ```
 
-The program does three things, in order:
+All three start the same way:
 
-1. **Mandatory scenario (Section 6).** It prints steps 1–4 and the result of the four required queries.
+1. **Mandatory scenario (Section 6).** It prints steps 1-4 and the result of the four required queries.
 2. **Bonus: concurrent simulation.** It runs one goroutine per patient for a few rounds and prints a summary.
-3. **Bonus: web interface.** It starts a server and prints `Open http://localhost:8080`. Open that URL in a browser. Press `Ctrl+C` to stop.
+
+Then they differ:
+
+| Command | Third step |
+|---|---|
+| `go run .` | Opens the game window (480x270 pixel art scaled x3). Closing the window ends the program. There is no web server. |
+| `go run . -web` | **Bonus: web interface.** It starts a server and prints `Open http://localhost:8080`. Open that URL in a browser. Press `Ctrl+C` to stop. No game window. |
+| `go run -tags nogame .` | Prints a short message saying the game was compiled out and exits. The `nogame` build never imports Ebitengine, so it works on a machine without the graphics libraries. Use it to run the mandatory scenario anywhere. |
 
 The web page has three tabs:
 
@@ -53,6 +68,8 @@ There are 8 tests in `hospital/hospital_test.go`:
 | `TestStaffDispatchIsPolymorphic` | The `[]Attender` dispatches a Doctor and then an Orderly |
 | `TestWakeUpReleasesRoom` | Waking up frees the bed for the patient left in the hallway |
 | `TestSimulationIsRaceFree` | Goroutines and concurrent snapshots keep the hospital consistent |
+
+`game/game_test.go` tests the game rules on top of the model: the chosen staff member is dispatched, a patient with no bed stays where they fell asleep, discharge frees the room, cooldowns, one-time overwork penalty, the clock and pause, scoring, five full seeded shifts, and that the scripted Demo ends with the same four queries as the console scenario.
 
 ### Race detector
 
@@ -82,7 +99,9 @@ go vet ./...    # prints nothing when there are no warnings
 
 ```
 go.mod                 module costenos-narcolepsia
-main.go                builds the scenario, prints it, starts the web server (no business logic)
+main.go                builds the scenario, prints it, then opens the game or (-web) the web server (no business logic)
+game_on.go             `!nogame`: opens the game window (the only file in main that reaches Ebitengine)
+game_off.go            `nogame`: prints that the game was compiled out
 hospital/              THE MODEL: pure logic, no printing, no display code
   person.go            Person (embedded in Patient, Doctor and Orderly)
   patient.go           Patient + NarcolepsyLevel + PatientState
@@ -96,6 +115,8 @@ hospital/              THE MODEL: pure logic, no printing, no display code
   snapshot.go          race-free copy of the state, used by readers
   simulation.go        bonus: one goroutine per patient
   hospital_test.go     tests
+game/                  GAME RULES (standard library only): clock, patients, staff, score, days, report, demo
+gameview/              GAME WINDOW: the only package that imports Ebitengine
 web/                   THE VIEW: REST API + static HTML/CSS/JS
   server.go            routes and handlers
   dto.go               JSON structs and conversion from hospital.Snapshot
