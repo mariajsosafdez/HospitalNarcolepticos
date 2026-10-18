@@ -51,7 +51,7 @@ func LoadFonts() (*Fonts, error) {
 	return &Fonts{pixel: pixel, vt: vt, faces: make(map[faceKey]*text.GoTextFace)}, nil
 }
 
-// face devuelve la cara pedida; size es el tamaño en píxeles a 1x.
+// face devuelve la cara pedida; size es el tamaño en píxeles de pantalla.
 func (f *Fonts) face(family fontFamily, size int) *text.GoTextFace {
 	key := faceKey{family, size}
 	if face, ok := f.faces[key]; ok {
@@ -70,8 +70,14 @@ func (f *Fonts) face(family fontFamily, size int) *text.GoTextFace {
 	return face
 }
 
-// Width mide el ancho del texto en píxeles a 1x.
+// Width mide el ancho del texto en píxeles del juego (a 1x). Mide con la
+// letra 8 veces más grande y divide, para no acumular el error de redondeo.
 func (f *Fonts) Width(s string, family fontFamily, size int) int {
+	return (f.screenWidth(s, family, size*8) + 4) / 8
+}
+
+// screenWidth mide el ancho en píxeles de pantalla con el tamaño ya escalado.
+func (f *Fonts) screenWidth(s string, family fontFamily, size int) int {
 	w, _ := text.Measure(screenText(s), f.face(family, size), 0)
 	return int(w + 0.5)
 }
@@ -86,18 +92,24 @@ const (
 )
 
 // drawText dibuja una línea de texto con su esquina de arriba (según la
-// alineación) en (x, y), en coordenadas del lienzo de 480x270.
+// alineación) en (x, y), en coordenadas del lienzo de 480x270. El texto se
+// dibuja con la letra ya multiplicada por Scale (tamaño de pantalla), así cada
+// trazo cae en píxeles enteros de la ventana y se ve nítido; si se dibujara a
+// 1x y se agrandara después, saldría borroso.
 func (e *Env) drawText(dst *ebiten.Image, s string, family fontFamily, size, x, y int, c color.RGBA, align textAlign) {
+	k := e.Scale
+	big := size * k
+	px, py := x*k, y*k
 	switch align {
 	case alignCenter:
-		x -= e.Fonts.Width(s, family, size) / 2
+		px -= e.Fonts.screenWidth(s, family, big) / 2
 	case alignRight:
-		x -= e.Fonts.Width(s, family, size)
+		px -= e.Fonts.screenWidth(s, family, big)
 	}
 	op := &text.DrawOptions{}
-	op.GeoM.Translate(float64(x), float64(y))
+	op.GeoM.Translate(float64(px), float64(py))
 	op.ColorScale.ScaleWithColor(c)
-	text.Draw(dst, screenText(s), e.Fonts.face(family, size), op)
+	text.Draw(dst, screenText(s), e.Fonts.face(family, big), op)
 }
 
 // textStyle agrupa lo que se repite al dibujar una línea.
@@ -114,7 +126,7 @@ func (e *Env) Text(dst *ebiten.Image, s string, x, y int, st textStyle) {
 }
 
 // TextShadow dibuja el texto con sombra: la misma línea en el color 0
-// desplazada (+1,+1), como en las vistas de Figma.
+// desplazada (+1,+1 píxel del juego), como en las vistas de Figma.
 func (e *Env) TextShadow(dst *ebiten.Image, s string, x, y int, st textStyle) {
 	e.drawText(dst, s, st.family, st.size, x+1, y+1, e.Assets.Color('0'), st.align)
 	e.Text(dst, s, x, y, st)
@@ -141,8 +153,9 @@ func (e *Env) FillRect(dst *ebiten.Image, r rect, key byte, alpha float64) {
 		return
 	}
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(float64(r.w), float64(r.h))
-	op.GeoM.Translate(float64(r.x), float64(r.y))
+	k := float64(e.Scale)
+	op.GeoM.Scale(float64(r.w)*k, float64(r.h)*k)
+	op.GeoM.Translate(float64(r.x)*k, float64(r.y)*k)
 	op.ColorScale.ScaleWithColor(e.Assets.Color(key))
 	op.ColorScale.ScaleAlpha(float32(alpha))
 	dst.DrawImage(e.Assets.pixel, op)
@@ -156,7 +169,8 @@ func (e *Env) StrokeRect(dst *ebiten.Image, r rect, key byte, thickness int) {
 	e.FillRect(dst, rect{r.x + r.w - thickness, r.y, thickness, r.h}, key, 1)
 }
 
-// DrawSprite dibuja una imagen en (x, y) a 1x. flip la refleja de izquierda
+// DrawSprite dibuja una imagen en (x, y) (coordenadas de 480x270, agrandada
+// Scale veces sin suavizar). flip la refleja de izquierda
 // a derecha (para caminar a la izquierda).
 func (e *Env) DrawSprite(dst, img *ebiten.Image, x, y int, flip bool) {
 	if img == nil {
@@ -168,6 +182,8 @@ func (e *Env) DrawSprite(dst, img *ebiten.Image, x, y int, flip bool) {
 		op.GeoM.Scale(-1, 1)
 		op.GeoM.Translate(float64(w), 0)
 	}
-	op.GeoM.Translate(float64(x), float64(y))
+	k := float64(e.Scale)
+	op.GeoM.Scale(k, k)
+	op.GeoM.Translate(float64(x)*k, float64(y)*k)
 	dst.DrawImage(img, op)
 }

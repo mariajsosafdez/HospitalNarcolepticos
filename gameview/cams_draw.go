@@ -188,8 +188,9 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 	// 3 y 4. La cámara: fondo, camas y pacientes a 168x123, luego a x2.
 	hasBackground := c.drawFeed(light, cam, camInfo)
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(feedScale, feedScale)
-	op.GeoM.Translate(feedScreenX, feedScreenY)
+	k := float64(e.Scale)
+	op.GeoM.Scale(feedScale*k, feedScale*k)
+	op.GeoM.Translate(feedScreenX*k, feedScreenY*k)
 	dst.DrawImage(c.feed, op)
 	if !hasBackground {
 		e.Text(dst, "Fondo pendiente", feedScreenX+168, 70, textStyle{fontPixel, 8, '2', alignCenter})
@@ -265,6 +266,11 @@ func (c *camsScene) drawFeed(light int, cam game.CameraID, info game.Camera) boo
 	a := e.Assets
 	feed := c.feed
 	feed.Clear()
+	// La imagen de la cámara es chica (168x123): se pinta a 1x y luego se
+	// agranda junto con el resto de la pantalla.
+	saved := e.Scale
+	e.Scale = 1
+	defer func() { e.Scale = saved }()
 
 	bg := backgroundName(cam, a.Names())
 	hasBackground := bg != ""
@@ -342,7 +348,9 @@ func (c *camsScene) drawOverlay(dst *ebiten.Image, name string, frames, frame in
 		return
 	}
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(feedScreenX, feedScreenY)
+	k := float64(c.env.Scale)
+	op.GeoM.Scale(k, k)
+	op.GeoM.Translate(feedScreenX*k, feedScreenY*k)
 	op.ColorScale.ScaleAlpha(alpha)
 	dst.DrawImage(img, op)
 }
@@ -352,7 +360,7 @@ func (c *camsScene) drawStamp(dst *ebiten.Image, cam game.CameraID, info game.Ca
 	e := c.env
 	e.DrawSprite(dst, e.Assets.Frame("ui_rec", 2, animFrame(e.Tick, 60, 2, 0)), 10, 26, false)
 	e.TextOutline(dst, "REC", 19, 24, textStyle{fontVT, stampFontSize, 'w', alignLeft})
-	e.TextOutline(dst, cameraStamp(cam, c.shift.Clock().Now()), 332, 24, textStyle{fontVT, stampFontSize, 'w', alignRight})
+	e.TextOutline(dst, cameraStamp(cam, c.shift.Clock().Now()), 327, 24, textStyle{fontVT, stampFontSize, 'w', alignRight})
 	e.TextOutline(dst, info.Name, 10, 253, textStyle{fontVT, stampFontSize, 'w', alignLeft})
 }
 
@@ -438,7 +446,7 @@ func (c *camsScene) drawStaffPanel(dst *ebiten.Image) {
 		c.drawHead(dst, m, r.x+4, r.y+4)
 
 		measure := func(s string) int { return e.Fonts.Width(s, fontPixel, 8) }
-		e.Text(dst, fitText(m.Name(), 82, measure), r.x+24, r.y+2, textStyle{fontPixel, 8, '1', alignLeft})
+		e.Text(dst, fitText(displayName(m.ID(), m.Name()), 82, measure), r.x+24, r.y+2, textStyle{fontPixel, 8, '1', alignLeft})
 		e.Text(dst, fitText(staffRole(m), 82, measure), r.x+24, r.y+10, textStyle{fontPixel, 8, '2', alignLeft})
 		if m.IsDoctor() {
 			quota := fmt.Sprintf("%d/%d", m.PatientCount(), game.DoctorQuota)
@@ -499,7 +507,7 @@ func (c *camsScene) drawMap(dst *ebiten.Image) {
 		case locked:
 			key = 'X'
 		}
-		e.Text(dst, string(id), r.x+r.w/2, r.y-1, textStyle{fontVT, stampFontSize, key, alignCenter})
+		e.Text(dst, string(id), r.x+r.w/2, r.y, textStyle{fontVT, stampFontSize, key, alignCenter})
 	}
 	e.Text(dst, "Monitoreo", 391, 233, textStyle{fontPixel, 8, 'k', alignLeft})
 
@@ -611,7 +619,8 @@ func (c *camsScene) drawReport(dst *ebiten.Image) {
 	}
 }
 
-// stampFontSize es el tamaño de VT323 del rótulo y de los botones del mapa.
-// La nota de Figma dice 10, pero en el juego a 10 px los trazos quedan a
-// medio píxel y se ven borrosos; a 13 se leen nítidos (VISUAL).
-const stampFontSize = 13
+// stampFontSize es el tamaño de VT323 del rótulo y de los botones del mapa:
+// 10 px a 1x, como dice la nota de Figma. Como el texto se dibuja a tamaño de
+// pantalla (ver drawText), a 10 ya se ve nítido; el 13 anterior era un
+// parche para el borroso de dibujarlo a 1x.
+const stampFontSize = 10

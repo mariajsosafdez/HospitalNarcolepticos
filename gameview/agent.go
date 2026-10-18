@@ -197,32 +197,22 @@ func (d *agentDriver) force(a *App, s step) error {
 	return shift.ForceSleep(s.text, cam, info.Name)
 }
 
-// afterDraw toma la captura pendiente, si hay una.
-func (d *agentDriver) afterDraw(a *App) {
+// takeShot toma la captura pendiente, si hay una. Pinta la pantalla otra vez
+// en una imagen del tamaño pedido (480x270 por el factor), con letras de ese
+// tamaño, y la guarda tal cual: es lo mismo que vería la ventana a ese factor.
+func (d *agentDriver) takeShot(a *App) {
 	if d.pending == nil {
 		return
 	}
 	req := d.pending
 	d.pending = nil
-	d.err = saveShot(a.canvas, req)
-}
-
-// saveShot guarda el lienzo como PNG, a 1x o ampliado (vecino más cercano).
-func saveShot(canvas *ebiten.Image, req *shotRequest) error {
-	pix := make([]byte, 4*screenW*screenH)
-	canvas.ReadPixels(pix)
-	small := &image.RGBA{Pix: pix, Stride: 4 * screenW, Rect: image.Rect(0, 0, screenW, screenH)}
-	out := image.Image(small)
-	if req.scale > 1 {
-		big := image.NewRGBA(image.Rect(0, 0, screenW*req.scale, screenH*req.scale))
-		for y := 0; y < screenH*req.scale; y++ {
-			for x := 0; x < screenW*req.scale; x++ {
-				big.SetRGBA(x, y, small.RGBAAt(x/req.scale, y/req.scale))
-			}
-		}
-		out = big
-	}
-	return writeFile(req.path, func(f *os.File) error { return png.Encode(f, out) })
+	w, h := screenW*req.scale, screenH*req.scale
+	img := ebiten.NewImage(w, h)
+	a.drawAt(img, req.scale)
+	pix := make([]byte, 4*w*h)
+	img.ReadPixels(pix)
+	out := &image.RGBA{Pix: pix, Stride: 4 * w, Rect: image.Rect(0, 0, w, h)}
+	d.err = writeFile(req.path, func(f *os.File) error { return png.Encode(f, out) })
 }
 
 // dumpFile es el JSON del volcado: la interfaz y el turno.

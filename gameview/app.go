@@ -33,6 +33,11 @@ type Env struct {
 	// reloj del turno: sigue corriendo aunque el juego esté en pausa.
 	Tick int
 
+	// Scale es cuántas veces se agranda el lienzo de 480x270 en pantalla (1,
+	// 2, 3...). Todo lo que se dibuja lo multiplica, y el texto usa letras de
+	// ese tamaño: así queda nítido en cualquier ventana.
+	Scale int
+
 	Save    game.SaveData
 	Store   *game.SaveStore // nil en la puerta de pruebas: nunca escribe el guardado real
 	HasSave bool            // hay partida guardada (activa "Continuar")
@@ -90,11 +95,10 @@ type Scene interface {
 
 // App implementa ebiten.Game: una pantalla activa y la entrada del tick.
 type App struct {
-	env    *Env
-	scene  Scene
-	canvas *ebiten.Image // todo se dibuja aquí a 1x y luego pasa a la ventana
-	in     Input
-	agent  *agentDriver // nil en el juego de verdad
+	env   *Env
+	scene Scene
+	in    Input
+	agent *agentDriver // nil en el juego de verdad
 }
 
 // Update lo llama Ebitengine 60 veces por segundo: cada llamada es un tick
@@ -118,16 +122,27 @@ func (a *App) step() {
 
 // Draw pinta un cuadro. La lógica no se toca aquí.
 func (a *App) Draw(screen *ebiten.Image) {
-	a.scene.Draw(a.canvas)
-	screen.DrawImage(a.canvas, nil)
 	if a.agent != nil {
-		a.agent.afterDraw(a)
+		a.agent.takeShot(a) // captura pendiente, con su propio tamaño
 	}
+	a.drawAt(screen, a.env.Scale)
 }
 
-// Layout fija la resolución lógica; Ebitengine escala la ventana.
+// drawAt pinta la pantalla actual en dst con el factor dado.
+func (a *App) drawAt(dst *ebiten.Image, scale int) {
+	saved := a.env.Scale
+	a.env.Scale = scale
+	a.scene.Draw(dst)
+	a.env.Scale = saved
+}
+
+// Layout elige el mayor factor entero que cabe en la ventana y devuelve ese
+// tamaño: el juego se dibuja directo a resolución de pantalla (sin agrandar
+// una imagen chica), que es lo que mantiene el texto nítido.
 func (a *App) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return logicalWidth, logicalHeight
+	k := max(1, min(outsideWidth/logicalWidth, outsideHeight/logicalHeight))
+	a.env.Scale = k
+	return logicalWidth * k, logicalHeight * k
 }
 
 // newApp arma la aplicación: carga arte y fuentes y elige la primera pantalla.
@@ -140,7 +155,7 @@ func newApp(opts Options, store *game.SaveStore) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loading fonts: %w", err)
 	}
-	env := &Env{Assets: assets, Fonts: fonts, Opts: opts, Store: store, Save: game.NewSaveData()}
+	env := &Env{Scale: windowScale, Assets: assets, Fonts: fonts, Opts: opts, Store: store, Save: game.NewSaveData()}
 	if store != nil {
 		if data, err := store.Load(); err == nil {
 			env.Save = data
@@ -151,7 +166,7 @@ func newApp(opts Options, store *game.SaveStore) (*App, error) {
 		env.Save.LastUnlockedDay = min(opts.SavedDay, game.MaxDay)
 		env.HasSave = true
 	}
-	app := &App{env: env, canvas: ebiten.NewImage(screenW, screenH)}
+	app := &App{env: env}
 	app.in.reset()
 	return app, nil
 }
