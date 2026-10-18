@@ -59,21 +59,27 @@ func TestFriendlyError(t *testing.T) {
 	}
 }
 
-func TestDemoStepTexts(t *testing.T) {
-	// El texto aprobado del paso 4 no debe cambiar sin querer.
-	if demoStepTexts[3] != "El reporte con las 4 consultas. ¡Así quedó el turno!" {
-		t.Errorf("step 4 text changed: %q", demoStepTexts[3])
+func TestDemoPartTexts(t *testing.T) {
+	// El texto aprobado de la última parte no debe cambiar sin querer.
+	if got := demoParts[7].text; got != "El reporte con las 4 consultas. ¡Así quedó el turno!" {
+		t.Errorf("part 8 text changed: %q", got)
 	}
-	total := 0
-	for _, n := range demoStepActions {
-		total += n
+	// Los "Paso N de 4" van de 1 a 4 y suben de a poco: 1, 2 x4, 3 x2, 4.
+	want := []int{1, 2, 2, 2, 2, 3, 3, 4}
+	for i, p := range demoParts {
+		if p.step != want[i] {
+			t.Errorf("part %d is step %d, want %d", i+1, p.step, want[i])
+		}
+		if p.text == "" || !strings.HasPrefix(p.title, "Paso ") {
+			t.Errorf("part %d has no title or text: %+v", i+1, p)
+		}
 	}
-	// Los 4 pasos de la vista tienen que gastar exactamente el guion de game.Demo.
+	// Cada parte de la vista tiene un beat en el guion de game.Demo: se abre la Demo y se juegan todas.
 	d, err := game.NewDemo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if total != d.StepCount() {
-		t.Errorf("view steps run %d demo actions, game.Demo has %d", total, d.StepCount())
+	if len(demoParts) != game.DemoParts || d.Part() != 1 {
+		t.Errorf("view has %d parts, game.Demo has %d", len(demoParts), game.DemoParts)
 	}
 }

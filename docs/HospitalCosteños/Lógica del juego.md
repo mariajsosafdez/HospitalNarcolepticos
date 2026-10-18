@@ -310,14 +310,24 @@ Más: estrellas, puntos, desglose y los doctores que hicieron exceso de trabajo.
 
 ## 9. Modo Demo (`demo.go`)
 
-Un turno sin azar que sigue un guion fijo con **los mismos datos que `runScenario` en `main.go`**:
+Un turno sin azar que sigue un guion fijo con **los mismos datos que `runScenario` en `main.go`** (Karen atiende a Yesid y a Wilfrido, Álvaro a Yeimy, Chepe a Rafa y luego lleva a Wilfrido). Desde 2026-10-18 es una **demo guiada de 8 partes** (los textos aprobados están en [[Textos del Director#Demo guiada ✅]]):
 
-1. 2 doctores, 1 camillero, 3 habitaciones de capacidad 1, 5 pacientes (3 severos, como en `main.go`).
-2. 4 pacientes se duermen en lugares distintos. 3 consiguen cama; el 4.º se queda en el pasillo y aparece el error.
-3. Uno se despierta, se le da de alta y el del pasillo pasa a esa cama (`MoveToBed`).
-4. Se muestra el reporte con las 4 consultas.
+| Parte | Qué pasa (cámara) |
+|---|---|
+| 1 | Se abre el turno (CAM 1A). No se anima nada |
+| 2.1 | Yesid se duerme en CAM 2, Karen entra, se lo lleva en la camilla, corte a CAM 7A: en la cama 101 |
+| 2.2 | Igual con Yeimy (CAM 8), Álvaro y la 102 (CAM 7B) |
+| 2.3 | Igual con Rafa (CAM 5), Chepe y la 103 (CAM 7C) |
+| 2.4 | Wilfrido se duerme en CAM 4, Karen llega, aviso "No hay cama libre!", lo atiende y se va a descansar (sin camilla); él se queda en el piso |
+| 3.1 | CAM 7A: Yesid despierta ("!"), "Dar de alta" se resalta y se pulsa solo: la 101 queda libre |
+| 3.2 | Chepe lleva a Wilfrido de CAM 4 a la 101 (CAM 7A) |
+| 4 | El reporte con las 4 consultas |
 
-Se avanza con **Siguiente paso** o **Auto**. Usa las mismas acciones de §5, así que la demo también prueba la lógica real.
+**El reloj nunca corre solo.** La Demo es una máquina de estados (`Demo`): cada parte es una lista de *beats* (`Beat`: `BeatMingle`, `BeatSleep`, `BeatArrive`, `BeatCarry`, `BeatNoBed`, `BeatLeave`, `BeatBed`, `BeatWake`, `BeatHighlight`, `BeatDischarge`, `BeatReport`) con una duración en ticks de la Demo. `Demo.Tick` es el **único** lugar donde se llama a `Shift.Tick`, y solo mientras una parte se anima; entre partes todo espera a `Demo.Start` (botón **Siguiente paso**, o **Auto**, que arranca la siguiente tras 0,75 s). Mientras la camilla va camino a la cama el reloj del turno avanza 4 ticks por cada tick de la Demo (`carrySpeed`), para que el traslado de 5 s (doctor) o 3 s (camillero) se vea en ~1,2 s. El turno no llega ni a la mitad (la Demo entera gasta ~2 000 de los 10 800 ticks) y nunca termina.
+
+Cada beat, al empezar, ejecuta **las mismas acciones de §5** (`Assign`, `MoveToBed`, `Discharge`) más las ayudas del guion (`ForceMove`, `ForceSleep`, `ForceWake`): la animación (personal que entra, camilla que sale) la pone la vista leyendo `Demo.Beat()` y `Demo.BeatProgress()`; `game` no sabe de píxeles. `Demo.Finish` corre lo que falte de la parte de golpe (el botón **Siguiente paso** durante una animación la salta). El aviso de "sin cama" sale como `DemoEvent`.
+
+Tests: `game/demo_test.go` (el reloj no se mueve con 10 000 ticks de espera, cada una de las 8 partes termina en el estado esperado, el turno nunca termina, quién atiende a quién, cámaras por parte) y `TestDemoEndStateMatchesTheConsoleScenario` (las 4 consultas dan lo mismo que `main.go`).
 
 ---
 

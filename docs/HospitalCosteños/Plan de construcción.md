@@ -28,6 +28,7 @@ Transversal: la **puerta de pruebas** (`-agent`, ver [[Arquitectura#Puerta de pr
 
 | Fecha | Qué | Commits | Cómo verlo |
 |---|---|---|---|
+| 2026-10-18 | **Demo guiada de 8 partes** (1, 2.1 a 2.4, 3.1, 3.2, 4): el reloj solo corre mientras una parte se anima, la cámara sigue cada evento, se ve dormirse, entrar al personal, la camilla y el corte a la habitación, Wilfrido sin cama y el alta que se pulsa sola. "Siguiente paso" salta la animación, Auto pasa solo (~4 s por parte). Dígitos: el "1" ya no deja hueco ("12", "101") | `feat(game): guided demo ...`, `fix(gameview): even digit spacing` | `go run . -agent -scene demo -step 5 -scale 2 -input guion.txt -quit` (ver [[Arquitectura#Puerta de pruebas (-agent)]]) |
 | 2026-10-17 | Paquete `game/`: reloj, pacientes, `StaffMember`, turno con acciones, puntos y estrellas, días 1-5, reporte, Demo, guardado, `Snapshot` y 26 tests | `feat(game): add game rules layer...` | `go test ./game` |
 | 2026-10-17 | `go run .` abre la ventana (480x270 x3, fondo crema), `-web` para el dashboard, etiqueta `nogame` | `feat: open the game window by default...` | `go run .`, `go run . -web`, `go run -tags nogame .` |
 | 2026-10-17 | README, [[Arquitectura]] y este plan | `docs: add architecture and build plan...` | leer las notas |

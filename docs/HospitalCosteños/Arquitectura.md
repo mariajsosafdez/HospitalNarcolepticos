@@ -73,6 +73,7 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 | `menu.go` | Pantalla del menú |
 | `cams.go`, `cams_draw.go` | Pantalla de cámaras (turno y Demo): lógica de entrada y dibujo por capas |
 | `walkers.go` | Cómo caminan los pacientes dentro de una sala (la lógica solo sabe la cámara) |
+| `demo_stage.go` | **Funciones puras** de la puesta en escena de la Demo: por qué lado entra el personal, dónde se para junto al paciente y por dónde sale la camilla (tests de tabla) |
 | `layout.go`, `textfit.go` | **Funciones puras** con tests de tabla: medidas de las vistas, luz por hora, cuadro de cada sprite, a qué botón le da clic el mouse, reporte en líneas, ajuste de texto |
 | `assets.go`, `text.go` | Carga de PNG, paleta y fuentes; dibujo de texto (sombra, borde) y rectángulos |
 | `input.go` | `Input`: lo único que las pantallas saben del teclado y el mouse |
@@ -126,7 +127,7 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 
 **Sprites por ID.** `spriteKeys` (`layout.go`) da la clave de los PNG por ID de persona (P-007 es `mane`, no `abelardo`). `TestEveryCastMemberHasSprites` comprueba que todo el elenco tenga sus PNG embebidos.
 
-**Dígitos en pixel art.** Pixelify Sans dibuja el 5 como una S, así que `drawText` (`text.go`) parte la línea en tandas (`splitRuns`, `digits.go`): los dígitos van con los sprites `ui_digitos_8` (Pixelify 8 Regular y Bold), `ui_digitos_10b` y `ui_digitos_18b` (`digitSpecFor` da avance, alto y línea base) y lo demás con la fuente. Cada cuadro se vuelve una máscara blanca (`Assets.digitMask`) y se tiñe con `ColorScale`, así funcionan `TextShadow` y `TextOutline`. `Fonts.lineWidth` (y `Width`) miden los dígitos como `avance * cantidad`, para que el centrado y la alineación a la derecha sigan bien. Otros tamaños y VT323 no cambian. Prueba: `go run . -agent -scale 3 -scene day -day 5 -input guion.txt -quit` (`wait 5; shotwin ruta`).
+**Dígitos en pixel art.** Pixelify Sans dibuja el 5 como una S, así que `drawText` (`text.go`) parte la línea en tandas (`splitRuns`, `digits.go`): los dígitos van con los sprites `ui_digitos_8` (Pixelify 8 Regular y Bold), `ui_digitos_10b` y `ui_digitos_18b` (`digitSpecFor` da avance, alto y línea base) y lo demás con la fuente. Cada cuadro se vuelve una máscara blanca (`Assets.digitMask`) y se tiñe con `ColorScale`, así funcionan `TextShadow` y `TextOutline`. `Fonts.lineWidth` (y `Width`) suman el avance de cada dígito (`digitSpec.advanceOf`), para que el centrado y la alineación a la derecha sigan bien. **El "1" avanza 1 px menos** (`narrowOne`): su tinta es un píxel más angosta y con el avance completo "12" salía "1 2". El test `TestDigitAdvanceMatchesInk` mide la tinta de cada PNG y comprueba la tabla; los demás dígitos no cambian. Otros tamaños y VT323 no cambian. Prueba: `go run . -agent -scale 3 -scene day -day 5 -input guion.txt -quit` (`wait 5; shotwin ruta`).
 
 ## Puerta de pruebas (-agent)
 
@@ -141,7 +142,7 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | `-day N` | Día que se juega (1 a 5) en `-scene day` |
 | `-seed N` | Semilla del azar del turno y de la vista (por defecto 1) |
 | `-cam ID` | Cámara con la que empieza (`2`, `7A`...) |
-| `-step N` | Solo `demo`: paso de la Demo (1 a 4) con el que empieza (ejecuta los anteriores sin mostrarlos) |
+| `-step N` | Solo `demo`: **parte** de la Demo (1 a 8) con la que empieza: juega de golpe, sin mostrarlas, las partes 2 a N, así que `-step 1` es el arranque (parte 1) y `-step 8` abre el reporte. Numeración: 1, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 4 = 1 a 8. Para ver una animación a medias: `-step 1` y un guion con `click 245 250` (Siguiente paso), `wait N`, `shot`. En `-scene tutorial` es la línea (1 a 9) |
 | `-input archivo` | Guion (ver abajo) |
 | `-frames N` | Ticks extra que corren después del guion |
 | `-quit` | Cierra al terminar (con `-quit` la ventana se saca de la pantalla). Sin `-quit` la ventana sigue abierta |
@@ -163,7 +164,7 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | `pause` | Un Día 1 en la pausa (`key Down`, `key Enter` abre los Ajustes) |
 | `settings` | El menú con los Ajustes abiertos (usar con `-savepath`) |
 | `credits` | Los Créditos (`credits.go`), con el menú detrás: `key Escape`, `key Enter` o `click` vuelven al menú con "Créditos" elegido. El desfile depende solo de los ticks: `wait N` antes del `shot` lo mueve (16 px/s, 60 ticks = 16 px) |
-| `demo` | La Demo con su caja de controles, arrancando en el paso `-step` |
+| `demo` | La Demo guiada con su caja de controles, después de la parte `-step` (ver abajo "Demo guiada"). `dump` trae `demoPart` (1 a 8), `demoStep` (el "Paso N de 4"), `demoPlaying` (una parte se anima: el reloj corre) y `demoBeat` (`mingle`, `sleep`, `arrive`, `carry`, `nobed`, `leave`, `bed`, `wake`, `highlight`, `discharge`) |
 
 **Guion.** Un paso por línea (o varios con `;`); `#` empieza un comentario. Un paso desconocido o con argumentos mal escritos **hace fallar el arranque** con el número de línea.
 
@@ -202,10 +203,13 @@ dump out/final.json
 
 ```
 go run . -agent -scene cams -cam 2 -input out/ejemplo.txt -quit
-go run . -agent -scene demo -step 4 -input script.txt -quit     # reporte de la Demo
+go run . -agent -scene demo -step 8 -input script.txt -quit     # reporte de la Demo (parte 4 de 4)
+go run . -agent -scene demo -step 5 -scale 2 -input script.txt -quit     # tras la parte 2.4: Wilfrido sin cama
 go run . -agent -scene menu -saved 3 -input script.txt -quit    # "Continuar" activo
 ```
 
-**Estados alcanzables.** Menú (normal, Demo elegida con `key Down`, sin y con partida), cámaras (zona común, paciente elegido, aviso sin cama, habitación con dormido y con despierto, candado en cámara bloqueada con `move`), panel de personal (los 4 estados; 4 y 5 personas con `-scene day -day 3` o `-day 4`), Demo (pasos 1 a 4, Auto), pausa (`key Escape` o `-scene pause`), ajustes, créditos (`-scene credits`, o desde el menú con `key Up; key Enter`), mensajes del Director, reporte (`-scene report`, paso 4 de la Demo, o al terminar un turno) y parpadeo de los botones del mapa (con los ajustes prendidos en un `-savepath`, `wait 2; sleep P-001 8; wait 20; dump`: el dump lista `blinking`). El volcado trae también `save` (ajustes, día desbloqueado, estrellas), `message` y `blinking`.
+**Estados alcanzables.** Menú (normal, Demo elegida con `key Down`, sin y con partida), cámaras (zona común, paciente elegido, aviso sin cama, habitación con dormido y con despierto, candado en cámara bloqueada con `move`), panel de personal (los 4 estados; 4 y 5 personas con `-scene day -day 3` o `-day 4`), Demo (las 8 partes, sus animaciones a medias con `click 245 250; wait N`, Auto con `click 305 250`), pausa (`key Escape` o `-scene pause`), ajustes, créditos (`-scene credits`, o desde el menú con `key Up; key Enter`), mensajes del Director, reporte (`-scene report`, parte 8 de la Demo, o al terminar un turno) y parpadeo de los botones del mapa (con los ajustes prendidos en un `-savepath`, `wait 2; sleep P-001 8; wait 20; dump`: el dump lista `blinking`). El volcado trae también `save` (ajustes, día desbloqueado, estrellas), `message` y `blinking`.
+
+**Demo guiada.** `game.Demo` (ver [[Lógica del juego#9. Modo Demo (`demo.go`)]]) decide qué pasa y cuánto va; `gameview` solo dibuja. `camsScene.updateDemo` llama a `Demo.Tick` (único lugar donde corre el reloj) en vez de `Shift.Tick`. Lo que se ve viene de `Demo.Beat()` y `Demo.BeatProgress()`: `drawStagedStaff` pinta al personal entrando, de pie junto al paciente o yéndose (sprites `*_camina` y `*_quieto`), `carryPlacement` hace salir la camilla de la cámara al ritmo del traslado (`StaffMember.CooldownFraction`) y `drawDischargeButton` resalta y hunde "Dar de alta". La cámara la cambia sola cada beat (`Beat.Camera`); con una parte animándose se ignoran las teclas 1 a 8 y el mapa, y en espera el jugador puede cambiarla a mano (la siguiente parte la devuelve). "Siguiente paso" durante una animación la salta (`Demo.Finish`); Auto (que pasa a "Pausa") espera 0,75 s entre partes. Los 8 recuadros ("Paso 2 de 4 · Yesid (1 de 4)") y sus textos están en `demoParts` (`layout.go`). **VISUAL, pendiente de la autora:** en la Demo el botón "Dar de alta" va en y = 186 (entre la cama y la caja de la Demo, dibujado encima de ella) porque en y = 208 la caja lo tapa.
 
 **Panel de 4 o 5 personas.** Con más de 3 personas (días 3 a 5) las tarjetas son `ui_tarjeta_compacta` (132x24), sin páginas.

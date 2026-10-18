@@ -1,8 +1,7 @@
 package gameview
 
 import (
-	"errors"
-	"fmt"
+	"math"
 	"math/rand"
 	"slices"
 
@@ -19,18 +18,12 @@ import (
 // dibuja está en cams_draw.go.
 
 const (
-	noticeTicks  = 4 * game.TicksPerSecond // el aviso se va a los 4 s
-	demoAutoTick = 4 * game.TicksPerSecond // Auto: un paso cada 4 s
+	noticeTicks = 4 * game.TicksPerSecond // el aviso se va a los 4 s
+
+	// demoAutoGap: en Auto, cuánto se espera (0,75 s) entre el final de una
+	// parte y el inicio de la siguiente, para que se alcance a ver el resultado.
+	demoAutoGap = 45
 )
-
-// demoStepActions dice cuántas acciones del guion de game.Demo se ejecutan
-// al llegar a cada uno de los 4 pasos que muestra la vista (el paso 1 no
-// hace nada: solo presenta el turno; el 2 son los cuatro sueños; el 3 el
-// alta y el traslado; el 4 el reporte).
-var demoStepActions = [4]int{0, 4, 2, 1}
-
-// demoStepCamera es la cámara que se mira al llegar a cada paso.
-var demoStepCamera = [4]game.CameraID{"2", "4", "4", "4"}
 
 // notice es el aviso amable que sale cuando una acción falla.
 type notice struct {
@@ -46,9 +39,9 @@ type camsScene struct {
 	shift *game.Shift
 	demo  *game.Demo // nil si es un turno normal
 
-	demoStep int  // 1 a 4 (0 = no es la Demo)
-	demoAuto bool // modo Auto
-	autoTick int  // ticks desde el último paso automático
+	demoAuto bool          // modo Auto
+	autoWait int           // ticks que lleva esperando para empezar la siguiente parte (solo en Auto)
+	shownCam game.CameraID // cámara que se veía en el tick anterior (para soltar la selección si la Demo la cambia)
 
 	selected string // ID del paciente elegido ("" = ninguno)
 	cursor   int    // con teclado: tarjeta del panel marcada (-1 = ninguna)
@@ -84,12 +77,10 @@ func newCams(env *Env, shift *game.Shift, demo *game.Demo, cam game.CameraID) (*
 		rng:     rand.New(rand.NewSource(shift.Seed() + 1)),
 		feed:    ebiten.NewImage(feedW, feedH),
 	}
-	if demo != nil {
-		c.demoStep = 1
-		if cam == "" {
-			cam = demoStepCamera[0]
-		}
+	if demo != nil && cam == "" {
+		cam = demoFirstCamera
 	}
+	c.shownCam = cam
 	if cam != "" {
 		if err := shift.SwitchCamera(cam); err != nil {
 			return nil, err
@@ -108,12 +99,17 @@ func (c *camsScene) State() UIState {
 		SelectedPatient: c.selected,
 		StaffCursor:     c.cursorID(),
 		HoveredButton:   c.hovered,
-		DemoStep:        c.demoStep,
 		DemoAuto:        c.demoAuto,
 		Tutorial:        c.practice,
 	}
 	if c.demo != nil {
 		st.Scene = "demo"
+		st.DemoPart = c.demo.Part()
+		st.DemoStep = demoParts[c.demo.Part()-1].step
+		st.DemoPlaying = c.demo.Playing()
+		if b, ok := c.demo.Beat(); ok {
+			st.DemoBeat = beatNames[b.Kind]
+		}
 	}
 	for _, p := range c.placements() {
 		r := p.screenRect()
@@ -177,20 +173,16 @@ func (c *camsScene) update(in *Input) Scene {
 	if !c.recorded && c.demo == nil && c.shift.Finished() {
 		c.finishShift()
 	}
-	c.shift.Tick()
+	if c.demo != nil {
+		c.updateDemo()
+	} else {
+		c.shift.Tick()
+	}
 	c.updateWalkers()
 	c.trackBlinks()
 	if c.notice != nil && c.env.Tick >= c.notice.until {
 		c.notice = nil
 	}
-	if c.demoAuto {
-		c.autoTick++
-		if c.autoTick >= demoAutoTick && c.demoStep < 4 {
-			c.autoTick = 0
-			c.stepDemo()
-		}
-	}
-
 	// Un clic mientras hay un aviso solo cierra el aviso.
 	if in.Click && c.notice != nil && c.hovered != "next" && c.hovered != "auto" {
 		c.notice = nil
@@ -266,15 +258,19 @@ func (c *camsScene) handleInput(in *Input) Scene {
 		}
 		return nil
 	}
+	// Durante la animación de la Demo la cámara la manda la Demo.
+	cameraKeys := c.demo == nil || !c.demo.Playing()
 	unlocked := c.shift.World().Unlocked()
 	for digit := byte('1'); digit <= '8'; digit++ {
-		if in.Pressed(string(digit)) {
+		if cameraKeys && in.Pressed(string(digit)) {
 			if id, ok := cameraForKey(digit, c.shift.CurrentCamera(), unlocked); ok {
 				c.switchCamera(id)
 			}
 		}
 	}
-	c.handleKeys(in)
+	if c.demo == nil { // en la Demo el alta la pulsa el guion, no el jugador
+		c.handleKeys(in)
+	}
 	if !in.Click {
 		return nil
 	}
@@ -381,14 +377,15 @@ func (c *camsScene) handleClick(x, y int) Scene {
 	if c.demo != nil {
 		switch c.hovered {
 		case "next":
-			if c.demoStep < 4 {
-				c.stepDemo()
-			}
+			c.demoNext()
 			return nil
 		case "auto":
 			c.demoAuto = !c.demoAuto
-			c.autoTick = 0
+			c.autoWait = 0
 			return nil
+		}
+		if c.demo.Playing() {
+			return nil // durante la animación la cámara la manda la Demo
 		}
 	}
 	// Mapa: cambiar de cámara (las bloqueadas no hacen nada).
@@ -532,7 +529,7 @@ func (c *camsScene) hoverTarget(x, y int) string {
 	if id, ok := mapButtonAt(x, y); ok {
 		return "cam " + string(id)
 	}
-	if c.roomPatient() != nil && dischargeRect(c.bed()).contains(x, y) {
+	if c.demo == nil && c.roomPatient() != nil && dischargeRect(c.bed()).contains(x, y) {
 		return "discharge"
 	}
 	if c.selected != "" {
@@ -599,37 +596,97 @@ func (c *camsScene) updatePause(in *Input) Scene {
 // Demo
 // ---------------------------------------------------------------------------
 
-// stepDemo pasa al siguiente de los 4 pasos de la Demo.
-func (c *camsScene) stepDemo() {
-	if err := c.nextDemoStep(); err != nil {
-		c.notice = &notice{"Algo salió mal", []string{err.Error()}, c.env.Tick + noticeTicks, noticeRect.y}
+// demoFirstCamera es la cámara de la parte 1: la Recepción (CAM 1A).
+const demoFirstCamera game.CameraID = "1A"
+
+// updateDemo avanza la Demo un tick. El reloj del turno SOLO corre aquí
+// dentro, mientras una parte se anima (c.demo.Tick); entre parte y parte todo
+// espera a "Siguiente paso", o a que Auto pase a la siguiente.
+func (c *camsScene) updateDemo() {
+	ev, err := c.demo.Tick()
+	if err != nil {
+		c.demoFailed(err)
+		return
+	}
+	c.demoEvent(ev)
+	if c.demoAuto && !c.demo.Playing() && !c.demo.Done() {
+		c.autoWait++
+		if c.autoWait >= demoAutoGap {
+			c.startDemoPart()
+		}
 	}
 }
 
-// nextDemoStep ejecuta las acciones del siguiente paso y, si alguien se
-// quedó sin cama, muestra el aviso de la vista "Cam / sin cama".
-func (c *camsScene) nextDemoStep() error {
-	if c.demo == nil || c.demoStep >= 4 {
-		return errors.New("the demo has no more steps")
+// startDemoPart empieza a animar la siguiente parte.
+func (c *camsScene) startDemoPart() {
+	c.autoWait = 0
+	c.notice = nil // el aviso de la parte anterior se queda hasta aquí
+	ev, err := c.demo.Start()
+	if err != nil {
+		c.demoFailed(err)
+		return
 	}
-	c.demoStep++
-	for i := 0; i < demoStepActions[c.demoStep-1]; i++ {
-		if _, err := c.demo.Next(); err != nil {
-			return fmt.Errorf("demo step %d: %w", c.demoStep, err)
-		}
+	c.demoEvent(ev)
+}
+
+// demoNext es el botón "Siguiente paso": si hay una parte animándose la
+// termina de golpe (salta la animación); si no, empieza la siguiente.
+func (c *camsScene) demoNext() {
+	if c.demo.Done() {
+		return
 	}
-	c.switchCamera(demoStepCamera[c.demoStep-1])
+	if !c.demo.Playing() {
+		c.startDemoPart()
+		return
+	}
+	ev, err := c.demo.Finish()
+	if err != nil {
+		c.demoFailed(err)
+		return
+	}
+	c.demoEvent(ev)
+}
+
+// playDemoPart anima la siguiente parte hasta el final sin esperar (lo usa
+// la puerta de pruebas para llegar a una parte con -step).
+func (c *camsScene) playDemoPart() error {
 	c.notice = nil
-	for _, g := range c.shift.Patients() {
-		if g.State() == game.NoBedWaiting {
+	ev, err := c.demo.Start()
+	if err != nil {
+		return err
+	}
+	c.demoEvent(ev)
+	ev, err = c.demo.Finish()
+	if err != nil {
+		return err
+	}
+	c.demoEvent(ev)
+	return nil
+}
+
+// demoEvent reacciona a lo que la Demo acaba de hacer: suelta la selección
+// si la cámara cambió sola, muestra el aviso de "sin cama" y abre el reporte
+// al llegar a la última parte.
+func (c *camsScene) demoEvent(ev game.DemoEvent) {
+	if cam := c.shift.CurrentCamera(); cam != c.shownCam {
+		c.shownCam = cam
+		c.selected, c.cursor = "", -1
+		delete(c.blinks, cam)
+	}
+	if ev.Kind == game.EventNoBed {
+		if g := c.shift.FindPatient(ev.Patient); g != nil {
 			c.showError(hospital.ErrNoRoomAvailable, g)
-			break
+			c.notice.until = math.MaxInt // se queda hasta la siguiente parte
 		}
 	}
-	if c.demoStep == 4 {
+	if c.demo.Done() && c.toReport == nil {
 		c.toReport = newReportScene(c.env, c.shift, true)
 	}
-	return nil
+}
+
+// demoFailed muestra un aviso si el guion de la Demo falló (no debería pasar).
+func (c *camsScene) demoFailed(err error) {
+	c.notice = &notice{"Algo salió mal", []string{err.Error()}, c.env.Tick + noticeTicks, noticeRect.y}
 }
 
 // patientAt devuelve el paciente dormido (y elegible) bajo el punto de la

@@ -192,19 +192,15 @@ func TestAutoPlayAllDaysAndSave(t *testing.T) {
 // quedó sin cama y a qué cama pasó después, y el estado de los severos.
 func TestReportNoBedAndSevereDetails(t *testing.T) {
 	d := mustNewDemo(t)
-	for d.StepIndex() < 4 { // los cuatro sueños: el cuarto, Wilfrido, no tiene cama
-		if _, err := d.Next(); err != nil {
-			t.Fatal(err)
-		}
+	for d.Part() < 5 { // partes 2.1 a 2.4: la cuarta, Wilfrido, no tiene cama
+		playPart(t, d)
 	}
 	r := d.Shift().Report()
 	if len(r.NoBed) != 1 || r.NoBed[0].ID != "P-004" || r.NoBed[0].LaterRoom != 0 {
 		t.Fatalf("NoBed before the discharge = %+v", r.NoBed)
 	}
 	for !d.Done() {
-		if _, err := d.Next(); err != nil {
-			t.Fatal(err)
-		}
+		playPart(t, d)
 	}
 	r = d.Shift().Report()
 	if len(r.NoBed) != 1 || r.NoBed[0].LaterRoom != 101 {

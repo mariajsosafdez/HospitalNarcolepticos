@@ -95,12 +95,13 @@ func startScene(env *Env) (Scene, error) {
 		if err != nil {
 			return nil, err
 		}
-		for scene.demoStep < opts.Step {
-			if err := scene.nextDemoStep(); err != nil {
+		// -step N juega de golpe las partes 2 a N (la 1 es el arranque).
+		for scene.demo.Part() < opts.Step {
+			if err := scene.playDemoPart(); err != nil {
 				return nil, err
 			}
 		}
-		if scene.toReport != nil { // paso 4: el reporte de la Demo
+		if scene.toReport != nil { // parte 8: el reporte de la Demo
 			return scene.toReport, nil
 		}
 		if opts.Camera != "" { // -cam manda sobre la cámara que pone cada paso

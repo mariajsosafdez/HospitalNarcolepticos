@@ -90,7 +90,10 @@ type UIState struct {
 	MessageIndex    int          `json:"messageIndex,omitempty"`    // línea (desde 1) del mensaje
 	MessageCount    int          `json:"messageCount,omitempty"`    // cuántas líneas tiene
 	Tutorial        bool         `json:"tutorial,omitempty"`        // está en "Cómo jugar"
-	DemoStep        int          `json:"demoStep,omitempty"`        // 1 a 4
+	DemoPart        int          `json:"demoPart,omitempty"`        // parte de la Demo (1 a 8)
+	DemoStep        int          `json:"demoStep,omitempty"`        // "Paso N de 4" del recuadro
+	DemoPlaying     bool         `json:"demoPlaying,omitempty"`     // una parte se está animando (el reloj corre)
+	DemoBeat        string       `json:"demoBeat,omitempty"`        // momento de la animación (sleep, arrive, carry...)
 	DemoAuto        bool         `json:"demoAuto,omitempty"`
 	UITick          int          `json:"uiTick"`
 	MouseX          int          `json:"mouseX"`

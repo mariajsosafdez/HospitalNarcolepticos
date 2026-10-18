@@ -15,7 +15,10 @@ func demoReport(t *testing.T) game.Report {
 		t.Fatal(err)
 	}
 	for !d.Done() {
-		if _, err := d.Next(); err != nil {
+		if _, err := d.Start(); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := d.Finish(); err != nil {
 			t.Fatal(err)
 		}
 	}

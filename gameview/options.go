@@ -16,7 +16,7 @@ type Options struct {
 	Day       int
 	Seed      int64
 	Camera    string
-	Step      int    // pasos de la Demo (1 a 4) con los que empieza
+	Step      int    // partes de la Demo (1 a 8) ya jugadas al empezar
 	InputFile string // guion de pasos (ver script.go)
 	Frames    int    // ticks extra que se corren al final del guion
 	Quit      bool   // cerrar al terminar el guion
@@ -37,7 +37,7 @@ func RegisterFlags(fs *flag.FlagSet) *Options {
 	fs.IntVar(&o.Day, "day", 1, "with -agent: day to play (1-5)")
 	fs.Int64Var(&o.Seed, "seed", 1, "with -agent: random seed (same seed, same game)")
 	fs.StringVar(&o.Camera, "cam", "", "with -agent: camera to look at, e.g. 2 or 7A")
-	fs.IntVar(&o.Step, "step", 1, "with -agent: demo step to start at (1-4), or tutorial line (1-9) in -scene tutorial")
+	fs.IntVar(&o.Step, "step", 1, "with -agent: demo part to start after (1-8; 1 = just opened), or tutorial line (1-9) in -scene tutorial")
 	fs.StringVar(&o.InputFile, "input", "", "with -agent: script file (wait, click, move, key, shot, shot4, dump, sleep, wake)")
 	fs.IntVar(&o.Frames, "frames", 0, "with -agent: extra ticks to run after the script")
 	fs.BoolVar(&o.Quit, "quit", false, "with -agent: close when the script ends")
@@ -65,7 +65,7 @@ func (o Options) validate() error {
 	if o.Day < 1 || o.Day > 5 {
 		return fmt.Errorf("day %d out of range (1-5)", o.Day)
 	}
-	maxStep := 4
+	maxStep := game.DemoParts
 	if o.Scene == "tutorial" {
 		maxStep = len(game.TutorialLines)
 	}

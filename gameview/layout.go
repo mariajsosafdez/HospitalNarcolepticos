@@ -483,13 +483,40 @@ func sendWord(fullName string) string {
 	return "mándelo"
 }
 
-// demoStepTexts son los 4 pasos de la Demo, tal cual los aprobó la autora
-// en la vista "Cam / Demo controles".
-var demoStepTexts = [4]string{
-	"Abrimos el turno: 2 doctores, 1 camillero, 3 habitaciones y 5 pacientes (3 severos).",
-	"Cuatro pacientes se quedan dormidos en sitios distintos. Tres consiguen cama; al cuarto no le alcanza.",
-	"Alguien se despierta: se le da de alta y el del pasillo pasa a esa cama.",
-	"El reporte con las 4 consultas. ¡Así quedó el turno!",
+// demoPartInfo es lo que dice la caja de la Demo en cada una de las 8 partes.
+type demoPartInfo struct {
+	step  int    // el "Paso N de 4" del recuadro
+	title string // rótulo del recuadro
+	text  string // lo que dice Don Ernesto
+}
+
+// demoParts son las 8 partes de la Demo guiada, tal cual las aprobó la
+// autora ("me gustan", 2026-10-18) en "Textos del Director" (Demo guiada).
+// Al dibujarlas se quita el ¡ de apertura (ver screenText).
+var demoParts = [game.DemoParts]demoPartInfo{
+	{1, "Paso 1 de 4", "Abrimos el turno: 2 doctores, 1 camillero, 3 habitaciones y 5 pacientes, 3 de ellos severos."},
+	{2, "Paso 2 de 4 · Yesid (1 de 4)", "Yesid se quedó dormido en la fila del sancocho. La Dra. Karen se lo lleva a la 101."},
+	{2, "Paso 2 de 4 · Yeimy (2 de 4)", "Yeimy se durmió en plena champeta. El Dr. Álvaro la acomoda en la 102."},
+	{2, "Paso 2 de 4 · Rafa (3 de 4)", "Rafa cayó rendido en la fila de rayos X. Chepe lo lleva en la camilla a la 103."},
+	{2, "Paso 2 de 4 · Wilfrido (4 de 4)", "Wilfrido se durmió en el Pasillo Oeste. La Dra. Karen lo atiende, pero no hay cama libre: se queda ahí mismo."},
+	{3, "Paso 3 de 4 · Alta (1 de 2)", "Yesid ya se despertó. Le damos de alta y la 101 queda libre."},
+	{3, "Paso 3 de 4 · Traslado (2 de 2)", "Ahora sí: Chepe lleva a Wilfrido a la 101."},
+	{4, "Paso 4 de 4", "El reporte con las 4 consultas. ¡Así quedó el turno!"},
+}
+
+// beatNames da el nombre de cada beat para el volcado de pruebas.
+var beatNames = map[game.BeatKind]string{
+	game.BeatMingle:    "mingle",
+	game.BeatSleep:     "sleep",
+	game.BeatArrive:    "arrive",
+	game.BeatCarry:     "carry",
+	game.BeatNoBed:     "nobed",
+	game.BeatLeave:     "leave",
+	game.BeatBed:       "bed",
+	game.BeatWake:      "wake",
+	game.BeatHighlight: "highlight",
+	game.BeatDischarge: "discharge",
+	game.BeatReport:    "report",
 }
 
 // screenText prepara un texto para mostrarlo en pantalla: quita el "¡" de

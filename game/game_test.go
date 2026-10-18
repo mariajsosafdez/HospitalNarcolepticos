@@ -732,10 +732,7 @@ func TestDemoEndStateMatchesTheConsoleScenario(t *testing.T) {
 		t.Fatal(err)
 	}
 	for !demo.Done() {
-		step, err := demo.Next()
-		if err != nil {
-			t.Fatalf("step %q: %v", step.Title, err)
-		}
+		playPart(t, demo)
 	}
 	s := demo.Shift()
 	var doctors []*hospital.Doctor
@@ -791,11 +788,9 @@ func TestDemoSleepLocationsMapToCameras(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantCam := map[string]CameraID{"P-001": "2", "P-002": "8", "P-003": "5", "P-004": "4"}
-	// Se ejecutan los 4 primeros pasos y se mira dónde se durmió cada uno.
-	for i := 0; i < 4; i++ {
-		if _, err := demo.Next(); err != nil {
-			t.Fatal(err)
-		}
+	// Se juegan las partes 2.1 a 2.4 y se mira dónde se durmió cada uno.
+	for demo.Part() < 5 {
+		playPart(t, demo)
 	}
 	s := demo.Shift()
 	for id, cam := range wantCam {

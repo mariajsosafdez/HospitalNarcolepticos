@@ -559,6 +559,23 @@ func (s *Shift) checkOverwork(m *StaffMember) {
 // Ayudas del guion de la Demo (no son acciones del jugador)
 // ---------------------------------------------------------------------------
 
+// ForceMove pone a un paciente que anda despierto en otra cámara. Lo usa la
+// Demo para que el paciente ya esté ahí, de pie, cuando se vaya a dormir.
+func (s *Shift) ForceMove(patientID string, cam CameraID) error {
+	g := s.FindPatient(patientID)
+	if g == nil {
+		return fmt.Errorf("patient %q: %w", patientID, ErrUnknownPatient)
+	}
+	if g.state != Wandering && g.state != Arriving {
+		return fmt.Errorf("force move %s (%v): %w", patientID, g.state, ErrWrongState)
+	}
+	if !s.world.Has(cam) {
+		return fmt.Errorf("camera %q: %w", cam, ErrUnknownCamera)
+	}
+	g.camera = cam
+	return nil
+}
+
 // ForceSleep duerme a un paciente en una cámara y lugar concretos. Lo usa la
 // Demo (y los tests) para reemplazar el azar por un guion.
 func (s *Shift) ForceSleep(patientID string, cam CameraID, location string) error {

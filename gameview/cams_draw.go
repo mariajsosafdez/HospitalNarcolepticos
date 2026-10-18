@@ -166,7 +166,68 @@ func (c *camsScene) carryPlacement(g *game.GamePatient, m *game.StaffMember, w *
 	}
 	p.x, p.y = int(math.Round(w.x))-p.w/2, int(math.Round(w.y))-p.h
 	p.footY = w.y
+	if b, ok := c.demoBeat(); ok && b.Kind == game.BeatCarry {
+		// En la Demo la camilla sale caminando de la cámara, por el lado más
+		// cercano, al ritmo del traslado (CooldownFraction va de 0 a 1).
+		left := entersFromLeft(w.x)
+		p.x = int(math.Round(stretcherX(w.x, left, p.w, m.CooldownFraction()))) - p.w/2
+		p.flip = left // el sprite mira a la derecha: yendo a la izquierda se refleja
+	}
 	return p
+}
+
+// demoBeat devuelve el beat de la Demo que se está animando (ok es false si
+// no es la Demo o está esperando).
+func (c *camsScene) demoBeat() (game.Beat, bool) {
+	if c.demo == nil {
+		return game.Beat{}, false
+	}
+	return c.demo.Beat()
+}
+
+// stagedStaff pinta al personal que entra caminando, espera junto al paciente
+// o se va a descansar (beats Arrive, NoBed y Leave de la Demo). El que se
+// lleva la camilla ya sale en carryPlacement.
+func (c *camsScene) drawStagedStaff(feed *ebiten.Image, placed []placement) {
+	b, ok := c.demoBeat()
+	if !ok || (b.Kind != game.BeatArrive && b.Kind != game.BeatNoBed && b.Kind != game.BeatLeave) {
+		return
+	}
+	m := c.shift.FindStaff(b.Staff)
+	if m == nil {
+		return
+	}
+	for _, target := range placed {
+		if target.patient.Patient().ID() != b.Patient {
+			continue
+		}
+		e := c.env
+		prefix := "cam_"
+		if m.IsDoctor() {
+			prefix = "doc_"
+		}
+		base := prefix + spriteKey(m.ID(), m.Name())
+		left := entersFromLeft(float64(target.x + target.w/2))
+		stand := standX(target.x, target.w, left, 16)
+		x, walking := stagedX(b.Kind, c.demo.BeatProgress(), stand, offscreenX(left, 16))
+		name, frames, index := base+"_quieto", 2, animFrame(e.Tick, 30, 2, 0)
+		if walking {
+			name, frames, index = base+"_camina", 4, animFrame(e.Tick, 9, 4, 0)
+		}
+		if !e.Assets.Has(name) {
+			return
+		}
+		w, h := e.Assets.FrameSize(name, frames)
+		// Mira hacia donde camina; de pie, hacia el paciente. Los sprites miran a la derecha.
+		facingRight := left
+		if b.Kind == game.BeatLeave {
+			facingRight = !left
+		}
+		sx := int(math.Round(x)) - w/2
+		sy := int(math.Round(target.footY)) + 1 - h // un pixel delante del paciente
+		e.DrawSprite(feed, e.Assets.Frame(name, frames, index), sx, sy, !facingRight)
+		return
+	}
 }
 
 // Draw pinta toda la pantalla de cámaras.
@@ -216,8 +277,8 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 		// chocar con el nombre del lugar (el más largo: "Patio de las palmeras").
 		e.TextOutline(dst, "Elige a alguien del panel · Esc para cancelar", 331, 253, textStyle{fontPixel, 8, 'w', alignRight})
 	}
-	if c.roomPatient() != nil {
-		c.drawButton(dst, dischargeRect(c.bed()), "Dar de alta", 'm', c.hovered == "discharge")
+	if c.demo == nil {
+		c.drawDischargeButton(dst)
 	}
 
 	// 7 y 8. Panel de personal y mapa.
@@ -226,6 +287,7 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 
 	if c.demo != nil {
 		c.drawDemoBox(dst)
+		c.drawDischargeButton(dst) // sobre la caja: en la Demo el alta se ve pulsarse sola
 	}
 	if c.notice != nil {
 		c.drawNotice(dst)
@@ -293,6 +355,7 @@ func (c *camsScene) drawFeed(light int, cam game.CameraID, info game.Camera) boo
 	for _, p := range placed {
 		c.drawPlacement(feed, p)
 	}
+	c.drawStagedStaff(feed, placed)
 	return hasBackground
 }
 
@@ -404,8 +467,18 @@ func (c *camsScene) drawSelectedLabel(dst *ebiten.Image, g *game.GamePatient) {
 
 // drawButton pinta un botón: relleno, borde 0, sombra de 1 px abajo y texto.
 func (c *camsScene) drawButton(dst *ebiten.Image, r rect, label string, fill byte, hover bool) {
+	c.drawButtonState(dst, r, label, fill, hover, false)
+}
+
+// drawButtonState es drawButton con la opción de dibujarlo hundido (pulsado):
+// baja 1 px y pierde la sombra.
+func (c *camsScene) drawButtonState(dst *ebiten.Image, r rect, label string, fill byte, hover, pressed bool) {
 	e := c.env
-	e.FillRect(dst, rect{r.x, r.y + 1, r.w, r.h}, '0', 1)
+	if pressed {
+		r.y++
+	} else {
+		e.FillRect(dst, rect{r.x, r.y + 1, r.w, r.h}, '0', 1)
+	}
 	e.FillRect(dst, r, fill, 1)
 	if hover {
 		e.FillRect(dst, r, 'w', 0.25)
@@ -605,9 +678,10 @@ func (c *camsScene) drawDemoBox(dst *ebiten.Image) {
 	e := c.env
 	drawBox(e, dst, demoBoxRect)
 	e.DrawSprite(dst, e.Assets.Image("director_retrato"), 14, 207, false)
-	e.Text(dst, fmt.Sprintf("Paso %d de 4", c.demoStep), 68, 206, textStyle{fontPixelBold, 10, '2', alignLeft})
+	info := demoParts[c.demo.Part()-1]
+	e.Text(dst, info.title, 68, 206, textStyle{fontPixelBold, 10, '2', alignLeft})
 	measure := func(s string) int { return e.Fonts.Width(s, fontPixel, 8) }
-	lines := wrapText(demoStepTexts[c.demoStep-1], 258, measure)
+	lines := wrapText(info.text, 258, measure)
 	for i, line := range lines {
 		if i >= 2 {
 			break
@@ -627,3 +701,30 @@ func (c *camsScene) drawDemoBox(dst *ebiten.Image) {
 // pantalla (ver drawText), a 10 ya se ve nítido; el 13 anterior era un
 // parche para el borroso de dibujarlo a 1x.
 const stampFontSize = 10
+
+// demoDischargeY es la y del botón "Dar de alta" en la Demo: la caja de la
+// Demo ocupa desde y = 200, así que el botón sube para quedar entre la cama y
+// la caja (y se dibuja encima de ella).
+const demoDischargeY = 186
+
+// drawDischargeButton pinta "Dar de alta" si hay un paciente despierto en la
+// cama. En la Demo lo pulsa el guion: se resalta y al final se hunde.
+func (c *camsScene) drawDischargeButton(dst *ebiten.Image) {
+	if c.roomPatient() == nil {
+		return
+	}
+	r := dischargeRect(c.bed())
+	hover, pressed := c.hovered == "discharge", false
+	if c.demo != nil {
+		r.y = demoDischargeY
+		hover, pressed = false, false
+		if b, ok := c.demoBeat(); ok && b.Kind == game.BeatHighlight {
+			hover, pressed = true, c.demo.BeatProgress() >= 0.75
+		}
+	}
+	if hover && !pressed && c.demo != nil {
+		// El aro amarillo avisa que este es el botón que la Demo va a pulsar.
+		c.env.StrokeRect(dst, rect{r.x - 2, r.y - 2, r.w + 4, r.h + 5}, 'y', 1)
+	}
+	c.drawButtonState(dst, r, "Dar de alta", 'm', hover, pressed)
+}
