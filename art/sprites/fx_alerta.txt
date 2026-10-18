@@ -1,0 +1,31 @@
+// Efecto "!" suave (alguien despertó), 2 cuadros de 7x14 (salta).
+// Generado con un script de apoyo (fuera del repo); se puede retocar a mano.
+.......
+.......
+..111..
+.1MMM1.
+.1MyM1.
+.1MyM1.
+.1MyM1.
+.1MMM1.
+..1M1..
+...1...
+..111..
+.1MMM1.
+.1MMM1.
+..111..
+---
+..111..
+.1MMM1.
+.1MyM1.
+.1MyM1.
+.1MyM1.
+.1MMM1.
+..1M1..
+...1...
+..111..
+.1MMM1.
+.1MMM1.
+..111..
+.......
+.......

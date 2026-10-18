@@ -306,7 +306,7 @@ Más: estrellas, puntos, desglose y los doctores que hicieron exceso de trabajo.
 
 Un turno sin azar que sigue un guion fijo con **los mismos datos que `runScenario` en `main.go`**:
 
-1. 2 doctores, 1 camillero, 3 habitaciones de capacidad 1, 5 pacientes (2 severos).
+1. 2 doctores, 1 camillero, 3 habitaciones de capacidad 1, 5 pacientes (3 severos, como en `main.go`).
 2. 4 pacientes se duermen en lugares distintos. 3 consiguen cama; el 4.º se queda en el pasillo y aparece el error.
 3. Uno se despierta, se le da de alta y el del pasillo pasa a esa cama (`MoveToBed`).
 4. Se muestra el reporte con las 4 consultas.

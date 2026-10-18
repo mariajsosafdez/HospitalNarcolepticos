@@ -1,0 +1,21 @@
+// Estrella de la barra superior, 2 cuadros de 9x9: llena, vacía.
+// Generado con un script de apoyo (fuera del repo); se puede retocar a mano.
+....0....
+...0y0...
+000mym000
+0mmmmmmm0
+.0mmmmm0.
+..0mmm0..
+.0mm0mm0.
+.0m0.0m0.
+.00...00.
+---
+....0....
+...0X0...
+000xXx000
+0xxxxxxx0
+.0xxxxx0.
+..0xxx0..
+.0xx0xx0.
+.0x0.0x0.
+.00...00.

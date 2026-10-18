@@ -1,16 +1,17 @@
-// Banca de madera con sombrero vueltiao, 40x22.
+// Banca de madera del andén (sin sombrero), 40x22.
+// Las 3 filas de arriba quedan vacías para que la banca caiga en el mismo sitio del menú.
 ........................................
 ........................................
 ........................................
-..0000000000000..........0000000000000..
-.0TT22TTTTTTTTT0000000000TTTTTTTTTT22T0.
-.0TT22TTTTTTTTTwwwwwwwwwwTTTTTTTTTT22T0.
-.0tt22ttttttttt0w0w0w0w0wtttttttttt22t0.
-..0022000000000wwwwwwwwww0000000000220..
+..000000000000000000000000000000000000..
+.0TT22TTTTTTTTTTTTTTTTTTTTTTTTTTTTT22T0.
+.0TT22TTTTTTTTTTTTTTTTTTTTTTTTTTTTT22T0.
+.0tt22ttttttttttttttttttttttttttttt22t0.
 ..002200000000000000000000000000000220..
-.0TT22TTTTwwwwwwwwwwwwwwwwwwwwTTTTT22T0.
-.0tt22tt0ww00ww00ww00ww00ww00ww0ttt22t0.
-..00220wwwwwwwwwwwwwwwwwwwwwwwwww00220..
+..002200000000000000000000000000000220..
+.0TT22TTTTTTTTTTTTTTTTTTTTTTTTTTTTT22T0.
+.0tt22ttttttttttttttttttttttttttttt22t0.
+....22.............................22...
 .00022000000000000000000000000000002200.
 0TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT0
 0TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT0

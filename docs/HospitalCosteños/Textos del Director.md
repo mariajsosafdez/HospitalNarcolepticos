@@ -2,6 +2,22 @@
 
 > ✅ **Aprobado** el 2026-10-17: "revisé el elenco y los textos y me gustan bastante, aprobados :D". Habla Don Ernesto Cassiani (ver [[Elenco]]). Mensajes cortos: caben en un cuadro de diálogo de 2–3 líneas a 480×270.
 
+## Menú principal
+
+> ✅ Aprobado el 2026-10-17: "me gustan como estan". No los dice Don Ernesto: son las descripciones que salen debajo de la opción elegida y la línea de ayuda.
+
+| Opción | Descripción |
+|---|---|
+| Nuevo turno | "Empieza el Día 1. Suave, sin afán." |
+| Continuar | "Sigue en el último día que desbloqueaste." |
+| Demo (escenario del enunciado) | "El escenario del enunciado, paso a paso." |
+| Cómo jugar | "Te explicamos el turno en un momentico." |
+| Ajustes | "Volumen, parpadeo de cámaras y pantalla completa." |
+| Créditos | "Quién hizo esto y con qué música." |
+
+- Línea de ayuda: "Flechas: elegir  ·  Enter: ¡dale!"
+- Sin partida guardada, al lado de Continuar: "(aún no hay partida)"
+
 ## Tutorial, Día 1 (uno por pantalla)
 
 1. "¡Ajá, bienvenido(a) a su primer turno! Yo soy Don Ernesto, el director de este hospital."

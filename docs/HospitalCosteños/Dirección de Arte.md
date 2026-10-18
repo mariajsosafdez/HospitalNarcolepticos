@@ -27,6 +27,14 @@
 - **Barra superior:** hora del turno, día y estrellas actuales.
 - No hay "oficina": siempre se juega desde las cámaras.
 
+### Pantalla de cámaras: medidas (propuesta del 2026-10-17, esperando aprobación)
+
+- La imagen de la cámara ocupa (4,20) 336×246 a 1×. Sus fondos miden **168×123** y se dibujan **a ×2**: así los personajes de 16×24 se ven de 32×48 y los cuartos quedan a escala de persona. El panel, el mapa y la barra superior van a 1×.
+- Panel de personal en x = 344..476 (tarjetas de 132×36); mapa en (344,156) 132×110; barra superior 480×16.
+- Encima de la cámara, a 1×: tinte por hora, viñeta tramada (35 %) y grano (12 %, 2 cuadros).
+- Cada fondo trae 3 cuadros: mediodía, tarde dorada y atardecer.
+- Medidas exactas por capa: notas de Figma en la sección "Cámaras — Demo (2026-10-17)".
+
 ## Manillas por nivel ✅
 
 | Nivel | Color |
@@ -61,7 +69,7 @@
 ## Fuente ✅
 
 - **Pixelify Sans** (Stefie Justprince), licencia **SIL OFL 1.1**, Google Fonts: https://fonts.google.com/specimen/Pixelify+Sans. Subconjuntos latin y latin-ext; probada en Figma con á é í ó ú ü ñ Ñ ¿ ¡. Variable 400–700 (Regular y Bold).
-  Tamaños a 1×: **18** Bold (título), **10** (opciones del menú), **8** (subtítulo, descripciones, ayudas).
+  Tamaños a 1×: **18** Bold (título), **10** (opciones del menú, línea de ayuda y **toda línea que lleve ¡**: a 8 px el ¡ se confunde con una i), **8** (subtítulo, descripciones).
 - **VT323** (Peter Hull), **SIL OFL 1.1**, Google Fonts: https://fonts.google.com/specimen/VT323. Solo para el sello de cámara (`REC  CAM 1A · 17:45`), 10 px a 1×.
 - Aún no se empaqueta el archivo `.ttf` en el repo.
 
@@ -71,5 +79,8 @@
 |---|---|---|---|
 | 2026-10-17 | Paleta cálida de 31 colores | `art/palette.hex`, `preview/paleta/paleta.png`; Figma: página "Hospital Costeños — Pantallas", sección "Paleta (2026-10-17)" | ✅ Aprobada junto con el menú |
 | 2026-10-17 | Fuentes: Pixelify Sans + VT323 (OFL) | Sección "Fuente" de esta nota | ✅ Aprobadas junto con el menú |
-| 2026-10-17 | Sprites del menú: `menu_fondo`, `palmera` (2 cuadros), `banca_sombrero`, `ui_panel_menu`, `ui_seleccion`, `ui_flecha` (2), `ui_rec` (2) | `art/sprites/*.txt` → `art/png/` (`go run ./tools/sprites`) | Esperando aprobación |
+| 2026-10-17 | Sprites del menú: `menu_fondo`, `palmera` (2 cuadros), `banca` (antes `banca_sombrero`: se quitó el sombrero), `ui_panel_menu`, `ui_seleccion`, `ui_flecha` (2), `ui_rec` (2; ya no sale en el menú, se guarda para las cámaras) | `art/sprites/*.txt` → `art/png/` (`go run ./tools/sprites`) | Esperando aprobación (revisión del 2026-10-17: banca sin sombrero; las vistas del menú se actualizaron: sin esquinas ni REC, ayuda a 10 px) |
 | 2026-10-17 | Vista del menú principal: `Menu / default`, `Menu / hover Demo`, `Menu / sin partida guardada` | Figma: página "Hospital Costeños — Pantallas", sección "Menú principal (2026-10-17)"; `preview/menu/menu-default.png`, `menu-hover-demo.png`, `menu-sin-partida.png` | ✅ Aprobado con cambios: quitar el sombrero ("yo creo que es mejor quitarlo"), quitar esquinas de cámara y REC ("nop"), líneas que empiezan con ¡ a tamaño 10 ("ok"), atardecer fijo, descripciones aprobadas ("me gustan como estan") |
+| 2026-10-17 | Sprites del elenco de la Demo: `pac_{yesid,yeimy,rafa,wilfrido,marelvis}_{camina,quieto,dormido,cama,sentado}`, `doc_{karen,alvaro}_{camina,quieto,camilla}`, `cam_chepe_{camina,quieto,camilla}`, `cama`, `director_retrato` (48×48), `fx_zzz` (3), `fx_alerta` (2). Caminar: 4 cuadros mirando a la derecha (a la izquierda se refleja en el código) | `art/sprites/*.txt` → `art/png/`; hojas en `preview/elenco/*.png` | Esperando aprobación |
+| 2026-10-17 | Fondos de cámara (3 cuadros por hora): `fondo_cam2_cafeteria`, `fondo_cam8_champeta`, `fondo_habitacion` (7A–7C); capas `camara_vineta`, `camara_grano`; UI `ui_barra_superior`, `ui_estrella`, `ui_tarjeta`, `ui_chip_estado`, `ui_boton_cam`, `ui_mapa` | `art/sprites/*.txt` → `art/png/` | Esperando aprobación |
+| 2026-10-17 | Vistas de cámaras: `Cam / zona común`, `Cam / paciente seleccionado`, `Cam / sin cama`, `Cam / habitación`, `Cam / Demo controles`, `Panel / estados del personal`, `Ref / luz por hora (CAM 2)` | Figma: página "Hospital Costeños — Pantallas", sección "Cámaras — Demo (2026-10-17)"; `preview/camaras/*.png` | Esperando aprobación |

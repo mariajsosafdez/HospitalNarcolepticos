@@ -109,7 +109,7 @@ Como las noches de FNAF: Día 1 tranquilo (pocos pacientes, 3 camas) y cada día
 
 Turno guionado, sin azar, que reproduce exactamente el escenario obligatorio:
 
-1. 2 doctores, 1 camillero, 3 habitaciones de capacidad 1, 5 pacientes (2 severos).
+1. 2 doctores, 1 camillero, 3 habitaciones de capacidad 1, 5 pacientes (3 severos, como en `main.go`).
 2. 4 pacientes se duermen en lugares distintos. 3 consiguen cama; el 4.º se queda en el pasillo y aparece el mensaje de error legible.
 3. Uno despierta, se libera la cama y el del pasillo pasa a esa cama.
 4. Se muestra el reporte con las 4 consultas.
