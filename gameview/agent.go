@@ -74,7 +74,7 @@ func startScene(env *Env) (Scene, error) {
 // ya está pintado.
 type shotRequest struct {
 	path  string
-	scale int
+	scale int // 1 o 4: tamaño final como múltiplo de 480x270; 0 = tal cual la ventana
 }
 
 // agentDriver lee el guion y le da a la aplicación su entrada de cada tick.
@@ -150,11 +150,11 @@ func (d *agentDriver) update(a *App) error {
 		case stepWait:
 			d.waitLeft = s.n
 		case stepMove:
-			a.in.moveTo(s.x, s.y)
+			a.in.moveToGameCell(s.x, s.y, a.env.Scale)
 			a.step()
 			return nil
 		case stepClick:
-			a.in.moveTo(s.x, s.y)
+			a.in.moveToGameCell(s.x, s.y, a.env.Scale)
 			a.in.Click = true
 			a.step()
 			return nil
@@ -167,6 +167,9 @@ func (d *agentDriver) update(a *App) error {
 			return nil
 		case stepShot4:
 			d.pending = &shotRequest{s.text, 4}
+			return nil
+		case stepShotWin:
+			d.pending = &shotRequest{s.text, 0}
 			return nil
 		case stepDump:
 			if err := d.dump(a, s.text); err != nil {
@@ -197,22 +200,42 @@ func (d *agentDriver) force(a *App, s step) error {
 	return shift.ForceSleep(s.text, cam, info.Name)
 }
 
-// takeShot toma la captura pendiente, si hay una. Pinta la pantalla otra vez
-// en una imagen del tamaño pedido (480x270 por el factor), con letras de ese
-// tamaño, y la guarda tal cual: es lo mismo que vería la ventana a ese factor.
-func (d *agentDriver) takeShot(a *App) {
+// takeShot toma la captura pendiente, si hay una. Lee los píxeles de la
+// imagen que Draw acaba de pintar a Env.Scale (la misma que ve la ventana) y,
+// si se pidió otro tamaño, la reescala sin suavizar. Así una captura nunca
+// muestra algo distinto de lo que dibuja el juego de verdad.
+func (d *agentDriver) takeShot(screen *ebiten.Image) {
 	if d.pending == nil {
 		return
 	}
 	req := d.pending
 	d.pending = nil
-	w, h := screenW*req.scale, screenH*req.scale
-	img := ebiten.NewImage(w, h)
-	a.drawAt(img, req.scale)
-	pix := make([]byte, 4*w*h)
-	img.ReadPixels(pix)
-	out := &image.RGBA{Pix: pix, Stride: 4 * w, Rect: image.Rect(0, 0, w, h)}
+	b := screen.Bounds()
+	pix := make([]byte, 4*b.Dx()*b.Dy())
+	screen.ReadPixels(pix)
+	out := &image.RGBA{Pix: pix, Stride: 4 * b.Dx(), Rect: image.Rect(0, 0, b.Dx(), b.Dy())}
+	if req.scale > 0 {
+		out = resizeNearest(out, screenW*req.scale, screenH*req.scale)
+	}
 	d.err = writeFile(req.path, func(f *os.File) error { return png.Encode(f, out) })
+}
+
+// resizeNearest cambia el tamaño de una imagen tomando, para cada píxel nuevo,
+// el píxel del centro del bloque que le toca de la original (sin suavizar).
+func resizeNearest(src *image.RGBA, w, h int) *image.RGBA {
+	sb := src.Bounds()
+	if sb.Dx() == w && sb.Dy() == h {
+		return src
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		sy := min((2*y+1)*sb.Dy()/(2*h), sb.Dy()-1)
+		for x := 0; x < w; x++ {
+			sx := min((2*x+1)*sb.Dx()/(2*w), sb.Dx()-1)
+			dst.SetRGBA(x, y, src.RGBAAt(sx, sy))
+		}
+	}
+	return dst
 }
 
 // dumpFile es el JSON del volcado: la interfaz y el turno.

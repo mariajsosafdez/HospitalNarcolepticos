@@ -65,19 +65,32 @@ func (e *Env) recordShift(day, stars int) {
 // UIState es lo que el volcado de pruebas dice de la interfaz (además del
 // game.Snapshot del turno).
 type UIState struct {
-	Scene           string `json:"scene"`
-	Selected        string `json:"selected,omitempty"`        // menú: opción elegida
-	Camera          string `json:"camera,omitempty"`          // cámara que se mira
-	SelectedPatient string `json:"selectedPatient,omitempty"` // paciente elegido para atender
-	HoveredButton   string `json:"hoveredButton,omitempty"`   // botón bajo el mouse
-	Notice          string `json:"notice,omitempty"`          // título del aviso visible
-	Overlay         string `json:"overlay,omitempty"`         // pausa, reporte, próximamente
-	StaffPage       int    `json:"staffPage,omitempty"`
-	DemoStep        int    `json:"demoStep,omitempty"` // 1 a 4
-	DemoAuto        bool   `json:"demoAuto,omitempty"`
-	UITick          int    `json:"uiTick"`
-	MouseX          int    `json:"mouseX"`
-	MouseY          int    `json:"mouseY"`
+	Scene           string       `json:"scene"`
+	Selected        string       `json:"selected,omitempty"`        // menú: opción elegida
+	Camera          string       `json:"camera,omitempty"`          // cámara que se mira
+	SelectedPatient string       `json:"selectedPatient,omitempty"` // paciente elegido para atender
+	Boxes           []PatientBox `json:"boxes,omitempty"`           // dónde se puede dar clic a cada paciente (píxeles del juego)
+	StaffCursor     string       `json:"staffCursor,omitempty"`     // personal marcado con el teclado
+	HoveredButton   string       `json:"hoveredButton,omitempty"`   // botón bajo el mouse
+	Notice          string       `json:"notice,omitempty"`          // título del aviso visible
+	Overlay         string       `json:"overlay,omitempty"`         // pausa, reporte, próximamente
+	StaffPage       int          `json:"staffPage,omitempty"`
+	DemoStep        int          `json:"demoStep,omitempty"` // 1 a 4
+	DemoAuto        bool         `json:"demoAuto,omitempty"`
+	UITick          int          `json:"uiTick"`
+	MouseX          int          `json:"mouseX"`
+	MouseY          int          `json:"mouseY"`
+}
+
+// PatientBox es el rectángulo (en píxeles del juego, 480x270) donde el mouse
+// toca a un paciente. La puerta de pruebas lo usa para hacer clic en el sitio
+// exacto sin adivinar por la captura.
+type PatientBox struct {
+	ID string `json:"id"`
+	X  int    `json:"x"`
+	Y  int    `json:"y"`
+	W  int    `json:"w"`
+	H  int    `json:"h"`
 }
 
 // Scene es una pantalla del juego: menú, cámaras...
@@ -107,7 +120,7 @@ func (a *App) Update() error {
 	if a.agent != nil {
 		return a.agent.update(a)
 	}
-	a.in.readReal()
+	a.in.readReal(a.env.Scale)
 	a.step()
 	return nil
 }
@@ -120,27 +133,32 @@ func (a *App) step() {
 	}
 }
 
-// Draw pinta un cuadro. La lógica no se toca aquí.
+// Draw pinta un cuadro en la imagen de la ventana, que mide 480x270 por
+// Env.Scale (lo que devolvió Layout). Si el tester pidió una captura, se saca
+// de ESTA imagen: es exactamente lo que ve la ventana.
 func (a *App) Draw(screen *ebiten.Image) {
+	a.scene.Draw(screen)
 	if a.agent != nil {
-		a.agent.takeShot(a) // captura pendiente, con su propio tamaño
+		a.agent.takeShot(screen)
 	}
-	a.drawAt(screen, a.env.Scale)
 }
 
-// drawAt pinta la pantalla actual en dst con el factor dado.
-func (a *App) drawAt(dst *ebiten.Image, scale int) {
-	saved := a.env.Scale
-	a.env.Scale = scale
-	a.scene.Draw(dst)
-	a.env.Scale = saved
+// layoutScale elige el mayor factor entero (mínimo 1) con el que el lienzo de
+// 480x270 cabe en una ventana de w x h. Es pura para poder probarla.
+func layoutScale(w, h int) int {
+	return max(1, min(w/logicalWidth, h/logicalHeight))
 }
 
-// Layout elige el mayor factor entero que cabe en la ventana y devuelve ese
-// tamaño: el juego se dibuja directo a resolución de pantalla (sin agrandar
-// una imagen chica), que es lo que mantiene el texto nítido.
+// Layout elige el factor y devuelve ese tamaño: el juego se dibuja directo a
+// resolución de pantalla (sin agrandar una imagen chica), que es lo que
+// mantiene el texto nítido. Por eso el cursor llega en ese mismo espacio y
+// hay que dividirlo por Scale (ver Input.moveToWindow). Con -scale (modo
+// pruebas) el factor es fijo, aunque la ventana real sea de otro tamaño.
 func (a *App) Layout(outsideWidth, outsideHeight int) (int, int) {
-	k := max(1, min(outsideWidth/logicalWidth, outsideHeight/logicalHeight))
+	k := layoutScale(outsideWidth, outsideHeight)
+	if a.env.Opts.Agent && a.env.Opts.Scale > 0 {
+		k = a.env.Opts.Scale
+	}
 	a.env.Scale = k
 	return logicalWidth * k, logicalHeight * k
 }
@@ -155,7 +173,11 @@ func newApp(opts Options, store *game.SaveStore) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loading fonts: %w", err)
 	}
-	env := &Env{Scale: windowScale, Assets: assets, Fonts: fonts, Opts: opts, Store: store, Save: game.NewSaveData()}
+	startScale := windowScale
+	if opts.Agent && opts.Scale > 0 {
+		startScale = opts.Scale
+	}
+	env := &Env{Scale: startScale, Assets: assets, Fonts: fonts, Opts: opts, Store: store, Save: game.NewSaveData()}
 	if store != nil {
 		if data, err := store.Load(); err == nil {
 			env.Save = data
@@ -187,7 +209,7 @@ func Run(opts Options) error {
 	if err != nil {
 		return err
 	}
-	ebiten.SetWindowSize(logicalWidth*windowScale, logicalHeight*windowScale)
+	ebiten.SetWindowSize(logicalWidth*app.env.Scale, logicalHeight*app.env.Scale)
 	ebiten.SetWindowTitle(windowTitle)
 	if opts.Agent {
 		scene, err := startScene(app.env)

@@ -19,6 +19,7 @@ type Options struct {
 	Frames    int    // ticks extra que se corren al final del guion
 	Quit      bool   // cerrar al terminar el guion
 	SavedDay  int    // finge una partida guardada con este último día
+	Scale     int    // factor de dibujo fijo (1 a 4); 0 = el de la ventana (2 por defecto)
 }
 
 // RegisterFlags define las banderas en fs y devuelve las opciones que se
@@ -35,6 +36,7 @@ func RegisterFlags(fs *flag.FlagSet) *Options {
 	fs.IntVar(&o.Frames, "frames", 0, "with -agent: extra ticks to run after the script")
 	fs.BoolVar(&o.Quit, "quit", false, "with -agent: close when the script ends")
 	fs.IntVar(&o.SavedDay, "saved", 0, "with -agent: pretend there is a save with this last unlocked day")
+	fs.IntVar(&o.Scale, "scale", 0, "with -agent: fixed drawing scale 1-4 (window is 480x270 times this)")
 	return o
 }
 
@@ -50,6 +52,9 @@ func (o Options) validate() error {
 	}
 	if o.Step < 1 || o.Step > 4 {
 		return fmt.Errorf("step %d out of range (1-4)", o.Step)
+	}
+	if o.Scale < 0 || o.Scale > 4 {
+		return fmt.Errorf("scale %d out of range (0-4)", o.Scale)
 	}
 	if o.Frames < 0 {
 		return fmt.Errorf("frames %d must not be negative", o.Frames)

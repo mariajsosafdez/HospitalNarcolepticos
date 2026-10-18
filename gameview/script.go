@@ -10,11 +10,12 @@ import (
 // (o varios separados por ";"). Las líneas que empiezan con # son comentarios.
 //
 //	wait N          corre N ticks
-//	move X Y        pone el mouse en (X, Y) del lienzo de 480x270
+//	move X Y        pone el mouse en (X, Y) del lienzo de 480x270 (entra como cursor de ventana)
 //	click X Y       mueve el mouse y hace clic (dura 1 tick)
 //	key Nombre      pulsa una tecla (Up Down Left Right Enter Escape Space M 1..8)
-//	shot ruta       captura a 1x (480x270)
-//	shot4 ruta      captura a 4x (1920x1080)
+//	shot ruta       captura a 1x (480x270), sacada de lo que dibuja la ventana
+//	shot4 ruta      captura a 4x (1920x1080), idem
+//	shotwin ruta    captura tal cual la ventana (480x270 por -scale)
 //	dump ruta       JSON con game.Snapshot y el estado de la interfaz
 //	sleep ID CAM    duerme al paciente ID en la cámara CAM (ForceSleep)
 //	wake ID         despierta al paciente ID que está en cama (ForceWake)
@@ -33,6 +34,7 @@ const (
 	stepKey
 	stepShot
 	stepShot4
+	stepShotWin
 	stepDump
 	stepSleep
 	stepWake
@@ -128,11 +130,11 @@ func parseStep(text string) (step, error) {
 			return step{}, err
 		}
 		return step{kind: stepKey, text: args[0]}, nil
-	case "shot", "shot4", "dump":
+	case "shot", "shot4", "shotwin", "dump":
 		if err := need(1); err != nil {
 			return step{}, err
 		}
-		kind := map[string]stepKind{"shot": stepShot, "shot4": stepShot4, "dump": stepDump}[name]
+		kind := map[string]stepKind{"shot": stepShot, "shot4": stepShot4, "shotwin": stepShotWin, "dump": stepDump}[name]
 		return step{kind: kind, text: args[0]}, nil
 	case "sleep":
 		if err := need(2); err != nil {
