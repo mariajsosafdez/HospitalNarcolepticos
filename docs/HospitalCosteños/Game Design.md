@@ -204,3 +204,6 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-18 | El recuadro de la consulta 5.1 se titula "Atendidos sin cama" | Que no parezca contradictorio | "mejor" |
 | 2026-10-18 | Obstáculos en todas las salas para que nadie se duerma sobre los muebles | — | "me gusta" |
 | 2026-10-18 | Dígitos en pixel art aprobados (0 pequeño sin punto, medianos con trazo de 1 px) | El 5 de Pixelify parecía una S | "si" / "ok" / "ok" |
+| 2026-10-18 | Nadie se duerme en los últimos 10 s reales del turno (17:40–18:00) | Si no, la penalización sería segura | "los pacientes no deberían dormirse faltando menos de 10 segundos para que se acabe el juego, porque sino seria garantizar una penalización" |
+| 2026-10-18 | Pantalla completa nítida (escala entera con bordes) | Se veía borrosa | "el modo de pantalla completa hace que se vea algo borroso el texto y el juego en general" |
+| 2026-10-18 | Si no hay cama, el personal no queda "En traslado": atiende y pasa directo a descansar | En la Demo parecía que Karen y Chepe trasladaban a la vez | "el traslado lo hacen la doctora karen y el camillero a la vez, no sé si sea error" |
