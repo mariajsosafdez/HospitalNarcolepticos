@@ -59,6 +59,11 @@ func (f *Fonts) face(family fontFamily, size int) *text.GoTextFace {
 	}
 	face := &text.GoTextFace{Source: f.pixel, Size: float64(size)}
 	face.SetVariation(text.MustParseTag("wght"), 400)
+	// Pixelify Sans trae ligaduras ("fi", "fl") que salen como un glifo roto
+	// ("la fila" se veía "la Ala"): se apagan para escribir letra por letra.
+	for _, tag := range []string{"liga", "clig", "dlig"} {
+		face.SetFeature(text.MustParseTag(tag), 0)
+	}
 	switch family {
 	case fontPixelBold:
 		// Pixelify Sans es una fuente variable: el eje "wght" va de 400 a 700.
