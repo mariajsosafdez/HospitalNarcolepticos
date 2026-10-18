@@ -105,6 +105,7 @@ web/               como está hoy                     (SIN CAMBIOS)
 - Base *(propuesto)*: Leve 3 %, Moderado 6 %, Severo 10 %.
 - Modificador de zona *(propuesto)*: Cafetería ×2 (el sancocho), Patio ×1,5, el resto ×1.
 - ✅ Un paciente recién dado de alta no puede dormirse otra vez durante **al menos 10 min de juego** (5 s), si no se ha ido del hospital.
+- ✅ **Sin ataques nuevos en los últimos 10 s reales** (los últimos 20 min de juego, de 17:40 a 18:00; constante `noSleepFinalMinutes`, función `sleepWindowOpen`): "los pacientes no deberían dormirse faltando menos de 10 segundos para que se acabe el juego, porque sino seria garantizar una penalización" (la autora, 2026-10-18). La Demo no se ve afectada: no tiene sueño al azar.
 
 ### 3.4 Despertar
 

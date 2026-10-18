@@ -283,7 +283,7 @@ func (s *Shift) sleepIfDue(g *GamePatient, now int) {
 		return
 	}
 	g.nextSleepCheck = now + MinutesToTicks(sleepCheckMinutes)
-	if g.leaving || now < g.noSleepUntil {
+	if g.leaving || now < g.noSleepUntil || !sleepWindowOpen(now) {
 		return
 	}
 	if s.rng.Float64() < SleepChance(g.patient.Level(), g.camera) {
@@ -449,7 +449,11 @@ func (s *Shift) Assign(patientID, staffID string) error {
 		return fmt.Errorf("assign %s: %w", patientID, ErrUnexpectedDispatch)
 	}
 	s.episodeTimes[record.ID()] = s.clock.Tick()
-	m.startCooldown(false)
+	if regErr != nil {
+		m.startRestOnly() // sin cama no hay traslado: solo descansa
+	} else {
+		m.startCooldown(false)
+	}
 	if m.IsDoctor() && g.patient.Level() == hospital.Severe {
 		s.score.SevereBonus += severeDoctorBonus
 	}

@@ -134,8 +134,24 @@ func TestNoBedKeepsPatientWhereTheyFell(t *testing.T) {
 	if got := len(s.Hospital().History()); got != 2 {
 		t.Errorf("history has %d episodes, want 2", got)
 	}
-	if s.FindStaff("D-001").State() != StaffTransferring {
-		t.Errorf("D-001 state = %v, want Transferring", s.FindStaff("D-001").State())
+	// Sin cama no hay nada que cargar: va directo a descansar, sin traslado.
+	d := s.FindStaff("D-001")
+	if d.State() != StaffResting {
+		t.Errorf("D-001 state = %v, want Resting (no stretcher to push)", d.State())
+	}
+	if g.Carrier() != nil {
+		t.Error("a patient without a bed must have no carrier")
+	}
+	if d.TransferUntil() != s.Clock().Tick() {
+		t.Errorf("TransferUntil = %d, want now (%d)", d.TransferUntil(), s.Clock().Tick())
+	}
+	advance(s, doctorRestTicks-1)
+	if d.Free() {
+		t.Error("still resting one tick before the normal rest time ends")
+	}
+	advance(s, 1)
+	if !d.Free() || d.State() != StaffAvailable {
+		t.Errorf("after the normal rest D-001 state = %v, want Available", d.State())
 	}
 	if s.NoBedCount() != 1 {
 		t.Errorf("NoBedCount = %d, want 1", s.NoBedCount())
@@ -439,6 +455,67 @@ func TestSleepChance(t *testing.T) {
 		got := SleepChance(tt.level, tt.cam)
 		if diff := got - tt.want; diff > 1e-9 || diff < -1e-9 {
 			t.Errorf("SleepChance(%v, %s) = %v, want %v", tt.level, tt.cam, got, tt.want)
+		}
+	}
+}
+
+// En los últimos 20 min de juego (17:40 a 18:00) ya no hay ataques de sueño
+// nuevos: sería una penalización garantizada.
+func TestSleepWindowOpen(t *testing.T) {
+	tests := []struct {
+		name string
+		tick int
+		want bool
+	}{
+		{"start of the shift", 0, true},
+		{"17:39", MinutesToTicks(5*60 + 39), true},
+		{"one tick before 17:40", MinutesToTicks(5*60+40) - 1, true},
+		{"17:40 exactly", MinutesToTicks(5*60 + 40), false},
+		{"17:59", MinutesToTicks(5*60 + 59), false},
+		{"18:00", ShiftTicks, false},
+	}
+	for _, tt := range tests {
+		if got := sleepWindowOpen(tt.tick); got != tt.want {
+			t.Errorf("%s: sleepWindowOpen(%d) = %v, want %v", tt.name, tt.tick, got, tt.want)
+		}
+	}
+	if noSleepFinalMinutes*TicksPerMinute != 10*TicksPerSecond {
+		t.Error("the final window must be 10 real seconds")
+	}
+}
+
+// Ningún paciente se duerme en la ventana final, aunque la probabilidad fuera
+// muy alta: se recorre el turno completo y se revisa la hora de cada sueño.
+func TestNoNewSleepInTheFinalWindow(t *testing.T) {
+	for seed := int64(1); seed <= 20; seed++ {
+		cfg, err := ConfigForDay(5)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s, err := NewShift(cfg, seed)
+		if err != nil {
+			t.Fatal(err)
+		}
+		slept := 0
+		for !s.Clock().Over() {
+			before := 0
+			for _, g := range s.Patients() {
+				before += g.sleeps
+			}
+			s.Tick()
+			after := 0
+			for _, g := range s.Patients() {
+				after += g.sleeps
+			}
+			if after > before {
+				slept++
+				if s.Clock().Tick()-1 >= ShiftTicks-600 { // 600 ticks = 10 s reales
+					t.Fatalf("seed %d: someone fell asleep at tick %d, inside the final window", seed, s.Clock().Tick())
+				}
+			}
+		}
+		if slept == 0 {
+			t.Errorf("seed %d: nobody ever slept, the test checks nothing", seed)
 		}
 	}
 }

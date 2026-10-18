@@ -154,6 +154,11 @@ const (
 	sleepCheckMinutes  = 10 // cada cuánto tira el dado del sueño
 	arrivingMinutes    = 5  // cuánto tarda en pasar de Arriving a Wandering
 	noSleepAfterMinute = 10 // tras el alta, mínimo 10 min sin dormirse
+
+	// noSleepFinalMinutes: en los últimos 20 min de juego (10 s reales, de
+	// 17:40 a 18:00) nadie se duerme de nuevo: un paciente que se durmiera
+	// ahí ya no se alcanza a atender y sería una penalización garantizada.
+	noSleepFinalMinutes = 20
 )
 
 // nextMoveDelay sortea cuántos ticks faltan para el próximo movimiento.
@@ -168,4 +173,11 @@ func (g *GamePatient) Carrier() *StaffMember {
 		return nil
 	}
 	return g.carrier
+}
+
+// sleepWindowOpen dice si en el tick now todavía pueden darse ataques de
+// sueño nuevos: no en los últimos noSleepFinalMinutes del turno. Es pura para
+// poder probarla con una tabla.
+func sleepWindowOpen(now int) bool {
+	return now < ShiftTicks-MinutesToTicks(noSleepFinalMinutes)
 }

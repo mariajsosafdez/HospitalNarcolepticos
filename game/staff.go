@@ -150,6 +150,16 @@ func (s *StaffMember) startCooldown(shortRest bool) {
 	s.busyUntil = s.transferUntil + rest
 }
 
+// startRestOnly es para quien atendió a un paciente pero no había cama: no
+// hay nada que cargar, así que no hay traslado (nunca queda "En traslado" ni
+// se dibuja una camilla vacía) y va directo a descansar el tiempo normal.
+func (s *StaffMember) startRestOnly() {
+	_, rest := s.cooldownTicks()
+	s.transferTicks, s.restTicks = 0, rest
+	s.transferUntil = s.now()
+	s.busyUntil = s.transferUntil + rest
+}
+
 // CooldownFraction devuelve cuánto llena la barra del panel: durante el
 // traslado crece de 0 a 1, durante el descanso baja de 1 a 0 y en cualquier
 // otro estado es 0. Es una función del estado y del tick actual, sin azar.
