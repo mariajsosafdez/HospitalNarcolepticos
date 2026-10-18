@@ -99,7 +99,7 @@ Pasos de la Demo (caja de la Demo, "Paso N de 4"):
 |---|---|
 | Título | "Fin del turno" · "Día N  ·  de 12 a 6  ·  X pacientes atendidos" |
 | Puntos | "Puntos", "de N posibles (P %)", "Excelente", "Bien", "Regular", "Mal", "Bonus severos", "Penalizaciones", "Cama sin alta", "Exceso de trabajo", "Sin atender", "Total" |
-| 5.1 | "Se quedaron sin cama": "Al cerrar el turno: nadie." / "Durante el turno: 1 vez." (o "N veces.") / "{Nombre}, {lugar}" / "(después pasó a la 101)" |
+| 5.1 | "Atendidos sin cama" (antes "Se quedaron sin cama"; la autora: "mejor"): "Al cerrar el turno: nadie." / "Durante el turno: 1 vez." (o "N veces.") / "{Nombre}, {lugar}" / "(después pasó a la 101)" |
 | 5.2 | "Episodios por doctor" (nombre, cantidad y debajo los pacientes) |
 | 5.3 | "Camas" (número y ocupante, o "libre") · "Veces sin cama: N" |
 | 5.4 | "Pacientes severos" ("cama 102", "despierta"/"despierto") · "3 severos, 2 atendidos por doctor" |
@@ -112,4 +112,4 @@ Pasos de la Demo (caja de la Demo, "Paso N de 4"):
 
 **Panel de 5 personas** (días 3 a 5), nombres y roles cortos: "Dra. Karen", "Dr. Álvaro", "Dra. Luz Dary", "Chepe", "El Mono" · "Neurología", "Del sueño", "General", "Camillero".
 
-**Créditos** (esperando aprobación, 2026-10-18): "Créditos" · "Hospital de los Costeños con Narcolepsia" · "El hueco más profundo de Montería" · Don Ernesto: "Gracias por la mano, mijo!" · "Hecho por": "Maria José Sosa" · "Clase": "Programación Orientada a Objetos", "Universidad EIA", "Profesor Sebastián Zapata Ramírez" · "Herramientas": "Hecho en Go con Ebitengine" · "Fuentes": "Pixelify Sans (Stefie Justprince)", "VT323 (Peter Hull)", "Licencia SIL OFL 1.1" · "Música y sonidos": por ahora "(se completa cuando la autora elija la música)"; las líneas finales (CC0/CC-BY) salen de [[Sonido]] · Propuesta: "Arte y código hechos con ayuda de IA (Claude, de Anthropic)" · "Volver" · "Esc o clic: volver al menú".
+**Créditos** (✅ aprobado con cambios, 2026-10-18): "Créditos" · "Hospital de los Costeños con Narcolepsia" · "El hueco más profundo de Montería" · Don Ernesto: "Gracias por la ayuda, vale!" (la autora: "pon \"gracias por la ayuda vale!\""; sin ¡ inicial) · "Hecho por": "Maria José Sosa" · "Clase": "Compiladores y Lenguajes", "Universidad EIA", "Profesor Sebastián Zapata Ramírez" (la autora: "Es clase de Compiladores y lenguajes :P") · "Herramientas": "Hecho en Go con Ebitengine" · "Fuentes": "Pixelify Sans (Stefie Justprince)", "VT323 (Peter Hull)", "Licencia SIL OFL 1.1" · "Música y sonidos": por ahora "(se completa cuando la autora elija la música)"; las líneas finales (CC0/CC-BY) salen de [[Sonido]] · "Arte y código hechos con ayuda de IA (Claude, de Anthropic)" (la autora: "Sip") · "Volver" · "Esc o clic: volver al menú".

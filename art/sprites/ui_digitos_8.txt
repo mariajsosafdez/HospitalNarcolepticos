@@ -1,0 +1,66 @@
+// Dígitos 0..9 en pixel art para Pixelify Sans 8 (Regular y Bold): 10 cuadros, uno por dígito.
+// avance: 5, alto: 5, base: 7
+// El cuadro ya trae el espacio entre dígitos (ancho = avance). base = fila de la
+// línea base contada desde la y que recibe drawText: la esquina de arriba del
+// dígito va en y + base - alto = y + 2.
+// Van en un solo color (w); el código los tiñe con el color del texto.
+// El 5 tiene la parte de arriba plana y el hombro cuadrado para no parecer S.
+.ww..
+w..w.
+w..w.
+w..w.
+.ww..
+---
+.w...
+ww...
+.w...
+.w...
+www..
+---
+.ww..
+w..w.
+..w..
+.w...
+wwww.
+---
+www..
+...w.
+.ww..
+...w.
+www..
+---
+w..w.
+w..w.
+wwww.
+...w.
+...w.
+---
+wwww.
+w....
+www..
+...w.
+www..
+---
+.ww..
+w....
+www..
+w..w.
+.ww..
+---
+wwww.
+...w.
+..w..
+.w...
+.w...
+---
+.ww..
+w..w.
+.ww..
+w..w.
+.ww..
+---
+.ww..
+w..w.
+.www.
+...w.
+.ww..
