@@ -210,3 +210,4 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-18 | Rework de la Demo: reloj quieto entre partes, cámara que sigue cada evento, 8 partes (texto en Textos del Director) | Se veía solo el que quedaba sin cama y el turno se acababa solo | "sipiriri" |
 | 2026-10-18 | Las restas al terminar el turno se quedan; un tester comprueba cada caso | Revisión | "ok, haz prubas replicando terminar el turno con esos casos y mira que la resta de puntos si sea correcta" |
 | 2026-10-18 | Pantalla completa que llene la pantalla a cualquier resolución (escala fraccionaria nítida) | Con escala entera quedaba pequeña | "bro la verdad está un poco popó, no hay manera de que se adapte a la resolución de cada pantalla?" |
+| 2026-10-18 | Textos de la Demo guiada aprobados | — | "me gustan" |

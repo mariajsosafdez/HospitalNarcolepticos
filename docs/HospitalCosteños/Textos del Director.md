@@ -114,7 +114,7 @@ Pasos de la Demo (caja de la Demo, "Paso N de 4"):
 
 **Créditos** (✅ aprobado con cambios, 2026-10-18): "Créditos" · "Hospital de los Costeños con Narcolepsia" · "El hueco más profundo de Montería" · Don Ernesto: "Gracias por la ayuda, vale!" (la autora: "pon \"gracias por la ayuda vale!\""; sin ¡ inicial) · "Hecho por": "Maria José Sosa" · "Clase": "Compiladores y Lenguajes", "Universidad EIA", "Profesor Sebastián Zapata Ramírez" (la autora: "Es clase de Compiladores y lenguajes :P") · "Herramientas": "Hecho en Go con Ebitengine" · "Fuentes": "Pixelify Sans (Stefie Justprince)", "VT323 (Peter Hull)", "Licencia SIL OFL 1.1" · "Música y sonidos": por ahora "(se completa cuando la autora elija la música)"; las líneas finales (CC0/CC-BY) salen de [[Sonido]] · "Arte y código hechos con ayuda de IA (Claude, de Anthropic)" (la autora: "Sip") · "Volver" · "Esc o clic: volver al menú".
 
-## Demo guiada (rework, propuesta del 2026-10-18, esperando aprobación)
+## Demo guiada ✅ (aprobada el 2026-10-18: "me gustan")
 
 El reloj solo corre durante las animaciones y la cámara cambia sola a donde pasa cada cosa. En pantalla se quita la ¡ inicial.
 
