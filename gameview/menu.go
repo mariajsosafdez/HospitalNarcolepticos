@@ -133,26 +133,24 @@ func (m *menuScene) activate() Scene {
 			return nil
 		}
 		return scene
+	case optHowToPlay:
+		scene, err := newPracticeScene(m.env, m.env.newSeed(), 0, "")
+		if err != nil {
+			m.overlay = err.Error()
+			return nil
+		}
+		return scene
 	default:
-		// Cómo jugar, Ajustes y Créditos todavía no tienen vista aprobada.
+		// Créditos todavía no tiene vista aprobada.
 		m.overlay = menuItems[m.selected].label
 	}
 	return nil
 }
 
-// startDay arma el turno de un día y abre la pantalla de cámaras.
+// startDay arma el turno de un día (con el mensaje del Director que le toca)
+// y abre la pantalla de cámaras.
 func (m *menuScene) startDay(day int) Scene {
-	cfg, err := game.ConfigForDay(day)
-	if err != nil {
-		m.overlay = err.Error()
-		return nil
-	}
-	shift, err := game.NewShift(cfg, m.env.newSeed())
-	if err != nil {
-		m.overlay = err.Error()
-		return nil
-	}
-	scene, err := newCams(m.env, shift, nil, "")
+	scene, err := newShiftScene(m.env, day, m.env.newSeed(), true, "")
 	if err != nil {
 		m.overlay = err.Error()
 		return nil

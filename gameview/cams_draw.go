@@ -252,6 +252,9 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 	if c.notice != nil && c.report == nil {
 		c.drawNotice(dst)
 	}
+	if c.msg != nil {
+		c.drawMessage(dst)
+	}
 	if c.paused {
 		c.drawPause(dst)
 	}

@@ -55,6 +55,8 @@ type camsScene struct {
 	notice   *notice
 	paused   bool
 	report   *game.Report // reporte abierto (fin del turno o paso 4 de la Demo)
+	msg      *messageBox  // mensaje del Director abierto (el reloj del turno se detiene)
+	practice bool         // "Cómo jugar": solo el tutorial, y al terminar vuelve al menú
 	recorded bool         // el resultado del turno ya se guardó
 
 	mouseX, mouseY int
@@ -104,6 +106,7 @@ func (c *camsScene) State() UIState {
 		HoveredButton:   c.hovered,
 		DemoStep:        c.demoStep,
 		DemoAuto:        c.demoAuto,
+		Tutorial:        c.practice,
 	}
 	if c.demo != nil {
 		st.Scene = "demo"
@@ -115,7 +118,12 @@ func (c *camsScene) State() UIState {
 	if c.notice != nil {
 		st.Notice = c.notice.title
 	}
+	if c.msg != nil {
+		st.Message, st.MessageIndex, st.MessageCount = c.msg.text(), c.msg.index+1, len(c.msg.lines)
+	}
 	switch {
+	case c.msg != nil:
+		st.Overlay = "message"
 	case c.report != nil:
 		st.Overlay = "report"
 	case c.paused:
@@ -135,6 +143,12 @@ func (c *camsScene) Update(in *Input) Scene {
 	c.hovered, c.hoverLocked = c.hoverTarget(in.MouseX, in.MouseY), ""
 	if id, ok := mapButtonAt(in.MouseX, in.MouseY); ok && !c.shift.World().Has(id) {
 		c.hoverLocked = id
+	}
+
+	// Con un mensaje del Director abierto el turno está detenido: solo se
+	// atiende el clic para seguir.
+	if c.msg != nil {
+		return c.updateMessage(in)
 	}
 
 	// Con el reporte abierto solo se puede volver al menú.
@@ -171,6 +185,51 @@ func (c *camsScene) Update(in *Input) Scene {
 		return nil
 	}
 	return c.handleInput(in)
+}
+
+// showMessage abre un mensaje del Director y detiene el reloj del turno.
+// start es la línea con la que empieza (0 = la primera).
+func (c *camsScene) showMessage(kind messageKind, lines []string, start int) {
+	c.msg = newMessage(kind, lines, start)
+	c.shift.Pause()
+}
+
+// queueIntro abre el mensaje con que empieza el turno: el tutorial en el Día
+// 1 (solo la primera vez) y el mensaje del director en los días 2 a 5.
+func (c *camsScene) queueIntro() {
+	if c.shift.Day() == 1 {
+		if !c.env.Save.TutorialSeen {
+			c.showMessage(msgTutorial, game.TutorialLines[:], 0)
+		}
+		return
+	}
+	if text, ok := game.DayIntro(c.shift.Day()); ok {
+		c.showMessage(msgDayIntro, []string{text}, 0)
+	}
+}
+
+// updateMessage avanza el mensaje con clic, Enter o Espacio. Al terminar el
+// último se cierra y el turno sigue (o, en "Cómo jugar", se vuelve al menú).
+func (c *camsScene) updateMessage(in *Input) Scene {
+	if !in.Click && !in.Pressed("Enter") && !in.Pressed("Space") {
+		return nil
+	}
+	if !c.msg.advance() {
+		return nil
+	}
+	kind := c.msg.kind
+	c.msg = nil
+	if !c.paused {
+		c.shift.Resume()
+	}
+	if kind == msgTutorial {
+		c.env.Save.TutorialSeen = true
+		c.env.persist()
+		if c.practice {
+			return newMenu(c.env)
+		}
+	}
+	return nil
 }
 
 // finishShift guarda el resultado del turno y abre el reporte.
@@ -373,6 +432,7 @@ func (c *camsScene) assign(m *game.StaffMember) {
 		c.cursor = -1
 		return
 	}
+	overworked := len(c.shift.Overworked())
 	var err error
 	if g.State() == game.NoBedWaiting {
 		err = c.shift.MoveToBed(c.selected, m.ID())
@@ -383,6 +443,14 @@ func (c *camsScene) assign(m *game.StaffMember) {
 	c.cursor = -1
 	if err != nil {
 		c.showError(err, g.Patient().Name())
+	}
+	// Un doctor que llega a 4/4 (con o sin cama para el paciente) recibe el
+	// regaño del director.
+	if list := c.shift.Overworked(); len(list) > overworked {
+		if doc := c.shift.FindStaff(list[len(list)-1]); doc != nil {
+			line := game.OverworkLine(displayName(doc.ID(), doc.Name()))
+			c.showMessage(msgOverwork, []string{line}, 0)
+		}
 	}
 }
 

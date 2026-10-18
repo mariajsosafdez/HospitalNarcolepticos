@@ -30,15 +30,21 @@ func startScene(env *Env) (Scene, error) {
 	case "menu":
 		return newMenu(env), nil
 	case "day":
-		cfg, err := game.ConfigForDay(opts.Day)
+		return newShiftScene(env, opts.Day, opts.Seed, opts.Intro, game.CameraID(opts.Camera))
+	case "dayintro":
+		return newShiftScene(env, opts.Day, opts.Seed, true, game.CameraID(opts.Camera))
+	case "tutorial":
+		// Cómo jugar, empezando en la línea -step.
+		return newPracticeScene(env, opts.Seed, opts.Step-1, game.CameraID(opts.Camera))
+	case "director":
+		// El regaño por exceso de trabajo, con la Dra. Karen, sobre un Día 1.
+		scene, err := newShiftScene(env, 1, opts.Seed, false, game.CameraID(opts.Camera))
 		if err != nil {
 			return nil, err
 		}
-		shift, err := game.NewShift(cfg, opts.Seed)
-		if err != nil {
-			return nil, err
-		}
-		return newCams(env, shift, nil, game.CameraID(opts.Camera))
+		line := game.OverworkLine(displayName("D-001", "Dra. Karen Ospina"))
+		scene.showMessage(msgOverwork, []string{line}, 0)
+		return scene, nil
 	case "cams":
 		// El escenario de la Demo (5 pacientes, 3 habitaciones, sin azar)
 		// sin la caja de la Demo: sirve para probar a mano con sleep/wake.

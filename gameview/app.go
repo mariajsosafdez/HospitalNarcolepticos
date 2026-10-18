@@ -5,7 +5,9 @@
 package gameview
 
 import (
+	"errors"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -52,14 +54,20 @@ func (e *Env) newSeed() int64 {
 	return time.Now().UnixNano()
 }
 
-// recordShift anota el resultado de un turno y lo guarda (si hay almacén).
+// persist escribe el guardado (si hay almacén). Si no se puede escribir, el
+// juego sigue: es solo el progreso. En la puerta de pruebas no hay almacén
+// (o es uno de prueba que se pasa con -savepath), nunca el guardado real.
+func (e *Env) persist() {
+	if e.Store != nil {
+		_ = e.Store.Save(e.Save)
+	}
+}
+
+// recordShift anota el resultado de un turno terminado y lo autoguarda.
 func (e *Env) recordShift(day, stars int) {
 	e.Save.RecordShift(day, stars)
 	e.HasSave = true
-	if e.Store != nil {
-		// Si no se puede guardar, el juego sigue: es solo el progreso.
-		_ = e.Store.Save(e.Save)
-	}
+	e.persist()
 }
 
 // UIState es lo que el volcado de pruebas dice de la interfaz (además del
@@ -73,7 +81,11 @@ type UIState struct {
 	StaffCursor     string       `json:"staffCursor,omitempty"`     // personal marcado con el teclado
 	HoveredButton   string       `json:"hoveredButton,omitempty"`   // botón bajo el mouse
 	Notice          string       `json:"notice,omitempty"`          // título del aviso visible
-	Overlay         string       `json:"overlay,omitempty"`         // pausa, reporte, próximamente
+	Overlay         string       `json:"overlay,omitempty"`         // pausa, reporte, mensaje, próximamente
+	Message         string       `json:"message,omitempty"`         // mensaje del Director abierto
+	MessageIndex    int          `json:"messageIndex,omitempty"`    // línea (desde 1) del mensaje
+	MessageCount    int          `json:"messageCount,omitempty"`    // cuántas líneas tiene
+	Tutorial        bool         `json:"tutorial,omitempty"`        // está en "Cómo jugar"
 	DemoStep        int          `json:"demoStep,omitempty"`        // 1 a 4
 	DemoAuto        bool         `json:"demoAuto,omitempty"`
 	UITick          int          `json:"uiTick"`
@@ -181,7 +193,7 @@ func newApp(opts Options, store *game.SaveStore) (*App, error) {
 		if data, err := store.Load(); err == nil {
 			env.Save = data
 		}
-		env.HasSave = store.Exists()
+		env.HasSave = store.Exists() && env.Save.HasProgress() // solo ajustes guardados no cuentan
 	}
 	if opts.Agent && opts.SavedDay > 0 {
 		env.Save.LastUnlockedDay = min(opts.SavedDay, game.MaxDay)
@@ -197,12 +209,20 @@ func newApp(opts Options, store *game.SaveStore) (*App, error) {
 // menú; con -agent (opts.Agent) sigue la puerta de pruebas.
 func Run(opts Options) error {
 	var store *game.SaveStore
-	if !opts.Agent {
+	switch {
+	case !opts.Agent:
 		path, err := game.DefaultSavePath()
 		if err != nil {
 			return err
 		}
 		store = game.NewSaveStore(path)
+	case opts.SavePath != "":
+		// Guardado de prueba: nunca el guardado real de la autora.
+		real, err := game.DefaultSavePath()
+		if err == nil && filepath.Clean(opts.SavePath) == filepath.Clean(real) {
+			return errors.New("-savepath must not be the real save file")
+		}
+		store = game.NewSaveStore(opts.SavePath)
 	}
 	app, err := newApp(opts, store)
 	if err != nil {
