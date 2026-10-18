@@ -14,9 +14,24 @@ import (
 // digitSpec describe uno de esos sprites para un tamaño de letra.
 type digitSpec struct {
 	sprite  string // nombre del PNG
-	advance int    // ancho de cada dígito, con su espacio (px del juego)
+	advance int    // ancho del cuadro de cada dígito, con su espacio (px del juego)
 	height  int    // alto del dígito
 	base    int    // fila de la línea base, contada desde la y que se entrega a drawText
+
+	// narrowOne es cuánto se acorta el avance del "1": su tinta mide un píxel
+	// menos que la de los demás dígitos, y con el avance completo queda un
+	// hueco de 2 px después de él ("1 2"). Con este ajuste el hueco es de 1 px,
+	// como entre cualquier otro par. Los demás dígitos no cambian (ver el test
+	// TestDigitAdvanceMatchesInk, que lo mide en los PNG).
+	narrowOne int
+}
+
+// advanceOf devuelve el avance del dígito d (0 al 9) en píxeles del juego.
+func (s digitSpec) advanceOf(d int) int {
+	if d == 1 {
+		return s.advance - s.narrowOne
+	}
+	return s.advance
 }
 
 // digitSpecFor devuelve el sprite que reemplaza los dígitos de esa cara y
@@ -24,11 +39,11 @@ type digitSpec struct {
 func digitSpecFor(family fontFamily, size int) (spec digitSpec, ok bool) {
 	switch {
 	case (family == fontPixel || family == fontPixelBold) && size == 8:
-		return digitSpec{"ui_digitos_8", 5, 5, 7}, true
+		return digitSpec{"ui_digitos_8", 5, 5, 7, 1}, true
 	case family == fontPixelBold && size == 10:
-		return digitSpec{"ui_digitos_10b", 6, 6, 9}, true
+		return digitSpec{"ui_digitos_10b", 6, 6, 9, 1}, true
 	case family == fontPixelBold && size == 18:
-		return digitSpec{"ui_digitos_18b", 11, 12, 17}, true
+		return digitSpec{"ui_digitos_18b", 11, 12, 17, 1}, true
 	}
 	return digitSpec{}, false
 }
@@ -64,7 +79,7 @@ func splitRuns(s string) []textRun {
 
 // lineWidth mide la línea en píxeles de pantalla: size está en píxeles del
 // juego y k es cuántos píxeles de pantalla mide cada uno (puede tener
-// decimales). Los dígitos miden advance*k cada uno; lo demás se mide con la fuente.
+// decimales). Cada dígito mide su avance (advanceOf) por k; lo demás se mide con la fuente.
 func (f *Fonts) lineWidth(s string, family fontFamily, size int, k float64) float64 {
 	spec, hasSprites := digitSpecFor(family, size)
 	if !hasSprites {
@@ -73,7 +88,9 @@ func (f *Fonts) lineWidth(s string, family fontFamily, size int, k float64) floa
 	total := 0.0
 	for _, run := range splitRuns(s) {
 		if run.digits {
-			total += float64(len(run.text)*spec.advance) * k
+			for _, r := range run.text {
+				total += float64(spec.advanceOf(int(r-'0'))) * k
+			}
 		} else {
 			total += f.screenWidth(run.text, family, float64(size)*k)
 		}
@@ -125,7 +142,7 @@ func (e *Env) drawDigits(dst *ebiten.Image, digits string, spec digitSpec, px fl
 		op.GeoM = e.imageGeo(b.Dx(), b.Dy(), px/e.Scale, top, 1, false)
 		op.ColorScale.ScaleWithColor(c)
 		dst.DrawImage(mask, op)
-		px += float64(spec.advance) * e.Scale
+		px += float64(spec.advanceOf(int(r-'0'))) * e.Scale
 	}
 	return px - start
 }
