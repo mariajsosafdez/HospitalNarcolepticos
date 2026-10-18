@@ -203,3 +203,4 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-18 | Dígitos dibujados en pixel art (el 5 de Pixelify parece una S) | Legibilidad | "okey" |
 | 2026-10-18 | El recuadro de la consulta 5.1 se titula "Atendidos sin cama" | Que no parezca contradictorio | "mejor" |
 | 2026-10-18 | Obstáculos en todas las salas para que nadie se duerma sobre los muebles | — | "me gusta" |
+| 2026-10-18 | Dígitos en pixel art aprobados (0 pequeño sin punto, medianos con trazo de 1 px) | El 5 de Pixelify parecía una S | "si" / "ok" / "ok" |
