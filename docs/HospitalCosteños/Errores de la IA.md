@@ -16,6 +16,9 @@ Registro honesto de errores reales que cometieron Claude y sus agentes durante e
 | 2026-10-18 | Builder | La pausa no tenía selección con teclado y no había forma de elegir pacientes con teclas | **La autora, jugando** | Flechas + Enter en la pausa y para elegir paciente y personal (commit `b6a9c2c`) |
 | 2026-10-18 | Builder | Mañe salía como un rectángulo: el juego buscaba el sprite por el primer nombre ("abelardo") y los archivos se llaman `pac_mane_*` | **La autora, jugando** | Buscar el sprite por ID, con un test que exige que exista el sprite de cada personaje |
 | 2026-10-18 | Builders en paralelo | Dos builders compartían el área de preparación (index) de git: el de pantallas hizo commit y se llevó los archivos del de sonido (commit `12b521d`) | El builder de sonido, al ver que su commit quedaba vacío | No reescribir la historia; para la próxima, cada agente hace `git commit <archivos>` con rutas explícitas o se trabaja en worktrees separados |
+| 2026-10-18 | Builder | Un `sed` pensado para la tarjeta compacta también cambió la tarjeta normal | Comparación automática de la captura contra la vista aprobada | Restaurar la tarjeta normal |
+| 2026-10-18 | Builder | Supuso que los puntos del reporte iban alineados a la derecha, pero en el diseño van a la izquierda | Comparación de la captura con la vista aprobada | Alinearlos como en el diseño |
+| 2026-10-18 | Builder | Python en Windows escribió finales de línea CRLF en archivos `.go` | `gofmt -l` | `gofmt -w` antes de cada commit |
 | 2026-10-17 | Sesión principal | Un `python -` en un comando quedó esperando entrada y colgó la terminal | El comando no terminó en 2 minutos | Detenerlo y hacer las ediciones a mano |
 
 ## Otros datos para AI_USAGE.md
