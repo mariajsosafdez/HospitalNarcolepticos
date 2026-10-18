@@ -185,4 +185,9 @@ For checking the game without a person looking at the window. Full table of flag
 ```
 go run . -agent -scene menu -input script.txt -quit
 go run . -agent -scene demo -step 3 -cam 7B -input script.txt -quit
+go run . -agent -scene report -day 3 -seed 5 -quit        # end-of-shift report (auto player)
+go run . -agent -scene tutorial -step 4 -quit             # Director message 4 of 9
+go run . -agent -scene dayintro -day 2 -quit              # day 2 intro
+go run . -agent -scene pause -quit                        # pause screen (Down + Enter opens settings)
+go run . -agent -scene settings -savepath scratch.json -quit
 ```

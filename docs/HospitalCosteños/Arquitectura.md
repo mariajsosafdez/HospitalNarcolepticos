@@ -86,7 +86,7 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 
 **El cursor llega en el espacio de `Layout`, no en 480x270.** `ebiten.CursorPosition()` devuelve coordenadas del tamaño que devolvió `Layout` (480x270 por `Scale`). Las pantallas hacen toda su detección (hover, clics) en píxeles del juego, así que el cursor se divide por `Scale` en **un solo sitio**: `windowToGame` (en `input.go`, con test de tabla para escalas 1 a 4, tamaños impares y cursor fuera de la ventana). `Input.moveToWindow` es el único camino del cursor a las pantallas; lo usan el juego de verdad (`readReal`) y la puerta de pruebas. Con la versión anterior (cursor sin dividir) en una ventana de 960x540 el hover caía el doble de abajo y a la derecha: "Nuevo turno" señalaba "Créditos" y los botones del mapa, de la Demo y de la pausa no respondían. El tamaño de la ventana se elige con `layoutScale` (pura, con test).
 
-**Teclado para atender.** Con un turno normal: Izquierda/Derecha eligen al paciente dormido de la cámara (de izquierda a derecha), Arriba/Abajo marcan una tarjeta del personal (borde blanco), Enter la manda. Sin paciente elegido, Enter da de alta al despierto de la habitación. En la pausa: Izquierda/Arriba marcan "Seguir", Derecha/Abajo "Menú", Enter ejecuta (Esc sigue, M sale); el mouse marca el botón igual que las flechas.
+**Teclado para atender.** Con un turno normal: Izquierda/Derecha eligen al paciente dormido de la cámara (de izquierda a derecha), Arriba/Abajo marcan una tarjeta del personal (borde blanco), Enter la manda. Sin paciente elegido, Enter da de alta al despierto de la habitación. En la pausa: Arriba/Abajo (o Izquierda/Derecha) marcan Continuar, Ajustes o Salir al menú, Enter ejecuta y Esc sigue; el mouse marca lo que toca.
 
 **Nombres en español en la vista.** La Demo usa los datos en inglés del enunciado ("Dr. Karen Ospina / Neurology"), que no se tocan. `gameview/names.go` busca por ID (D-001 a D-003) el nombre y la especialidad del Elenco y se usa en las tarjetas del panel y en el reporte.
 
@@ -96,7 +96,25 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 
 **Adiciones pequeñas a `game/`** (con tests): `StaffMember.CooldownFraction()` (la barra del panel crece en el traslado y baja en el descanso), `GamePatient.Carrier()` (quién empuja la camilla, para dibujar a la persona correcta) y `SaveStore.Exists()` (para dejar "Continuar" gris sin partida).
 
-**Guardado.** En el juego de verdad la vista usa `game.DefaultSavePath()`. En `-agent` no hay `SaveStore` (es `nil`): el progreso vive solo en memoria y el guardado real no se toca.
+**Guardado.** En el juego de verdad la vista usa `game.DefaultSavePath()`. En `-agent` no hay `SaveStore` (es `nil`) salvo que se pase `-savepath` (un archivo de prueba, nunca el real): el progreso vive solo en memoria y el guardado real no se toca. Se autoguarda al terminar cada turno y con cada cambio de ajustes.
+
+### Pantallas del turno (2026-10-18)
+
+| Archivo | Qué tiene |
+|---|---|
+| `message.go` | Caja del Director (tutorial, inicio de día, exceso de trabajo). Mientras está abierta el reloj del turno se detiene (`shift.Pause`). |
+| `report.go` | Reporte de fin de turno. Las funciones puras (`noBedLines`, `doctorLines`, `bedCells`, `severeLines`, `capWithMore`, `signedPoints`...) arman el texto de cada caja y tienen tests de tabla. |
+| `pause.go` | Pausa (Continuar / Ajustes / Salir al menú) y el parpadeo de los botones del mapa (`blinkAlpha`, `stateEvent`). |
+| `settings.go` | Ajustes: volúmenes (de a 10), parpadeo al dormirse y al despertarse, pantalla completa. Cada cambio llama `Env.settingsChanged` (autoguarda). |
+| `play.go` | `newShiftScene` y `newPracticeScene`: la única manera de armar un turno, usada por el menú, el reporte y la puerta de pruebas. |
+
+**Flujo.** Menú -> turno (`camsScene`) -> `finishShift` guarda (`Env.recordShift`: mejores estrellas + día siguiente desbloqueado) -> `reportScene` -> "Siguiente día" arma el día N+1 con el mensaje del Director de ese día, o "Menú". En la Demo (paso 4) y el Día 5 solo hay "Menú". "Salir al menú" desde la pausa abandona el turno sin guardarlo. "Cómo jugar" abre un Día 1 con los 9 mensajes del tutorial y al terminar vuelve al menú. El tutorial del Día 1 de "Nuevo turno" sale solo la primera vez (`SaveData.TutorialSeen`).
+
+**Medidas.** Salen de las vistas aprobadas en `preview/turno/`, comparadas pixel a pixel con capturas `-scale 4` (la nota de Figma no estaba al alcance del builder cuando se programó: ver Plan de construcción).
+
+**Habitaciones.** Cada habitación puede tener su fondo propio `fondo_habitacion_<número>`. La cama (32x30) y la placa del número (9x4) de cada una están en la tabla `roomArts` (`layout.go`), que repite los comentarios `// cama: x,y` y `// placa: x,y` de `art/sprites/fondo_habitacion_<n>.txt`; `TestRoomArtsMatchSprites` lee esos archivos y falla si dejan de coincidir. Se usa una tabla y no se lee el comentario al ejecutar porque los `.txt` no van en el ejecutable. Si falta el fondo propio se usa `fondo_habitacion` con la cama en (34, 72).
+
+**Sprites por ID.** `spriteKeys` (`layout.go`) da la clave de los PNG por ID de persona (P-007 es `mane`, no `abelardo`). `TestEveryCastMemberHasSprites` comprueba que todo el elenco tenga sus PNG embebidos.
 
 ## Puerta de pruebas (-agent)
 
@@ -116,6 +134,8 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | `-frames N` | Ticks extra que corren después del guion |
 | `-quit` | Cierra al terminar (con `-quit` la ventana se saca de la pantalla). Sin `-quit` la ventana sigue abierta |
 | `-saved N` | Finge una partida guardada con último día desbloqueado N (activa "Continuar") |
+| `-intro` | Con `-scene day`: abre con el mensaje del Director del día (tutorial en el Día 1 la primera vez, inicio de día en 2 a 5). Sin la bandera el turno corre sin mensajes |
+| `-savepath archivo` | Guardado de PRUEBA que se lee y se escribe (ajustes, días desbloqueados, estrellas). Nunca puede ser el guardado real (falla si lo es). Sin la bandera no hay guardado |
 | `-scale N` | Factor de dibujo fijo (1 a 4). Sin la bandera, 2 (ventana de 960x540). Sirve para probar a 2x y 3x lo que ve la ventana real |
 
 | `-scene` | Qué abre |
@@ -123,6 +143,12 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | `menu` | El menú. Sin `-saved`, "Continuar" sale gris |
 | `day` | Turno normal del `-day`, con azar de `-seed` (los pacientes llegan, caminan y se duermen solos) |
 | `cams` | La pantalla de cámaras con el escenario de la Demo (5 pacientes, 3 habitaciones, sin azar y sin caja de la Demo). Ideal para probar con `sleep`/`wake` |
+| `dayintro` | El mensaje de inicio del día `-day` (2 a 5) sobre el turno detenido |
+| `tutorial` | "Cómo jugar": los 9 mensajes sobre un Día 1, empezando en el mensaje `-step` (1 a 9) |
+| `director` | El mensaje de exceso de trabajo (Dra. Karen) sobre un Día 1 |
+| `report` | Juega el día `-day` entero con `game.AutoStep` (jugador automático), guarda como un turno real y abre el reporte |
+| `pause` | Un Día 1 en la pausa (`key Down`, `key Enter` abre los Ajustes) |
+| `settings` | El menú con los Ajustes abiertos (usar con `-savepath`) |
 | `demo` | La Demo con su caja de controles, arrancando en el paso `-step` |
 
 **Guion.** Un paso por línea (o varios con `;`); `#` empieza un comentario. Un paso desconocido o con argumentos mal escritos **hace fallar el arranque** con el número de línea.
@@ -166,6 +192,6 @@ go run . -agent -scene demo -step 4 -input script.txt -quit     # reporte de la 
 go run . -agent -scene menu -saved 3 -input script.txt -quit    # "Continuar" activo
 ```
 
-**Estados alcanzables.** Menú (normal, Demo elegida con `key Down`, sin y con partida, "Próximamente"), cámaras (zona común, paciente elegido, aviso sin cama, habitación con dormido y con despierto, candado en cámara bloqueada con `move`), panel de personal (los 4 estados), Demo (pasos 1 a 4, Auto), pausa (`key Escape`) y reporte (paso 4 de la Demo, o al terminar un turno con `wait 10800`).
+**Estados alcanzables.** Menú (normal, Demo elegida con `key Down`, sin y con partida, "Próximamente"), cámaras (zona común, paciente elegido, aviso sin cama, habitación con dormido y con despierto, candado en cámara bloqueada con `move`), panel de personal (los 4 estados; 4 y 5 personas con `-scene day -day 3` o `-day 4`), Demo (pasos 1 a 4, Auto), pausa (`key Escape` o `-scene pause`), ajustes, mensajes del Director, reporte (`-scene report`, paso 4 de la Demo, o al terminar un turno) y parpadeo de los botones del mapa (con los ajustes prendidos en un `-savepath`, `wait 2; sleep P-001 8; wait 20; dump`: el dump lista `blinking`). El volcado trae también `save` (ajustes, día desbloqueado, estrellas), `message` y `blinking`.
 
-**Pendiente de diseño.** Un paso de la vista no está en Figma: con más de 3 personas (días 3 a 5) el panel muestra 3 tarjetas por página y un botón "Más >" (en la vista aprobada solo caben 3).
+**Panel de 4 o 5 personas.** Con más de 3 personas (días 3 a 5) las tarjetas son `ui_tarjeta_compacta` (132x24), sin páginas.
