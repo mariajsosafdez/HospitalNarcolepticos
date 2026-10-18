@@ -192,3 +192,5 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-17 | Salas nuevas y resto del elenco aprobados, con un cambio: la mayoría se duerme en el piso; solo Mañe y Marelvis en silla (Yeimy de pie) | Que no todos se duerman en sillas | "Me gustaría cambiar que no todos se duerman en sillas, cambialo para que algunos (la gran mayoría) se duerma en el piso como los demás" |
 | 2026-10-17 | Mensajes del builder aprobados: "Un momentico", "Cupo lleno!", "Turno terminado", "Ya no se puede" | — | "me gusta" |
 | 2026-10-17 | Panel de personal con tarjetas compactas para que quepan 5 sin páginas | Días 3–5 | "okeyyy" |
+| 2026-10-18 | La ayuda "Elige a alguien del panel…" lleva borde oscuro, como los nombres de las cámaras | Se leía mal sobre la pared clara | "ponle borde negro, asi como hicimos para los nombres de las cámaras" |
+| 2026-10-18 | Dormidos en el piso aprobados | — | "okey" |

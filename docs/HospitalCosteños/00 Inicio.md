@@ -13,6 +13,7 @@ Bóveda de ideas del juego de cámaras. Aquí se decide **qué** es el juego ant
 | [[Dirección de Arte]] | Estilo, medidas, flujo de sprites sin Aseprite y **Art log** |
 | [[Elenco]] | Pacientes, doctores, camilleros y el Director ✅ |
 | [[Textos del Director]] | Tutorial y mensajes de fin de turno ✅ |
+| [[Errores de la IA]] | Errores reales de la IA y sus arreglos, para escribir `AI_USAGE.md` |
 
 ## Estado
 
