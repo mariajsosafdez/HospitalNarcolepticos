@@ -34,6 +34,14 @@ func main() {
 	webMode := flag.Bool("web", false, "serve the old web dashboard instead of opening the game window")
 	flag.Parse()
 
+	// La puerta de pruebas (-agent) va sola: en silencio, sin escenario.
+	if agentMode() {
+		if err := runAgent(); err != nil {
+			log.Fatalf("agent mode: %v", err)
+		}
+		return
+	}
+
 	// 1. Escenario obligatorio. io.MultiWriter es un Writer que copia todo
 	//    lo que recibe a VARIOS destinos: la consola y un buffer en memoria.
 	//    Así el mismo texto se muestra luego en la pestaña 1 de la web.

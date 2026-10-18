@@ -3,24 +3,25 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"time"
 
-	"costenos-narcolepsia/game"
 	"costenos-narcolepsia/gameview"
 )
 
-// runGame abre la ventana del juego (Día 1). La semilla viene del reloj para
-// que cada partida sea distinta; la lógica de game nunca lee el reloj.
+// agentOpts son las banderas de la puerta de pruebas (-agent, -scene...).
+// Se registran al iniciar el programa, antes de flag.Parse() de main.
+var agentOpts = gameview.RegisterFlags(flag.CommandLine)
+
+// agentMode dice si se pidió la puerta de pruebas (-agent).
+func agentMode() bool { return agentOpts.Agent }
+
+// runAgent corre el juego en modo pruebas: sin escenario por consola, en
+// silencio y sin tocar el guardado real.
+func runAgent() error { return gameview.Run(*agentOpts) }
+
+// runGame abre la ventana del juego en el menú principal.
 func runGame() error {
-	cfg, err := game.ConfigForDay(1)
-	if err != nil {
-		return err
-	}
-	shift, err := game.NewShift(cfg, time.Now().UnixNano())
-	if err != nil {
-		return err
-	}
 	fmt.Println("\n== Game ==\n  Opening the game window (close it to exit)")
-	return gameview.Run(shift)
+	return gameview.Run(gameview.Options{})
 }
