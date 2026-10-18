@@ -169,6 +169,19 @@ func (e *Env) StrokeRect(dst *ebiten.Image, r rect, key byte, thickness int) {
 	e.FillRect(dst, rect{r.x + r.w - thickness, r.y, thickness, r.h}, key, 1)
 }
 
+// DrawSpriteScaled dibuja una imagen agrandada k veces más (por ejemplo las
+// estrellas del reporte, que van a x2).
+func (e *Env) DrawSpriteScaled(dst, img *ebiten.Image, x, y, k int) {
+	if img == nil {
+		return
+	}
+	op := &ebiten.DrawImageOptions{}
+	s := float64(e.Scale * k)
+	op.GeoM.Scale(s, s)
+	op.GeoM.Translate(float64(x*e.Scale), float64(y*e.Scale))
+	dst.DrawImage(img, op)
+}
+
 // DrawSprite dibuja una imagen en (x, y) (coordenadas de 480x270, agrandada
 // Scale veces sin suavizar). flip la refleja de izquierda
 // a derecha (para caminar a la izquierda).

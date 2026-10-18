@@ -38,23 +38,6 @@ func (c *camsScene) bed() point {
 	return roomLayout(info.RoomNumber).bed
 }
 
-// backButtonRect es el botón de volver al menú del reporte.
-func backButtonRect(demo bool) rect {
-	if demo {
-		return demoNextRect // en el paso 4 de la Demo el botón cambia de texto
-	}
-	return rect{feedScreenX + 336/2 - 45, feedScreenY + 246 - 20, 90, 13}
-}
-
-// reportRect es el recuadro del reporte: en la Demo deja libre la caja de
-// controles de abajo.
-func reportRect(demo bool) rect {
-	if demo {
-		return rect{feedScreenX, feedScreenY, 336, 176}
-	}
-	return rect{feedScreenX, feedScreenY, 336, 246}
-}
-
 // La cama de las habitaciones: UNA por cuarto (ver roomBed). Sprite de 32x30.
 const (
 	bedW = 32
@@ -246,10 +229,7 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 	if c.demo != nil {
 		c.drawDemoBox(dst)
 	}
-	if c.report != nil {
-		c.drawReport(dst)
-	}
-	if c.notice != nil && c.report == nil {
+	if c.notice != nil {
 		c.drawNotice(dst)
 	}
 	if c.msg != nil {
@@ -633,11 +613,7 @@ func (c *camsScene) drawDemoBox(dst *ebiten.Image) {
 		}
 		e.Text(dst, line, 68, 220+11*i, textStyle{fontPixel, 8, '1', alignLeft})
 	}
-	next, nextFill := "Siguiente paso", byte('m')
-	if c.demoStep >= 4 {
-		next = "Volver al menú"
-	}
-	c.drawButton(dst, demoNextRect, next, nextFill, c.hovered == "next" || c.hovered == "back")
+	c.drawButton(dst, demoNextRect, "Siguiente paso", 'm', c.hovered == "next")
 	autoLabel, autoFill := "Auto", byte('k')
 	if c.demoAuto {
 		autoLabel, autoFill = "Pausa", 'm'
@@ -654,48 +630,6 @@ func (c *camsScene) drawPause(dst *ebiten.Image) {
 	e.Text(dst, "Esc: seguir · M: menú", pauseBoxRect.x+pauseBoxRect.w/2, pauseBoxRect.y+26, textStyle{fontPixel, 8, '1', alignCenter})
 	c.drawButton(dst, pauseResumeRect, "Seguir", 'm', c.pauseSel == 0)
 	c.drawButton(dst, pauseMenuRect, "Menú", 'k', c.pauseSel == 1)
-}
-
-// drawReport pinta el reporte con las 4 consultas. Es provisional: se cambia
-// cuando la vista del Reporte esté aprobada.
-func (c *camsScene) drawReport(dst *ebiten.Image) {
-	e := c.env
-	r := reportRect(c.demo != nil)
-	e.FillRect(dst, r, 'W', 1)
-	e.StrokeRect(dst, r, '0', 1)
-
-	title := "Reporte del turno"
-	if c.demo == nil {
-		title = fmt.Sprintf("Fin del turno - Día %d", c.report.Day)
-	}
-	e.Text(dst, title, r.x+8, r.y+5, textStyle{fontPixelBold, 10, '2', alignLeft})
-	for i := 0; i < 5; i++ {
-		frame := 1
-		if i < c.report.Stars {
-			frame = 0
-		}
-		e.DrawSprite(dst, e.Assets.Frame("ui_estrella", 2, frame), r.x+r.w-58+10*i, r.y+5, false)
-	}
-	e.Text(dst, fmt.Sprintf("Puntos: %d", c.report.Total), r.x+8, r.y+19, textStyle{fontPixel, 8, '1', alignLeft})
-
-	bottom := r.y + r.h - 4
-	if c.demo == nil {
-		bottom = backButtonRect(false).y - 4
-	}
-	maxLines := (bottom - (r.y + 32)) / 11
-	for i, line := range capLines(reportLines(*c.report), maxLines) {
-		family := fontPixel
-		key := byte('1')
-		if line.head {
-			family, key = fontPixelBold, '2'
-		}
-		size := 8
-		text := fitText(line.text, r.w-16, func(s string) int { return e.Fonts.Width(s, family, size) })
-		e.Text(dst, text, r.x+8, r.y+32+11*i, textStyle{family, size, key, alignLeft})
-	}
-	if c.demo == nil {
-		c.drawButton(dst, backButtonRect(false), "Volver al menú", 'm', c.hovered == "back")
-	}
 }
 
 // stampFontSize es el tamaño de VT323 del rótulo y de los botones del mapa:

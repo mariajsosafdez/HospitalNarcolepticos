@@ -36,6 +36,20 @@ func startScene(env *Env) (Scene, error) {
 	case "tutorial":
 		// Cómo jugar, empezando en la línea -step.
 		return newPracticeScene(env, opts.Seed, opts.Step-1, game.CameraID(opts.Camera))
+	case "report":
+		// Juega el día entero con el jugador automático (game.AutoStep) y abre
+		// el reporte, igual que cuando termina un turno de verdad: se anota el
+		// resultado y se guarda (si hay -savepath).
+		scene, err := newShiftScene(env, opts.Day, opts.Seed, false, "")
+		if err != nil {
+			return nil, err
+		}
+		for !scene.shift.Finished() {
+			scene.shift.Tick()
+			game.AutoStep(scene.shift)
+		}
+		scene.finishShift()
+		return scene.toReport, nil
 	case "director":
 		// El regaño por exceso de trabajo, con la Dra. Karen, sobre un Día 1.
 		scene, err := newShiftScene(env, 1, opts.Seed, false, game.CameraID(opts.Camera))
@@ -66,6 +80,9 @@ func startScene(env *Env) (Scene, error) {
 			if err := scene.nextDemoStep(); err != nil {
 				return nil, err
 			}
+		}
+		if scene.toReport != nil { // paso 4: el reporte de la Demo
+			return scene.toReport, nil
 		}
 		if opts.Camera != "" { // -cam manda sobre la cámara que pone cada paso
 			if err := scene.shift.SwitchCamera(game.CameraID(opts.Camera)); err != nil {

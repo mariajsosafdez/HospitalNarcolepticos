@@ -77,35 +77,3 @@ func TestDemoStepTexts(t *testing.T) {
 		t.Errorf("view steps run %d demo actions, game.Demo has %d", total, d.StepCount())
 	}
 }
-
-func TestReportLinesAndCap(t *testing.T) {
-	d, err := game.NewDemo()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for !d.Done() {
-		if _, err := d.Next(); err != nil {
-			t.Fatal(err)
-		}
-	}
-	lines := reportLines(d.Shift().Report())
-	heads := 0
-	for _, l := range lines {
-		if l.head {
-			heads++
-		}
-	}
-	if heads != 4 {
-		t.Errorf("report has %d section titles, want 4 (the 4 queries)", heads)
-	}
-	if !strings.HasPrefix(lines[0].text, "1. Dormidos fuera de una cama: 0") {
-		t.Errorf("first line = %q", lines[0].text)
-	}
-	capped := capLines(lines, 5)
-	if len(capped) != 5 || !strings.Contains(capped[4].text, "más") {
-		t.Errorf("capLines gave %d lines, last %q", len(capped), capped[len(capped)-1].text)
-	}
-	if got := capLines(lines, 100); len(got) != len(lines) {
-		t.Error("capLines must not change a short report")
-	}
-}

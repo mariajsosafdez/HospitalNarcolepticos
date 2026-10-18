@@ -54,7 +54,7 @@ type camsScene struct {
 	pauseSel int    // en la pausa: 0 = Seguir, 1 = Menú
 	notice   *notice
 	paused   bool
-	report   *game.Report // reporte abierto (fin del turno o paso 4 de la Demo)
+	toReport *reportScene // reporte listo para abrirse (fin del turno o paso 4 de la Demo)
 	msg      *messageBox  // mensaje del Director abierto (el reloj del turno se detiene)
 	practice bool         // "Cómo jugar": solo el tutorial, y al terminar vuelve al menú
 	recorded bool         // el resultado del turno ya se guardó
@@ -124,8 +124,6 @@ func (c *camsScene) State() UIState {
 	switch {
 	case c.msg != nil:
 		st.Overlay = "message"
-	case c.report != nil:
-		st.Overlay = "report"
 	case c.paused:
 		st.Overlay = "pause"
 		st.Selected = [2]string{"resume", "menu"}[c.pauseSel]
@@ -137,8 +135,17 @@ func (c *camsScene) State() UIState {
 // Update
 // ---------------------------------------------------------------------------
 
-// Update avanza el turno un tick y atiende la entrada.
+// Update avanza el turno un tick y atiende la entrada. Si el turno terminó (o
+// la Demo llegó a su paso 4), devuelve la pantalla del reporte.
 func (c *camsScene) Update(in *Input) Scene {
+	next := c.update(in)
+	if next == nil && c.toReport != nil {
+		next, c.toReport = c.toReport, nil
+	}
+	return next
+}
+
+func (c *camsScene) update(in *Input) Scene {
 	c.mouseX, c.mouseY = in.MouseX, in.MouseY
 	c.hovered, c.hoverLocked = c.hoverTarget(in.MouseX, in.MouseY), ""
 	if id, ok := mapButtonAt(in.MouseX, in.MouseY); ok && !c.shift.World().Has(id) {
@@ -149,14 +156,6 @@ func (c *camsScene) Update(in *Input) Scene {
 	// atiende el clic para seguir.
 	if c.msg != nil {
 		return c.updateMessage(in)
-	}
-
-	// Con el reporte abierto solo se puede volver al menú.
-	if c.report != nil {
-		if in.Pressed("Escape") || in.Pressed("Enter") || (in.Click && c.hovered == "back") {
-			return newMenu(c.env)
-		}
-		return nil
 	}
 
 	if c.paused {
@@ -232,12 +231,12 @@ func (c *camsScene) updateMessage(in *Input) Scene {
 	return nil
 }
 
-// finishShift guarda el resultado del turno y abre el reporte.
+// finishShift autoguarda el resultado del turno (desbloquea el día siguiente
+// y anota las mejores estrellas) y prepara el reporte.
 func (c *camsScene) finishShift() {
 	c.recorded = true
 	c.env.recordShift(c.shift.Day(), c.shift.Stars())
-	r := c.shift.Report()
-	c.report = &r
+	c.toReport = newReportScene(c.env, c.shift, false)
 }
 
 // handleInput atiende teclas y clics de una pantalla en juego.
@@ -372,8 +371,6 @@ func (c *camsScene) handleClick(x, y int) Scene {
 				c.stepDemo()
 			}
 			return nil
-		case "back":
-			return newMenu(c.env)
 		case "auto":
 			c.demoAuto = !c.demoAuto
 			c.autoTick = 0
@@ -481,12 +478,6 @@ func (c *camsScene) roomPatient() *game.GamePatient {
 // hoverTarget dice qué botón está bajo el mouse (para el resaltado y para el
 // volcado de pruebas).
 func (c *camsScene) hoverTarget(x, y int) string {
-	if c.report != nil {
-		if backButtonRect(c.demo != nil).contains(x, y) {
-			return "back"
-		}
-		return ""
-	}
 	if c.paused {
 		switch {
 		case pauseResumeRect.contains(x, y):
@@ -499,9 +490,6 @@ func (c *camsScene) hoverTarget(x, y int) string {
 	if c.demo != nil {
 		switch {
 		case demoNextRect.contains(x, y):
-			if c.demoStep >= 4 {
-				return "back"
-			}
 			return "next"
 		case demoAutoRect.contains(x, y):
 			return "auto"
@@ -602,8 +590,7 @@ func (c *camsScene) nextDemoStep() error {
 		}
 	}
 	if c.demoStep == 4 {
-		r := c.shift.Report()
-		c.report = &r
+		c.toReport = newReportScene(c.env, c.shift, true)
 	}
 	return nil
 }
