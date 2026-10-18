@@ -74,7 +74,7 @@ type Report struct {
 	Total      int            `json:"total"`
 	Stars      int            `json:"stars"`
 	Overworked []string       `json:"overworked"`
-	Attended   int            `json:"attended"` // pacientes que llegaron a una cama
+	Attended   int            `json:"attended"` // pacientes DISTINTOS que llegaron a una cama
 	Possible   int            `json:"possible"` // puntos posibles (120 por episodio)
 	Percent    int            `json:"percent"`  // puntos logrados sobre los posibles
 }
@@ -89,7 +89,7 @@ func (s *Shift) Report() Report {
 		Total:      s.score.Total(),
 		Stars:      s.Stars(),
 		Overworked: s.Overworked(),
-		Attended:   s.score.Attended(),
+		Attended:   len(s.attendedIDs),
 		Possible:   PossiblePoints(s.score.Episodes),
 		Percent:    PointsPercent(s.score.Total(), s.score.Episodes),
 	}

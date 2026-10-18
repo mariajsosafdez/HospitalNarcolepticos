@@ -55,10 +55,11 @@ type Shift struct {
 
 	camera       CameraID // cámara que mira el jugador
 	score        ScoreBreakdown
-	noBedCount   int            // veces que un paciente se quedó sin cama
-	noBedEvents  []noBedEvent   // quién se quedó sin cama y dónde (para el reporte)
-	overworked   []string       // IDs de doctores con exceso de trabajo
-	episodeTimes map[string]int // ID de episodio -> tick de juego en que ocurrió
+	attendedIDs  map[string]bool // pacientes DISTINTOS que llegaron a una cama (un paciente puede dormirse varias veces)
+	noBedCount   int             // veces que un paciente se quedó sin cama
+	noBedEvents  []noBedEvent    // quién se quedó sin cama y dónde (para el reporte)
+	overworked   []string        // IDs de doctores con exceso de trabajo
+	episodeTimes map[string]int  // ID de episodio -> tick de juego en que ocurrió
 	messages     []Message
 	finished     bool
 }
@@ -311,12 +312,22 @@ func (s *Shift) arriveInBed(g *GamePatient, now int) {
 	}
 	g.waitMinutes = TicksToMinutes(now - g.sleepTick)
 	s.score.addWait(g.waitMinutes)
+	s.markAttended(g)
 	if s.cfg.Scripted {
 		g.wakeTick = neverTick
 	} else {
 		g.wakeTick = now + MinutesToTicks(sleepMinutes(g.patient.Level(), s.rng))
 	}
 	s.log("%s llegó a la cama tras esperar %d min.", g.patient.Name(), g.waitMinutes)
+}
+
+// markAttended anota que el paciente llegó a una cama. Las notas (score) se
+// cuentan por episodio, pero "pacientes atendidos" del reporte cuenta personas.
+func (s *Shift) markAttended(g *GamePatient) {
+	if s.attendedIDs == nil {
+		s.attendedIDs = make(map[string]bool)
+	}
+	s.attendedIDs[g.patient.ID()] = true
 }
 
 // chargeBedPenalty cobra −2 (x multiplicador del día) por cada 10 min que un
@@ -349,6 +360,7 @@ func (s *Shift) finish() {
 			s.score.Episodes++
 		case Carried:
 			s.score.addWait(TicksToMinutes(now - g.sleepTick))
+			s.markAttended(g)
 		}
 	}
 	s.log("Terminó el turno: %d puntos, %d estrellas.", s.score.Total(), s.Stars())

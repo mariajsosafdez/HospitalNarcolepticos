@@ -162,7 +162,7 @@ func TestAutoPlayAllDaysAndSave(t *testing.T) {
 		if r.Day != day || r.Stars < 1 || r.Stars > 5 {
 			t.Errorf("day %d report: day %d, stars %d", day, r.Day, r.Stars)
 		}
-		if r.Attended != r.Score.Attended() || r.Possible != PossiblePoints(r.Score.Episodes) {
+		if r.Attended > r.Score.Attended() || r.Attended > len(s.Patients()) || r.Possible != PossiblePoints(r.Score.Episodes) {
 			t.Errorf("day %d: attended %d possible %d", day, r.Attended, r.Possible)
 		}
 		data.RecordShift(day, r.Stars)

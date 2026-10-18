@@ -1006,3 +1006,16 @@ func TestCarrier(t *testing.T) {
 		t.Error("after arriving in bed there is no carrier")
 	}
 }
+
+// "Pacientes atendidos" cuenta personas distintas: si un paciente se duerme y
+// llega a cama dos veces, es uno solo (las notas sí cuentan los dos episodios).
+func TestAttendedCountsDistinctPatients(t *testing.T) {
+	s := newDemoShift(t)
+	g := s.FindPatient("P-001")
+	s.markAttended(g)
+	s.markAttended(g)
+	s.markAttended(s.FindPatient("P-002"))
+	if got := s.Report().Attended; got != 2 {
+		t.Errorf("Attended = %d, want 2", got)
+	}
+}
