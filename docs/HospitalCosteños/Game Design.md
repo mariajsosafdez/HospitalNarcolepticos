@@ -198,3 +198,4 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-18 | Yeimy: brazos unidos (3 px abajo, no 1) y 2 px más arriba cuando los alza | Que se vea que baila | "subele un poco más los brazos cuando ella los alce, tipo unos 2 pixeles más" |
 | 2026-10-18 | Zoom de cámaras confirmado normal; controles de teclado aprobados; retoque de Yeimy aprobado; plan del día aprobado (sonido ahora, tester en la noche, unir a `main` el 19 temprano) | Prueba de la autora | "ya está normal" / "funcionan bien :D" / "sip" |
 | 2026-10-18 | Camas al centro de la habitación y cada habitación con distinta organización y objetos | El mensaje del Director tapaba las camas | "podríamos mover las camas de las habitaciones al centro? y buscar que entre las habitaciones cambie un poco el diseño?" |
+| 2026-10-18 | Seis habitaciones distintas (101–106) con la cama al centro, aprobadas | — | "sip" |
