@@ -942,3 +942,67 @@ func TestUnattendedAtEndSubtractPoints(t *testing.T) {
 		}
 	}
 }
+
+// La barra del panel crece durante el traslado, baja durante el descanso y
+// queda en 0 cuando el personal está libre.
+func TestCooldownFraction(t *testing.T) {
+	s := newDemoShift(t)
+	m := s.FindStaff("O-001")
+	if got := m.CooldownFraction(); got != 0 {
+		t.Fatalf("free staff fraction = %v, want 0", got)
+	}
+	mustSleepAndAssign(t, s, "P-001", "O-001")
+	if got := m.CooldownFraction(); got != 0 {
+		t.Errorf("fraction at the start of the transfer = %v, want 0", got)
+	}
+	advance(s, orderlyTransferTicks/2)
+	if got := m.CooldownFraction(); got != 0.5 {
+		t.Errorf("fraction halfway through the transfer = %v, want 0.5", got)
+	}
+	advance(s, orderlyTransferTicks/2)
+	if got := m.CooldownFraction(); got != 1 {
+		t.Errorf("fraction at the start of the rest = %v, want 1", got)
+	}
+	advance(s, orderlyRestTicks/2)
+	if got := m.CooldownFraction(); got != 0.5 {
+		t.Errorf("fraction halfway through the rest = %v, want 0.5", got)
+	}
+	advance(s, orderlyRestTicks/2)
+	if got := m.CooldownFraction(); got != 0 {
+		t.Errorf("fraction after the rest = %v, want 0", got)
+	}
+}
+
+func TestSaveStoreExists(t *testing.T) {
+	store := NewSaveStore(filepath.Join(t.TempDir(), "save.json"))
+	if store.Exists() {
+		t.Error("Exists before saving")
+	}
+	if err := store.Save(NewSaveData()); err != nil {
+		t.Fatal(err)
+	}
+	if !store.Exists() {
+		t.Error("Exists is false after saving")
+	}
+}
+
+// El paciente en camilla sabe quién lo empuja; fuera de la camilla, nadie.
+func TestCarrier(t *testing.T) {
+	s := newDemoShift(t)
+	if err := s.ForceSleep("P-001", "2", "cafeteria"); err != nil {
+		t.Fatal(err)
+	}
+	if s.FindPatient("P-001").Carrier() != nil {
+		t.Error("a sleeping patient has no carrier")
+	}
+	if err := s.Assign("P-001", "O-001"); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.FindPatient("P-001").Carrier(); got != s.FindStaff("O-001") {
+		t.Errorf("carrier = %v, want O-001", got)
+	}
+	advance(s, orderlyTransferTicks)
+	if s.FindPatient("P-001").Carrier() != nil {
+		t.Error("after arriving in bed there is no carrier")
+	}
+}

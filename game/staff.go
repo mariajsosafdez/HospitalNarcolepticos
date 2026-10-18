@@ -53,6 +53,8 @@ type StaffMember struct {
 	inner           hospital.Attender // el *Doctor o *Orderly de verdad
 	doctor          *hospital.Doctor  // nil si es camillero (cupo y reporte 5.2)
 	transferUntil   int               // tick en que termina el traslado
+	transferTicks   int               // duración del último traslado (para la barra)
+	restTicks       int               // duración del último descanso (para la barra)
 	busyUntil       int               // tick en que termina traslado + descanso
 	selected        bool              // true SOLO durante el despacho elegido
 	overworkCharged bool              // ya se cobró el exceso de trabajo
@@ -143,6 +145,22 @@ func (s *StaffMember) startCooldown(shortRest bool) {
 	if shortRest {
 		rest /= 2
 	}
+	s.transferTicks, s.restTicks = transfer, rest
 	s.transferUntil = s.now() + transfer
 	s.busyUntil = s.transferUntil + rest
+}
+
+// CooldownFraction devuelve cuánto llena la barra del panel: durante el
+// traslado crece de 0 a 1, durante el descanso baja de 1 a 0 y en cualquier
+// otro estado es 0. Es una función del estado y del tick actual, sin azar.
+func (s *StaffMember) CooldownFraction() float64 {
+	now := s.now()
+	switch {
+	case now < s.transferUntil && s.transferTicks > 0:
+		return 1 - float64(s.transferUntil-now)/float64(s.transferTicks)
+	case now < s.busyUntil && s.restTicks > 0:
+		return float64(s.busyUntil-now) / float64(s.restTicks)
+	default:
+		return 0
+	}
 }

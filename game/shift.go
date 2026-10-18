@@ -442,6 +442,7 @@ func (s *Shift) Assign(patientID, staffID string) error {
 	}
 	g.state = Carried
 	g.arrivesAtBed = m.transferUntil
+	g.carrier = m
 	s.log("%s lleva a %s a la habitación %d.", m.Name(), g.patient.Name(), g.patient.Room().Number())
 	return nil
 }
@@ -466,6 +467,7 @@ func (s *Shift) MoveToBed(patientID, staffID string) error {
 	m.startCooldown(true) // cooldown corto: descanso a la mitad
 	g.state = Carried
 	g.arrivesAtBed = m.transferUntil
+	g.carrier = m
 	s.log("%s lleva a %s a la habitación %d.", m.Name(), g.patient.Name(), room.Number())
 	return nil
 }

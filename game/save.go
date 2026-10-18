@@ -95,3 +95,10 @@ func (st *SaveStore) Save(data SaveData) error {
 	}
 	return os.WriteFile(st.path, raw, 0o644)
 }
+
+// Exists dice si ya hay un archivo de guardado. El menú lo usa para dejar
+// "Continuar" gris cuando es la primera vez que se juega.
+func (st *SaveStore) Exists() bool {
+	_, err := os.Stat(st.path)
+	return err == nil
+}

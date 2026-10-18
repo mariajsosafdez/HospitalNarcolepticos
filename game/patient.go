@@ -56,19 +56,20 @@ type GamePatient struct {
 	camera  CameraID
 	spot    int // punto dentro de la cámara (silla, mostrador...)
 
-	arrivalTick    int    // tick en que entra al hospital
-	nextMoveTick   int    // cuándo se mueve de nuevo
-	nextSleepCheck int    // cuándo vuelve a tirar el dado del sueño
-	noSleepUntil   int    // tras el alta no puede dormirse hasta este tick
-	leaving        bool   // dado de alta y rumbo a Recepción para irse
-	sleepLocation  string // lugar que se le reporta al hospital
-	sleepTick      int    // tick en que se durmió (empieza a correr su espera)
-	arrivesAtBed   int    // tick en que la camilla llega a la habitación
-	wakeTick       int    // tick en que despierta en su cama
-	awakeSince     int    // tick en que quedó AwakeInBed
-	bedPenalties   int    // cuántos cobros por cama ocupada ya se le hicieron
-	waitMinutes    int    // espera final (cuando llegó a cama)
-	sleeps         int    // cuántas veces se ha dormido en el turno
+	arrivalTick    int          // tick en que entra al hospital
+	nextMoveTick   int          // cuándo se mueve de nuevo
+	nextSleepCheck int          // cuándo vuelve a tirar el dado del sueño
+	noSleepUntil   int          // tras el alta no puede dormirse hasta este tick
+	leaving        bool         // dado de alta y rumbo a Recepción para irse
+	sleepLocation  string       // lugar que se le reporta al hospital
+	sleepTick      int          // tick en que se durmió (empieza a correr su espera)
+	arrivesAtBed   int          // tick en que la camilla llega a la habitación
+	carrier        *StaffMember // quién empuja la camilla (solo en Carried)
+	wakeTick       int          // tick en que despierta en su cama
+	awakeSince     int          // tick en que quedó AwakeInBed
+	bedPenalties   int          // cuántos cobros por cama ocupada ya se le hicieron
+	waitMinutes    int          // espera final (cuando llegó a cama)
+	sleeps         int          // cuántas veces se ha dormido en el turno
 }
 
 // Patient devuelve el paciente del modelo.
@@ -158,4 +159,13 @@ const (
 // nextMoveDelay sortea cuántos ticks faltan para el próximo movimiento.
 func nextMoveDelay(rng *rand.Rand) int {
 	return MinutesToTicks(randomBetween(rng, minMoveMinutes, maxMoveMinutes))
+}
+
+// Carrier devuelve a quien empuja la camilla del paciente (nil si no va en
+// camilla). La vista lo usa para dibujar a la persona correcta.
+func (g *GamePatient) Carrier() *StaffMember {
+	if g.state != Carried {
+		return nil
+	}
+	return g.carrier
 }
