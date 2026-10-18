@@ -31,6 +31,7 @@ type walker struct {
 	pause   int     // ticks que le faltan quieto
 	left    bool    // mira a la izquierda
 	walking bool
+	settled bool // ya eligió dónde tumbarse al dormirse (ver pickSleepSpot)
 }
 
 // randomFloorPoint sortea un punto del piso.
@@ -89,7 +90,45 @@ func (c *camsScene) updateWalkers() {
 		}
 		state := g.State()
 		w.step(state == game.Wandering || state == game.Arriving, c.floor(), c.rng)
+
+		// Al dormirse en el piso se busca un lugar libre; al despertar, se
+		// olvida para la próxima vez.
+		if state == game.AsleepWaiting || state == game.NoBedWaiting {
+			if !w.settled {
+				c.settleSleeper(g, w)
+			}
+		} else {
+			w.settled = false
+		}
 	}
+}
+
+// sleepSize da el tamaño del sprite dormido de un paciente (el del
+// placeholder, 16x24, si todavía no tiene arte).
+func (c *camsScene) sleepSize(g *game.GamePatient) (int, int) {
+	name := "pac_" + spriteKey(g.Patient().ID(), g.Patient().Name()) + "_dormido"
+	if c.env.Assets.Has(name) {
+		return c.env.Assets.FrameSize(name, 2)
+	}
+	return 16, 24
+}
+
+// settleSleeper mueve a un paciente recién dormido a un lugar libre del piso:
+// que su sprite no tape a otro dormido de la cámara ni a un obstáculo.
+func (c *camsScene) settleSleeper(g *game.GamePatient, w *walker) {
+	w.settled = true
+	sw, sh := c.sleepSize(g)
+	var taken []rect
+	for _, o := range c.shift.Patients() {
+		ow := c.walkers[o.Patient().ID()]
+		if o == g || ow == nil || !ow.settled || o.Camera() != g.Camera() {
+			continue
+		}
+		ow2, oh := c.sleepSize(o)
+		taken = append(taken, footBox(ow.x, ow.y, ow2, oh))
+	}
+	w.x, w.y = pickSleepSpot(w.x, w.y, sw, sh, c.floor(), taken, sleepObstacles[g.Camera()], c.rng)
+	w.tx, w.ty = w.x, w.y
 }
 
 // floor devuelve la zona por donde caminan los pacientes. En la Demo la caja

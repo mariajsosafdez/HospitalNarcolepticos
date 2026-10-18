@@ -133,7 +133,8 @@ func (c *camsScene) placements() []placement {
 				// la cámara.
 				p.x = min(max(p.x, 0), feedW-p.w)
 				fxW, _ := a.FrameSize("fx_zzz", 3)
-				p.zzz, p.effectX, p.effectY = true, min(p.x+p.w-5, feedW-fxW), p.y-16
+				p.zzz = true
+				p.effectX, p.effectY = zzzSpot(p.x, p.y, p.w, p.h, fxW)
 			}
 		}
 		out = append(out, p)
