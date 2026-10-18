@@ -1,6 +1,6 @@
 # Elenco fijo
 
-> Estado: **propuesta, esperando aprobación**. El elenco fijo se aprobó el 2026-10-17 ("el elenco hagamoslo fijo"); los nombres y personalidades de abajo son la propuesta de Claude.
+> ✅ **Aprobado** el 2026-10-17: "revisé el elenco y los textos y me gustan bastante, aprobados :D"
 >
 > Los 5 pacientes, los 2 doctores y el camillero del **escenario obligatorio** (`main.go`) están incluidos con el mismo ID, nombre, edad y nivel, para que el modo Demo use exactamente esos datos.
 
@@ -44,6 +44,6 @@ Niveles: 3 Leves, 4 Moderados, 3 Severos (al menos 2 severos, como pide el enunc
 
 Personajes extra que aparecen muy de vez en cuando. Se definen después.
 
-## Por decidir
+## Lugar de la Demo ✅
 
-- La Demo dice que la paciente P-002 se durmió en el **"champeta dance hall"**, pero ese lugar no está entre las cámaras. Propuesta: **agregar la cámara "Salón de champeta"** (CAM 8, la sala de terapia de baile). Así la Demo coincide con el escenario sin cambiar `main.go`.
+En el escenario, P-002 se duerme en el "champeta dance hall". Por eso se agregó la cámara **CAM 8 · Salón de champeta** (ver [[Mapa de Cámaras]]). Aprobado: "Sipi".

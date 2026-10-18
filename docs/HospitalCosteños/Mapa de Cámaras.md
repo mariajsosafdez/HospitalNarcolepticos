@@ -20,6 +20,7 @@ Hay dos tipos de cámara:
 | 4     | Pasillo Oeste         | común / pasillo | Igual que el 3                                               |
 | 5     | Radiología            | común           | La "fila de radiología" del ejemplo del enunciado            |
 | 6     | Patio de las palmeras | común           | Guiño al enunciado: se duermen de pie contra una palmera     |
+| 8     | Salón de champeta     | común           | Sala de terapia de baile. Aquí se duerme Yeimy en la Demo (el "champeta dance hall" de `main.go`) ✅ |
 | 7A    | Habitación 101        | habitación      |                                                              |
 | 7B    | Habitación 102        | habitación      |                                                              |
 | 7C    | Habitación 103        | habitación      |                                                              |
@@ -29,7 +30,7 @@ Hay dos tipos de cámara:
 
 ```
  ┌──────────── HOSPITAL DE LOS COSTEÑOS ────────────┐
- │  [6 Patio]          [2 Cafetería]                 │
+ │  [6 Patio]   [8 Champeta]   [2 Cafetería]          │
  │      │                   │                        │
  │ [4 Pasillo O]──[1B Espera]──[3 Pasillo E]──[5 Rx] │
  │      │              │              │              │

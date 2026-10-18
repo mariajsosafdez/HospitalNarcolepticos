@@ -173,3 +173,5 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-17 | Aprobados: dirección de arte, manillas verde/amarillo/rojo, elenco fijo, textos del Director, lista de pantallas de Figma | — | "me gusta la dirección de arte, la manilla de cada nivel como la recomendaste. me gusta el elenco fijo, los textos de recomendación y las pantallas de figma" |
 | 2026-10-17 | `go run .` abre el juego sin dashboard; `go run . -web` abre el dashboard sin juego; `web/` se queda en el repo | Respaldo para la defensa | "Sip" |
 | 2026-10-17 | Equipo de agentes (arte, builder, tester) en la rama `game` | Flujo de trabajo | "Sí, me parece bien :D" |
+| 2026-10-17 | Nueva cámara CAM 8 · Salón de champeta (la Demo coincide con `main.go`) | Lugar del escenario que faltaba | "Sipi" |
+| 2026-10-17 | Elenco fijo y textos del Director aprobados | — | "revisé el elenco y los textos y me gustan bastante, aprobados :D" |

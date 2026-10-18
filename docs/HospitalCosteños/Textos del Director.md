@@ -1,6 +1,6 @@
 # Textos del Director
 
-> Estado: **propuesta, esperando aprobación**. Habla Don Ernesto Cassiani (ver [[Elenco]]). Mensajes cortos: caben en un cuadro de diálogo de 2–3 líneas a 480×270.
+> ✅ **Aprobado** el 2026-10-17: "revisé el elenco y los textos y me gustan bastante, aprobados :D". Habla Don Ernesto Cassiani (ver [[Elenco]]). Mensajes cortos: caben en un cuadro de diálogo de 2–3 líneas a 480×270.
 
 ## Tutorial, Día 1 (uno por pantalla)
 

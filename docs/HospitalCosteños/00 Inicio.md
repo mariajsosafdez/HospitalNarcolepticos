@@ -11,8 +11,8 @@ Bóveda de ideas del juego de cámaras. Aquí se decide **qué** es el juego ant
 | [[Integración con el modelo]] | Resumen: cómo el juego usa el paquete `hospital` sin modificarlo |
 | [[Lógica del juego]] | **Especificación completa** de la capa `game`: estados, personal, acciones, puntuación, tests, defensa |
 | [[Dirección de Arte]] | Estilo, medidas, flujo de sprites sin Aseprite y **Art log** |
-| [[Elenco]] | Pacientes, doctores, camilleros y el Director (propuesta) |
-| [[Textos del Director]] | Tutorial y mensajes de fin de turno (propuesta) |
+| [[Elenco]] | Pacientes, doctores, camilleros y el Director ✅ |
+| [[Textos del Director]] | Tutorial y mensajes de fin de turno ✅ |
 
 ## Estado
 
