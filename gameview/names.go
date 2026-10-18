@@ -7,12 +7,18 @@ package gameview
 type staffText struct {
 	name      string
 	specialty string
+	// shortName y shortRole son los de la tarjeta compacta del panel de 4 o
+	// 5 personas (nota de Figma 18:655).
+	shortName string
+	shortRole string
 }
 
 var staffTexts = map[string]staffText{
-	"D-001": {"Dra. Karen Ospina", "Neurología"},
-	"D-002": {"Dr. Álvaro Mendoza", "Medicina del sueño"},
-	"D-003": {"Dra. Luz Dary Fontalvo", "Medicina general"},
+	"D-001": {"Dra. Karen Ospina", "Neurología", "Dra. Karen", "Neurología"},
+	"D-002": {"Dr. Álvaro Mendoza", "Medicina del sueño", "Dr. Álvaro", "Del sueño"},
+	"D-003": {"Dra. Luz Dary Fontalvo", "Medicina general", "Dra. Luz Dary", "General"},
+	"O-001": {"Chepe Barrios", "Camillero", "Chepe", "Camillero"},
+	"O-002": {"El Mono Arrieta", "Camillero", "El Mono", "Camillero"},
 }
 
 // displayName devuelve el nombre para mostrar; si el ID no está en la tabla
@@ -30,4 +36,21 @@ func displaySpecialty(id, modelSpecialty string) string {
 		return t.specialty
 	}
 	return modelSpecialty
+}
+
+// shortName devuelve el nombre corto de la tarjeta compacta; si el ID no
+// está en la tabla, el nombre del modelo.
+func shortName(id, modelName string) string {
+	if t, ok := staffTexts[id]; ok {
+		return t.shortName
+	}
+	return modelName
+}
+
+// shortRole devuelve el rol corto de la tarjeta compacta.
+func shortRole(id, modelRole string) string {
+	if t, ok := staffTexts[id]; ok {
+		return t.shortRole
+	}
+	return modelRole
 }

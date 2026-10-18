@@ -92,8 +92,13 @@ func backgroundFrame(widthPx, light int) int {
 // Devuelve "" si todavía no está dibujado.
 func backgroundName(cam game.CameraID, names []string) string {
 	if c, ok := game.CameraByID(cam); ok && c.Kind == game.RoomCam {
-		if slices.Contains(names, "fondo_habitacion") {
-			return "fondo_habitacion"
+		// Cada habitación puede tener su propio fondo (fondo_habitacion_101...);
+		// si no existe se usa el fondo común.
+		own := fmt.Sprintf("fondo_habitacion_%d", c.RoomNumber)
+		for _, n := range []string{own, "fondo_habitacion"} {
+			if slices.Contains(names, n) {
+				return n
+			}
 		}
 		return ""
 	}
@@ -104,6 +109,42 @@ func backgroundName(cam game.CameraID, names []string) string {
 		}
 	}
 	return ""
+}
+
+// point es una posición (esquina de arriba a la izquierda) dentro del fondo
+// de 168x123 de una cámara.
+type point struct{ x, y int }
+
+// roomArt dice dónde están, dentro del fondo de una habitación, la cama (esquina
+// del sprite de 32x30) y la placa de la puerta (rect de 9x4 donde va el número).
+type roomArt struct{ bed, plate point }
+
+// defaultRoom es la habitación del fondo común: cama en (34, 72) (nota de
+// Figma 9:690) y placa en (123, 14).
+var defaultRoom = roomArt{bed: point{34, 72}, plate: point{123, 14}}
+
+// roomArts guarda lo de los fondos propios de cada habitación. Cada archivo
+// art/sprites/fondo_habitacion_<n>.txt lo dice en sus dos primeras líneas
+// ("// cama: x,y" y "// placa: x,y"); esta tabla se mantiene a mano igual y un
+// test (TestRoomArtsMatchSprites) lee los .txt y falla si dejan de coincidir.
+// Se eligió una tabla y no leer el comentario al ejecutar porque los .txt no
+// van dentro del ejecutable (solo los PNG), y así la vista no depende de
+// parsear arte.
+var roomArts = map[int]roomArt{
+	101: {point{68, 52}, point{123, 14}},
+	102: {point{60, 50}, point{32, 14}},
+	103: {point{76, 54}, point{129, 14}},
+	104: {point{66, 56}, point{31, 14}},
+	105: {point{72, 50}, point{125, 14}},
+	106: {point{68, 54}, point{29, 14}},
+}
+
+// roomLayout devuelve la cama y la placa de una habitación.
+func roomLayout(roomNumber int) roomArt {
+	if art, ok := roomArts[roomNumber]; ok {
+		return art
+	}
+	return defaultRoom
 }
 
 // accents quita las tildes para armar nombres de archivo.
@@ -122,6 +163,25 @@ func personKey(fullName string) string {
 	return ""
 }
 
+// spriteKeys da la clave de los PNG de cada persona POR ID. No se puede sacar
+// del nombre: "Abelardo "Mañe" Julio" es pac_mane_* y no pac_abelardo_*.
+var spriteKeys = map[string]string{
+	"P-001": "yesid", "P-002": "yeimy", "P-003": "rafa", "P-004": "wilfrido", "P-005": "marelvis",
+	"P-006": "nayeli", "P-007": "mane", "P-008": "kelly", "P-009": "eder", "P-010": "yuranis",
+	"D-001": "karen", "D-002": "alvaro", "D-003": "luzdary",
+	"O-001": "chepe", "O-002": "mono",
+}
+
+// spriteKey devuelve la clave de los PNG de una persona: la de la tabla por
+// ID, y si el ID no está (por ejemplo, un personaje nuevo) la primera palabra
+// del nombre.
+func spriteKey(id, fullName string) string {
+	if key, ok := spriteKeys[id]; ok {
+		return key
+	}
+	return personKey(fullName)
+}
+
 // femaleNames sirve para decir "dormida" o "dormido" en los avisos.
 var femaleNames = []string{"yeimy", "marelvis", "nayeli", "kelly", "yuranis"}
 
@@ -135,7 +195,12 @@ type spriteSpec struct {
 	suffix     string // pac_<nombre>_<suffix>
 	frames     int    // cuadros del PNG
 	frameTicks int    // cuánto dura cada cuadro, en ticks (60 por segundo)
+	durations  []int  // si no es nil, cuánto dura CADA cuadro (cuadros de distinta duración)
 }
+
+// sittingDurations: el paciente despierto en la cama (`_sentado`) pasa 2,0 s
+// con el cuadro 1 y parpadea 0,2 s con el cuadro 2 (nota de Figma 18:96).
+var sittingDurations = []int{120, 12}
 
 // patientSprite elige el sprite según el estado de juego (notas "Cam / zona
 // común" y "Cam / habitación"). ok es false si en ese estado el paciente no
@@ -144,17 +209,46 @@ func patientSprite(state game.PatientState, walking bool) (spriteSpec, bool) {
 	switch state {
 	case game.Arriving, game.Wandering:
 		if walking {
-			return spriteSpec{"camina", 4, 9}, true // 0,15 s por cuadro
+			return spriteSpec{"camina", 4, 9, nil}, true // 0,15 s por cuadro
 		}
-		return spriteSpec{"quieto", 2, 30}, true
+		return spriteSpec{"quieto", 2, 30, nil}, true
 	case game.AsleepWaiting, game.NoBedWaiting:
-		return spriteSpec{"dormido", 2, 72}, true // 1,2 s
+		return spriteSpec{"dormido", 2, 72, nil}, true // 1,2 s
 	case game.InBed:
-		return spriteSpec{"cama", 2, 90}, true // 1,5 s: respira
+		return spriteSpec{"cama", 2, 90, nil}, true // 1,5 s: respira
 	case game.AwakeInBed:
-		return spriteSpec{"sentado", 2, 36}, true // 0,6 s: se estira
+		return spriteSpec{"sentado", 2, 0, sittingDurations}, true // 2,0 s y un parpadeo de 0,2 s
 	}
 	return spriteSpec{}, false
+}
+
+// frameByDurations elige el cuadro de una animación cuyos cuadros duran
+// distinto: durations[i] son los ticks del cuadro i. Después del último
+// vuelve al primero. Es pura para probarla con una tabla.
+func frameByDurations(tick int, durations []int) int {
+	total := 0
+	for _, d := range durations {
+		total += d
+	}
+	if total <= 0 {
+		return 0
+	}
+	t := ((tick % total) + total) % total
+	for i, d := range durations {
+		if t < d {
+			return i
+		}
+		t -= d
+	}
+	return 0
+}
+
+// spriteFrame elige el cuadro de un sprite de paciente para un tick de la interfaz.
+func spriteFrame(spec spriteSpec, tick int) int {
+	if len(spec.durations) > 0 {
+		return frameByDurations(tick, spec.durations)
+	}
+	return animFrame(tick, spec.frameTicks, spec.frames, 0)
 }
 
 // animFrame elige el cuadro de una animación que cambia cada frameTicks.
@@ -169,27 +263,25 @@ func animFrame(tick, frameTicks, frames, offset int) int {
 // Panel de personal
 // ---------------------------------------------------------------------------
 
-const cardsPerPage = 3
+// normalCards es hasta cuántas personas caben con la tarjeta normal (132x36).
+// Con 4 o 5 personas (días 3 a 5) el panel usa la tarjeta compacta (132x24),
+// así caben todas sin pasar páginas (Dirección de Arte, retoques 2026-10-17).
+const normalCards = 3
 
-// staffCardRect es la tarjeta i (0 a 2) del panel: (344, 34 + 40i), 132x36.
-func staffCardRect(i int) rect { return rect{344, 34 + 40*i, 132, 36} }
+// compactCards dice si, con este personal, el panel usa tarjetas compactas.
+func compactCards(total int) bool { return total > normalCards }
 
-// staffCardHighlight es el borde m de 2 px por fuera de la tarjeta.
-func staffCardHighlight(i int) rect { return rect{342, 32 + 40*i, 136, 40} }
-
-// staffPageCount dice cuántas páginas de tarjetas hay. Con más de 3 personas
-// (días 3 a 5) el panel se pagina, porque en la vista aprobada solo caben 3.
-func staffPageCount(total int) int { return max((total+cardsPerPage-1)/cardsPerPage, 1) }
-
-// staffPage devuelve el rango [from, to) de personal que se ve en la página.
-func staffPage(total, page int) (from, to int) {
-	page = min(max(page, 0), staffPageCount(total)-1)
-	from = page * cardsPerPage
-	return from, min(from+cardsPerPage, total)
+// staffCardRect es la tarjeta i del panel: normal (344, 34 + 40i) 132x36, o
+// compacta (344, 34 + 24i) 132x24 cuando hay más de 3 personas.
+func staffCardRect(i, total int) rect {
+	if compactCards(total) {
+		return rect{344, 34 + 24*i, 132, 24}
+	}
+	return rect{344, 34 + 40*i, 132, 36}
 }
 
-// pageButtonRect es el botón "Más >" / "< Atrás" de la fila del título.
-var pageButtonRect = rect{436, 20, 40, 11}
+// staffCardHighlight es el borde m de 2 px por fuera de la tarjeta normal.
+func staffCardHighlight(i int) rect { return rect{342, 32 + 40*i, 136, 40} }
 
 // staffRole es lo que sale bajo el nombre: la especialidad del doctor o
 // "Camillero".

@@ -25,8 +25,18 @@ var (
 	noticeRect      = rect{60, 203, 220, 46}
 )
 
-// dischargeRect es el botón "Dar de alta", centrado bajo la cama (ranura A).
-func dischargeRect() rect { return rect{66, 242, 60, 13} }
+// dischargeRect es el botón "Dar de alta", centrado bajo la cama (con la cama
+// en x = 34..66 del fondo, o sea 72..136 en pantalla, queda en x = 74).
+func dischargeRect(bed point) rect {
+	sx, _ := feedToScreen(bed.x+bedW/2, 0)
+	return rect{sx - 30, 242, 60, 13}
+}
+
+// bed devuelve la cama de la habitación que se está mirando.
+func (c *camsScene) bed() point {
+	info, _ := game.CameraByID(c.shift.CurrentCamera())
+	return roomLayout(info.RoomNumber).bed
+}
 
 // backButtonRect es el botón de volver al menú del reporte.
 func backButtonRect(demo bool) rect {
@@ -45,12 +55,10 @@ func reportRect(demo bool) rect {
 	return rect{feedScreenX, feedScreenY, 336, 246}
 }
 
-// Ranura de cama A de las habitaciones (coordenadas del fondo, sprite 32x30).
+// La cama de las habitaciones: UNA por cuarto (ver roomBed). Sprite de 32x30.
 const (
-	bedSlotX = 30
-	bedSlotY = 70
-	bedW     = 32
-	bedH     = 30
+	bedW = 32
+	bedH = 30
 )
 
 // placement es un paciente ya colocado en la cámara que se mira: qué sprite,
@@ -113,9 +121,9 @@ func (c *camsScene) placements() []placement {
 		if !ok {
 			continue
 		}
-		name := "pac_" + personKey(g.Patient().Name()) + "_" + spec.suffix
+		name := "pac_" + spriteKey(g.Patient().ID(), g.Patient().Name()) + "_" + spec.suffix
 		p := placement{patient: g, frames: spec.frames, flip: w.left}
-		p.index = animFrame(c.env.Tick, spec.frameTicks, spec.frames, 0)
+		p.index = spriteFrame(spec, c.env.Tick)
 		if a.Has(name) {
 			p.imgName = name
 			p.w, p.h = a.FrameSize(name, spec.frames)
@@ -126,13 +134,14 @@ func (c *camsScene) placements() []placement {
 			}
 		}
 		if inRoom {
-			p.x, p.y = bedSlotX, bedSlotY
+			bed := roomLayout(info.RoomNumber).bed
+			p.x, p.y = bed.x, bed.y
 			p.footY = float64(p.y + p.h)
 			p.flip = false
 			if state == game.InBed {
-				p.zzz, p.effectX, p.effectY = true, bedSlotX+12, bedSlotY-12
+				p.zzz, p.effectX, p.effectY = true, bed.x+12, bed.y-12
 			} else {
-				p.alert, p.effectX, p.effectY = true, bedSlotX+8, bedSlotY-16
+				p.alert, p.effectX, p.effectY = true, bed.x+8, bed.y-16
 			}
 		} else {
 			p.x, p.y = int(math.Round(w.x))-p.w/2, int(math.Round(w.y))-p.h
@@ -161,7 +170,7 @@ func (c *camsScene) carryPlacement(g *game.GamePatient, m *game.StaffMember, w *
 	if m.IsDoctor() {
 		prefix = "doc_"
 	}
-	name := prefix + personKey(m.Name()) + "_camilla"
+	name := prefix + spriteKey(m.ID(), m.Name()) + "_camilla"
 	p := placement{patient: g, frames: 4, flip: w.left}
 	p.index = animFrame(c.env.Tick, 8, 4, 0)
 	if a.Has(name) {
@@ -201,8 +210,11 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 		e.Text(dst, "Fondo pendiente", feedScreenX+168, 70, textStyle{fontPixel, 8, '2', alignCenter})
 	}
 	if camInfo.Kind == game.RoomCam {
-		// El número de la habitación va en la placa de la puerta.
-		e.Text(dst, fmt.Sprintf("%d", camInfo.RoomNumber), 259, 46, textStyle{fontPixel, 8, '1', alignCenter})
+		// El número de la habitación va en la placa de la puerta: centrado en
+		// la placa (9 px de ancho) y 2 px de pantalla por encima de su borde.
+		plate := roomLayout(camInfo.RoomNumber).plate
+		sx, sy := feedToScreen(plate.x, plate.y)
+		e.Text(dst, fmt.Sprintf("%d", camInfo.RoomNumber), sx+feedScale*9/2, sy-2, textStyle{fontPixel, 8, '1', alignCenter})
 	}
 
 	// 5. Encima de la cámara: tinte por hora, viñeta y grano.
@@ -224,7 +236,7 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 		e.TextOutline(dst, "Elige a alguien del panel · Esc para cancelar", 331, 253, textStyle{fontPixel, 8, 'w', alignRight})
 	}
 	if c.roomPatient() != nil {
-		c.drawButton(dst, dischargeRect(), "Dar de alta", 'm', c.hovered == "discharge")
+		c.drawButton(dst, dischargeRect(c.bed()), "Dar de alta", 'm', c.hovered == "discharge")
 	}
 
 	// 7 y 8. Panel de personal y mapa.
@@ -291,7 +303,8 @@ func (c *camsScene) drawFeed(light int, cam game.CameraID, info game.Camera) boo
 
 	placed := c.placements()
 	if info.Kind == game.RoomCam && !roomHasBedPatient(placed) {
-		e.DrawSprite(feed, a.Image("cama"), bedSlotX, bedSlotY, false)
+		bed := c.bed()
+		e.DrawSprite(feed, a.Image("cama"), bed.x, bed.y, false)
 	}
 	for _, p := range placed {
 		c.drawPlacement(feed, p)
@@ -428,7 +441,6 @@ func (c *camsScene) drawButton(dst *ebiten.Image, r rect, label string, fill byt
 
 func (c *camsScene) drawStaffPanel(dst *ebiten.Image) {
 	e := c.env
-	a := e.Assets
 	title := "Personal"
 	if c.selected != "" {
 		title = "¿Quién lo atiende?"
@@ -436,45 +448,98 @@ func (c *camsScene) drawStaffPanel(dst *ebiten.Image) {
 	e.Text(dst, title, 346, 20, textStyle{fontPixelBold, 10, 'M', alignLeft})
 
 	staff := c.shift.Staff()
-	if len(staff) > cardsPerPage {
-		label := fmt.Sprintf("Más > %d/%d", c.staffPage+1, staffPageCount(len(staff)))
-		e.Text(dst, label, pageButtonRect.x+pageButtonRect.w, pageButtonRect.y+2, textStyle{fontPixel, 8, 'w', alignRight})
-	}
-	from, to := staffPage(len(staff), c.staffPage)
-	for i := from; i < to; i++ {
-		m := staff[i]
-		slot := i - from
-		r := staffCardRect(slot)
+	compact := compactCards(len(staff))
+	for i, m := range staff {
+		r := staffCardRect(i, len(staff))
 		state := m.State()
-		if c.selected != "" && state == game.StaffAvailable {
-			e.FillRect(dst, staffCardHighlight(slot), 'm', 1)
-		}
-		if c.selected != "" && slot == c.cursor {
-			e.FillRect(dst, staffCardHighlight(slot), 'w', 1) // la marca del teclado
-		}
-		e.DrawSprite(dst, a.Image("ui_tarjeta"), r.x, r.y, false)
-		c.drawHead(dst, m, r.x+4, r.y+4)
-
-		measure := func(s string) int { return e.Fonts.Width(s, fontPixel, 8) }
-		e.Text(dst, fitText(displayName(m.ID(), m.Name()), 82, measure), r.x+24, r.y+2, textStyle{fontPixel, 8, '1', alignLeft})
-		e.Text(dst, fitText(staffRole(m), 82, measure), r.x+24, r.y+10, textStyle{fontPixel, 8, '2', alignLeft})
-		if m.IsDoctor() {
-			quota := fmt.Sprintf("%d/%d", m.PatientCount(), game.DoctorQuota)
-			if state == game.StaffNoQuota {
-				e.Text(dst, quota, r.x+108, r.y+2, textStyle{fontPixelBold, 8, 'R', alignLeft})
-			} else {
-				e.Text(dst, quota, r.x+108, r.y+2, textStyle{fontPixel, 8, '1', alignLeft})
+		if c.selected != "" && !compact {
+			// Tarjeta normal: borde de 2 px por fuera.
+			if state == game.StaffAvailable {
+				e.FillRect(dst, staffCardHighlight(i), 'm', 1)
+			}
+			if i == c.cursor {
+				e.FillRect(dst, staffCardHighlight(i), 'w', 1) // la marca del teclado
 			}
 		}
-		e.DrawSprite(dst, a.Frame("ui_chip_estado", 4, chipFrame(state)), r.x+24, r.y+22, false)
-		chipKey := byte('0')
-		if state == game.StaffNoQuota {
-			chipKey = 'w'
+		if compact {
+			c.drawCompactCard(dst, m, r, state)
+			if c.selected != "" {
+				// Las tarjetas compactas se tocan entre sí: el borde de 2 px va por dentro.
+				if state == game.StaffAvailable {
+					e.StrokeRect(dst, r, 'm', 2)
+				}
+				if i == c.cursor {
+					e.StrokeRect(dst, r, 'w', 2)
+				}
+			}
+		} else {
+			c.drawNormalCard(dst, m, r, state)
 		}
-		e.Text(dst, chipText(state), r.x+26, r.y+22, textStyle{fontPixel, 8, chipKey, alignLeft})
-		e.FillRect(dst, rect{r.x + 86, r.y + 25, 40, 4}, 'k', 1)
-		e.FillRect(dst, rect{r.x + 86, r.y + 25, int(40 * m.CooldownFraction()), 4}, 'q', 1)
 	}
+}
+
+// drawNormalCard pinta la tarjeta de 132x36 (hasta 3 personas).
+func (c *camsScene) drawNormalCard(dst *ebiten.Image, m *game.StaffMember, r rect, state game.StaffState) {
+	e := c.env
+	a := e.Assets
+	e.DrawSprite(dst, a.Image("ui_tarjeta"), r.x, r.y, false)
+	c.drawHead(dst, m, r.x+4, r.y+4)
+
+	measure := func(s string) int { return e.Fonts.Width(s, fontPixel, 8) }
+	e.Text(dst, fitText(displayName(m.ID(), m.Name()), 82, measure), r.x+24, r.y+2, textStyle{fontPixel, 8, '1', alignLeft})
+	e.Text(dst, fitText(staffRole(m), 82, measure), r.x+24, r.y+10, textStyle{fontPixel, 8, '2', alignLeft})
+	if m.IsDoctor() {
+		quota := fmt.Sprintf("%d/%d", m.PatientCount(), game.DoctorQuota)
+		if state == game.StaffNoQuota {
+			e.Text(dst, quota, r.x+108, r.y+2, textStyle{fontPixelBold, 8, 'R', alignLeft})
+		} else {
+			e.Text(dst, quota, r.x+108, r.y+2, textStyle{fontPixel, 8, '1', alignLeft})
+		}
+	}
+	e.DrawSprite(dst, a.Frame("ui_chip_estado", 4, chipFrame(state)), r.x+24, r.y+22, false)
+	c.drawChipText(dst, state, r.x+26, r.y+22)
+	e.FillRect(dst, rect{r.x + 86, r.y + 25, 40, 4}, 'k', 1)
+	e.FillRect(dst, rect{r.x + 86, r.y + 25, int(40 * m.CooldownFraction()), 4}, 'q', 1)
+}
+
+// drawCompactCard pinta la tarjeta de 132x24 (4 o 5 personas, días 3 a 5),
+// con el nombre y el rol cortos. Medidas leídas de la vista "Panel / 5
+// personas" (preview/turno/panel-5-personas.png): el chip de estado (58x10)
+// va a la derecha y la barra de cooldown (58x3) justo debajo.
+func (c *camsScene) drawCompactCard(dst *ebiten.Image, m *game.StaffMember, r rect, state game.StaffState) {
+	e := c.env
+	a := e.Assets
+	e.DrawSprite(dst, a.Image("ui_tarjeta_compacta"), r.x, r.y, false)
+	c.drawHead(dst, m, r.x+3, r.y+6)
+
+	measure := func(s string) int { return e.Fonts.Width(s, fontPixel, 8) }
+	e.Text(dst, fitText(shortName(m.ID(), m.Name()), 80, measure), r.x+22, r.y+1, textStyle{fontPixel, 8, '1', alignLeft})
+	role := "Camillero"
+	if m.IsDoctor() {
+		role = shortRole(m.ID(), m.Doctor().Specialty())
+	}
+	e.Text(dst, fitText(role, 46, measure), r.x+22, r.y+12, textStyle{fontPixel, 8, '2', alignLeft})
+	if m.IsDoctor() {
+		quota := fmt.Sprintf("%d/%d", m.PatientCount(), game.DoctorQuota)
+		if state == game.StaffNoQuota {
+			e.Text(dst, quota, r.x+125, r.y+1, textStyle{fontPixelBold, 8, 'R', alignRight})
+		} else {
+			e.Text(dst, quota, r.x+125, r.y+1, textStyle{fontPixel, 8, '1', alignRight})
+		}
+	}
+	e.DrawSprite(dst, a.Frame("ui_chip_estado", 4, chipFrame(state)), r.x+70, r.y+10, false)
+	c.drawChipText(dst, state, r.x+72, r.y+10)
+	e.FillRect(dst, rect{r.x + 70, r.y + 20, 58, 3}, 'k', 1)
+	e.FillRect(dst, rect{r.x + 70, r.y + 20, int(58 * m.CooldownFraction()), 3}, 'q', 1)
+}
+
+// drawChipText escribe el estado dentro del chip ("Disponible"...).
+func (c *camsScene) drawChipText(dst *ebiten.Image, state game.StaffState, x, y int) {
+	key := byte('0')
+	if state == game.StaffNoQuota {
+		key = 'w'
+	}
+	c.env.Text(dst, chipText(state), x, y, textStyle{fontPixel, 8, key, alignLeft})
 }
 
 // drawHead pinta la cabeza (filas 0 a 11 del cuadro 1 del sprite quieto) de
@@ -486,7 +551,7 @@ func (c *camsScene) drawHead(dst *ebiten.Image, m *game.StaffMember, x, y int) {
 	if m.IsDoctor() {
 		prefix = "doc_"
 	}
-	name := prefix + personKey(m.Name()) + "_quieto"
+	name := prefix + spriteKey(m.ID(), m.Name()) + "_quieto"
 	if img := a.Image(name); img != nil {
 		head := img.SubImage(image.Rect(0, 0, 16, 12)).(*ebiten.Image)
 		e.DrawSprite(dst, head, x, y, false)
@@ -517,18 +582,19 @@ func (c *camsScene) drawMap(dst *ebiten.Image) {
 		case locked:
 			key = 'X'
 		}
-		e.Text(dst, string(id), r.x+r.w/2, r.y, textStyle{fontVT, stampFontSize, key, alignCenter})
+		if id != c.hoverLocked { // con el candado encima, el rótulo se esconde
+			e.Text(dst, string(id), r.x+r.w/2, r.y, textStyle{fontVT, stampFontSize, key, alignCenter})
+		}
 	}
 	e.Text(dst, "Monitoreo", 391, 233, textStyle{fontPixel, 8, 'k', alignLeft})
 
-	// Candado rojo al pasar el mouse por una cámara bloqueada. El dibujo
-	// (ui_candado.png) lo hace el arte; mientras no exista, no se muestra.
+	// Candado (7x9) al pasar el mouse por una cámara bloqueada: el botón se
+	// oscurece con la clave 0 al 40 % y el candado va en (x+5, y+1) del botón
+	// (nota de Figma 18:176).
 	if c.hoverLocked != "" {
-		if lock := a.Image("ui_candado"); lock != nil {
-			r := mapButtonRect(c.hoverLocked)
-			b := lock.Bounds()
-			e.DrawSprite(dst, lock, r.x+r.w/2-b.Dx()/2, r.y+r.h/2-b.Dy()/2, false)
-		}
+		r := mapButtonRect(c.hoverLocked)
+		e.FillRect(dst, r, '0', 0.4)
+		e.DrawSprite(dst, a.Image("ui_candado"), r.x+5, r.y+1, false)
 	}
 }
 

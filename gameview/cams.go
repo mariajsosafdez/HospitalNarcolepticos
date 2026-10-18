@@ -49,14 +49,13 @@ type camsScene struct {
 	demoAuto bool // modo Auto
 	autoTick int  // ticks desde el último paso automático
 
-	selected  string // ID del paciente elegido ("" = ninguno)
-	cursor    int    // con teclado: tarjeta del panel marcada (-1 = ninguna)
-	pauseSel  int    // en la pausa: 0 = Seguir, 1 = Menú
-	notice    *notice
-	paused    bool
-	staffPage int
-	report    *game.Report // reporte abierto (fin del turno o paso 4 de la Demo)
-	recorded  bool         // el resultado del turno ya se guardó
+	selected string // ID del paciente elegido ("" = ninguno)
+	cursor   int    // con teclado: tarjeta del panel marcada (-1 = ninguna)
+	pauseSel int    // en la pausa: 0 = Seguir, 1 = Menú
+	notice   *notice
+	paused   bool
+	report   *game.Report // reporte abierto (fin del turno o paso 4 de la Demo)
+	recorded bool         // el resultado del turno ya se guardó
 
 	mouseX, mouseY int
 	hovered        string
@@ -103,7 +102,6 @@ func (c *camsScene) State() UIState {
 		SelectedPatient: c.selected,
 		StaffCursor:     c.cursorID(),
 		HoveredButton:   c.hovered,
-		StaffPage:       c.staffPage,
 		DemoStep:        c.demoStep,
 		DemoAuto:        c.demoAuto,
 	}
@@ -227,12 +225,12 @@ func (c *camsScene) handleKeys(in *Input) {
 		c.cursor = -1
 	}
 	if c.selected != "" {
-		from, to := staffPage(len(c.shift.Staff()), c.staffPage)
+		n := len(c.shift.Staff())
 		switch {
 		case in.Pressed("Down"):
-			c.cursor = nextCursor(c.cursor, 1, to-from)
+			c.cursor = nextCursor(c.cursor, 1, n)
 		case in.Pressed("Up"):
-			c.cursor = nextCursor(c.cursor, -1, to-from)
+			c.cursor = nextCursor(c.cursor, -1, n)
 		}
 	}
 	if !in.Pressed("Enter") && !in.Pressed("Space") {
@@ -240,9 +238,8 @@ func (c *camsScene) handleKeys(in *Input) {
 	}
 	switch {
 	case c.selected != "" && c.cursor >= 0:
-		from, to := staffPage(len(c.shift.Staff()), c.staffPage)
-		if from+c.cursor < to {
-			c.assign(c.shift.Staff()[from+c.cursor])
+		if staff := c.shift.Staff(); c.cursor < len(staff) {
+			c.assign(staff[c.cursor])
 		}
 	case c.selected == "":
 		if g := c.roomPatient(); g != nil {
@@ -267,11 +264,11 @@ func (c *camsScene) sleeperIDs() []string {
 
 // cursorID dice qué persona del personal marca el teclado ("" = ninguna).
 func (c *camsScene) cursorID() string {
-	from, to := staffPage(len(c.shift.Staff()), c.staffPage)
-	if c.selected == "" || c.cursor < 0 || from+c.cursor >= to {
+	staff := c.shift.Staff()
+	if c.selected == "" || c.cursor < 0 || c.cursor >= len(staff) {
 		return ""
 	}
-	return c.shift.Staff()[from+c.cursor].ID()
+	return staff[c.cursor].ID()
 }
 
 // nextPatient elige el siguiente (dir = 1) o el anterior (dir = -1) de la
@@ -324,11 +321,6 @@ func (c *camsScene) handleClick(x, y int) Scene {
 			return nil
 		}
 	}
-	// Páginas del panel (días con más de 3 personas).
-	if c.hovered == "page" {
-		c.staffPage = (c.staffPage + 1) % staffPageCount(len(c.shift.Staff()))
-		return nil
-	}
 	// Mapa: cambiar de cámara (las bloqueadas no hacen nada).
 	if id, ok := mapButtonAt(x, y); ok {
 		if c.shift.World().Has(id) {
@@ -339,9 +331,8 @@ func (c *camsScene) handleClick(x, y int) Scene {
 	// Tarjetas del personal: solo sirven con un paciente elegido.
 	if c.selected != "" {
 		staff := c.shift.Staff()
-		from, to := staffPage(len(staff), c.staffPage)
-		for i := from; i < to; i++ {
-			if staffCardRect(i-from).contains(x, y) {
+		for i := range staff {
+			if staffCardRect(i, len(staff)).contains(x, y) {
 				c.assign(staff[i])
 				return nil
 			}
@@ -448,20 +439,16 @@ func (c *camsScene) hoverTarget(x, y int) string {
 			return "auto"
 		}
 	}
-	if len(c.shift.Staff()) > cardsPerPage && pageButtonRect.contains(x, y) {
-		return "page"
-	}
 	if id, ok := mapButtonAt(x, y); ok {
 		return "cam " + string(id)
 	}
-	if c.roomPatient() != nil && dischargeRect().contains(x, y) {
+	if c.roomPatient() != nil && dischargeRect(c.bed()).contains(x, y) {
 		return "discharge"
 	}
 	if c.selected != "" {
 		staff := c.shift.Staff()
-		from, to := staffPage(len(staff), c.staffPage)
-		for i := from; i < to; i++ {
-			if staffCardRect(i-from).contains(x, y) {
+		for i := range staff {
+			if staffCardRect(i, len(staff)).contains(x, y) {
 				return "staff " + staff[i].ID()
 			}
 		}

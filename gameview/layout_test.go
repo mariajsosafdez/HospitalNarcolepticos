@@ -52,6 +52,14 @@ func TestBackgroundName(t *testing.T) {
 		{"1A", ""}, // todavía no está dibujado
 		{"6", ""},
 	}
+	// Con fondo propio por habitación se usa ese; si no, el común.
+	own := append([]string{"fondo_habitacion_102"}, names...)
+	if got := backgroundName("7B", own); got != "fondo_habitacion_102" {
+		t.Errorf("backgroundName(7B) = %q, want its own background", got)
+	}
+	if got := backgroundName("7A", own); got != "fondo_habitacion" {
+		t.Errorf("backgroundName(7A) = %q, want the shared background", got)
+	}
 	for _, tt := range tests {
 		if got := backgroundName(tt.cam, names); got != tt.want {
 			t.Errorf("backgroundName(%q) = %q, want %q", tt.cam, got, tt.want)
@@ -186,20 +194,43 @@ func TestCameraForKey(t *testing.T) {
 	}
 }
 
-func TestStaffPage(t *testing.T) {
-	tests := []struct{ total, page, from, to, pages int }{
-		{3, 0, 0, 3, 1},
-		{2, 0, 0, 2, 1},
-		{5, 0, 0, 3, 2},
-		{5, 1, 3, 5, 2},
-		{5, 9, 3, 5, 2}, // una página de más se queda en la última
-		{0, 0, 0, 0, 1},
+func TestStaffCardRect(t *testing.T) {
+	tests := []struct {
+		i, total int
+		want     rect
+	}{
+		{0, 2, rect{344, 34, 132, 36}},
+		{2, 3, rect{344, 114, 132, 36}}, // 3 personas: tarjeta normal
+		{0, 4, rect{344, 34, 132, 24}},  // 4 o 5: tarjeta compacta
+		{4, 5, rect{344, 130, 132, 24}},
 	}
 	for _, tt := range tests {
-		from, to := staffPage(tt.total, tt.page)
-		if from != tt.from || to != tt.to || staffPageCount(tt.total) != tt.pages {
-			t.Errorf("staffPage(%d,%d) = %d,%d (%d pages) want %d,%d (%d)", tt.total, tt.page, from, to, staffPageCount(tt.total), tt.from, tt.to, tt.pages)
+		if got := staffCardRect(tt.i, tt.total); got != tt.want {
+			t.Errorf("staffCardRect(%d,%d) = %v, want %v", tt.i, tt.total, got, tt.want)
 		}
+	}
+	// Las 5 tarjetas compactas terminan antes de que empiece el mapa (y = 156).
+	if last := staffCardRect(4, 5); last.y+last.h > mapOrigin.y {
+		t.Errorf("the 5th compact card ends at %d, over the map (%d)", last.y+last.h, mapOrigin.y)
+	}
+}
+
+func TestFrameByDurations(t *testing.T) {
+	d := sittingDurations // 2,0 s y un parpadeo de 0,2 s
+	tests := []struct{ tick, want int }{
+		{0, 0}, {119, 0}, {120, 1}, {131, 1}, {132, 0}, {132 + 120, 1}, {-1, 1},
+	}
+	for _, tt := range tests {
+		if got := frameByDurations(tt.tick, d); got != tt.want {
+			t.Errorf("frameByDurations(%d) = %d, want %d", tt.tick, got, tt.want)
+		}
+	}
+	if frameByDurations(5, nil) != 0 {
+		t.Error("without durations the frame is 0")
+	}
+	spec, _ := patientSprite(game.AwakeInBed, false)
+	if spriteFrame(spec, 125) != 1 || spriteFrame(spec, 10) != 0 {
+		t.Error("the sitting sprite must blink on the second frame")
 	}
 }
 

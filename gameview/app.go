@@ -74,8 +74,7 @@ type UIState struct {
 	HoveredButton   string       `json:"hoveredButton,omitempty"`   // botón bajo el mouse
 	Notice          string       `json:"notice,omitempty"`          // título del aviso visible
 	Overlay         string       `json:"overlay,omitempty"`         // pausa, reporte, próximamente
-	StaffPage       int          `json:"staffPage,omitempty"`
-	DemoStep        int          `json:"demoStep,omitempty"` // 1 a 4
+	DemoStep        int          `json:"demoStep,omitempty"`        // 1 a 4
 	DemoAuto        bool         `json:"demoAuto,omitempty"`
 	UITick          int          `json:"uiTick"`
 	MouseX          int          `json:"mouseX"`

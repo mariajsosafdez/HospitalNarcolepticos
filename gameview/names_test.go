@@ -10,7 +10,8 @@ func TestDisplayStaffText(t *testing.T) {
 		{"D-001", "Dr. Karen Ospina", "Neurology", "Dra. Karen Ospina", "Neurología"},
 		{"D-002", "Dr. Alvaro Mendoza", "Sleep Medicine", "Dr. Álvaro Mendoza", "Medicina del sueño"},
 		{"D-003", "Dr. Luz Dary Fontalvo", "General", "Dra. Luz Dary Fontalvo", "Medicina general"},
-		{"S-001", "Chepe Barrios", "", "Chepe Barrios", ""},
+		{"O-001", "Chepe Barrios", "", "Chepe Barrios", "Camillero"},
+		{"X-001", "Alguien Nuevo", "", "Alguien Nuevo", ""},
 	}
 	for _, tt := range tests {
 		if got := displayName(tt.id, tt.name); got != tt.wantName {

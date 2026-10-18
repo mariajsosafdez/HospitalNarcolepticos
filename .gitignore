@@ -12,3 +12,8 @@ ENUNCIADO.md
 
 # Obsidian: estado personal del editor
 docs/**/.obsidian/workspace.json
+
+# Candidatos de sonido para escuchar (no se commitean; ver sound/audition/README.md)
+sound/audition/*
+!sound/audition/README.md
+!sound/audition/escuchar.ps1
