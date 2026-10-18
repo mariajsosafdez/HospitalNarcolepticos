@@ -91,7 +91,7 @@ func capWithMore(lines []rline, max int) []rline {
 	return append(out, rline{left: fmt.Sprintf("y %d más", len(lines)-(max-1)), dim: true})
 }
 
-// noBedLines es la caja "Se quedaron sin cama" (consulta 5.1): cuántos
+// noBedLines es la caja "Atendidos sin cama" (consulta 5.1): cuántos
 // siguen así al cerrar el turno, cuántas veces pasó, y quiénes (con la cama
 // a la que pasaron después, si la consiguieron).
 func noBedLines(r game.Report) []rline {
@@ -331,7 +331,7 @@ func (s *reportScene) Draw(dst *ebiten.Image) {
 	}
 
 	s.drawPointsCard(dst)
-	s.drawLinesCard(dst, reportNoBedCard, "Se quedaron sin cama", noBedLines(r))
+	s.drawLinesCard(dst, reportNoBedCard, "Atendidos sin cama", noBedLines(r))
 	s.drawLinesCard(dst, reportDoctorCard, "Episodios por doctor", doctorLines(r))
 	s.drawBedsCard(dst)
 	s.drawSevereCard(dst)

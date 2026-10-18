@@ -3,6 +3,8 @@ package gameview
 import (
 	"math/rand"
 	"testing"
+
+	"costenos-narcolepsia/game"
 )
 
 func TestZzzSpot(t *testing.T) {
@@ -100,5 +102,45 @@ func TestPickSleepSpotFullFloorDoesNotPanic(t *testing.T) {
 	x, y := pickSleepSpot(80, 90, 34, 14, floorRect, taken, nil, rand.New(rand.NewSource(1)))
 	if int(y) < floorRect.y || int(y) > floorRect.y+floorRect.h || x < 0 {
 		t.Errorf("fuera del piso: (%v,%v)", x, y)
+	}
+}
+
+// commonCameras son las cámaras de zonas comunes, donde los pacientes
+// caminan y se duermen en el piso.
+var commonCameras = []game.CameraID{"1A", "1B", "2", "3", "4", "5", "6", "8"}
+
+func TestEveryCommonCameraHasObstacles(t *testing.T) {
+	for _, id := range commonCameras {
+		info, ok := game.CameraByID(id)
+		if !ok || info.Kind != game.Common {
+			t.Fatalf("la cámara %s no es una zona común", id)
+		}
+		if len(sleepObstacles[id]) == 0 {
+			t.Errorf("la cámara %s no tiene obstáculos", id)
+		}
+	}
+}
+
+// Cada cámara común, con los tamaños de sprite dormido que hay (de pie,
+// en silla y acostado), desde muchos puntos de partida: nunca cae sobre un
+// mueble.
+func TestPickSleepSpotNeverOverlapsFurniture(t *testing.T) {
+	sizes := [][2]int{{16, 28}, {20, 24}, {34, 14}, {47, 14}}
+	for _, id := range commonCameras {
+		obs := sleepObstacles[id]
+		for _, sz := range sizes {
+			for seed := int64(1); seed <= 25; seed++ {
+				rng := rand.New(rand.NewSource(seed))
+				// El punto de partida también sale de la semilla.
+				sx, sy := randomFloorPoint(floorRect, rng)
+				x, y := pickSleepSpot(sx, sy, sz[0], sz[1], floorRect, nil, obs, rng)
+				box := footBox(x, y, sz[0], sz[1])
+				for _, o := range obs {
+					if overlapArea(box, o) > 0 {
+						t.Errorf("cámara %s, sprite %v, semilla %d: %+v toca el mueble %+v", id, sz, seed, box, o)
+					}
+				}
+			}
+		}
 	}
 }

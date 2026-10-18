@@ -18,17 +18,57 @@ const (
 	lyingMinRatio = 2  // un sprite acostado es al menos 2 veces más ancho que alto
 )
 
-// sleepObstacles son los rincones donde no se tumba nadie (coordenadas del
-// fondo de 168x123). Salen de las notas del arte: el tronco izquierdo de la
-// palmera del patio tiene su base cerca de (44,104), el derecho cerca de
-// (126,92), y además están la jardinera y la banca. Dormir "contra una
-// palmera" es al lado del tronco, no encima.
+// sleepObstacles son los muebles contra los que no se tumba nadie (coordenadas
+// del fondo de 168x123, medidas sobre el primer cuadro de cada PNG de
+// art/png). Cada rectángulo cubre un mueble que se para en el piso: mesas,
+// sillas, bancas, mostradores, matas, el dispensador, la máquina de rayos X.
+// Un paciente que camina puede pasar junto a ellos, pero al dormirse su caja
+// no los toca (ver sleepScore). Las claves son todas las cámaras comunes. En
+// el Patio: los troncos de las palmeras (base cerca de (44,104) y (126,92)),
+// la jardinera y la banca. Dormir "contra una palmera"
+// es al lado del tronco, no encima.
 var sleepObstacles = map[game.CameraID][]rect{
+	"1A": {
+		{2, 86, 36, 18},   // banca de la entrada
+		{80, 46, 62, 17},  // mostrador de recepción
+		{148, 56, 12, 16}, // mata de la derecha
+		{61, 46, 12, 16},  // mata junto a la puerta
+	},
+	"1B": {
+		{22, 44, 68, 18},  // fila de sillas del fondo
+		{21, 50, 10, 16},  // mata de la izquierda
+		{93, 75, 55, 21},  // fila de sillas del frente
+		{132, 24, 16, 38}, // dispensador de agua
+	},
+	"2": {
+		{8, 70, 52, 28},   // mesa izquierda con sus sillas
+		{102, 82, 52, 27}, // mesa derecha con sus sillas
+		{106, 28, 40, 28}, // mostrador de la olla
+		{150, 34, 11, 25}, // mata de la derecha
+	},
+	"3": {
+		{2, 96, 16, 22},   // mata grande de abajo
+		{107, 50, 29, 10}, // banca
+	},
+	"4": {
+		{35, 49, 29, 11},  // banca
+		{75, 45, 10, 17},  // dispensador
+		{149, 95, 17, 23}, // mata grande de abajo
+	},
+	"5": {
+		{28, 20, 10, 59}, // columna del aparato de rayos X
+		{40, 56, 60, 30}, // camilla de la máquina
+	},
 	"6": {
 		{40, 60, 10, 46},  // palmera izquierda
 		{124, 60, 8, 34},  // palmera derecha
 		{144, 86, 18, 20}, // jardinera
 		{66, 54, 38, 16},  // banca
+	},
+	"8": {
+		{2, 64, 10, 13},   // silla de arriba
+		{6, 82, 10, 13},   // silla de abajo
+		{146, 46, 12, 32}, // ventilador de pie
 	},
 }
 
