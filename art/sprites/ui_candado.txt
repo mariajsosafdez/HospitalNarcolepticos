@@ -1,0 +1,11 @@
+// Candado rojo 7x9 para las cámaras bloqueadas: sale al pasar el mouse por encima del botón (2026-10-17).
+// Se centra sobre ui_boton_cam (16x11): candado en (botón.x + 5, botón.y + 1).
+..000..
+.0XXX0.
+.0X0X0.
+0000000
+0CRRRR0
+0RR0RR0
+0RR0RR0
+0RRRRR0
+0000000

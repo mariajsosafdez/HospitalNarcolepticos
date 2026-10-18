@@ -1,4 +1,5 @@
 // P-005 Marelvis Ortega (Severo, manilla R): quieto, 2 cuadros de 16x24 (el 2.º parpadea).
+// Revisión 2026-10-17: la olla cerraba sin borde en la última columna; ahora tiene contorno.
 // Generado con un script de apoyo (fuera del repo); se puede retocar a mano.
 ................
 .....000000.....
@@ -13,11 +14,11 @@
 .....00tTT0.....
 ....0cccccc0....
 ...0ccttcccc0...
-...0tcttcccc00..
+...0tcttcccc000.
 ...0tccTTc0xxxx0
-...0tccRR0XXXXXX
-...0ttccT0xXXXXx
-...0ccccc0xxxxxx
+...0tccRR0XXXXX0
+...0ttccT0xXXXX0
+...0ccccc0xxxxx0
 ...0cccccc000000
 ..0cccccccccc0..
 ..000000000000..
@@ -38,11 +39,11 @@
 .....00tTT0.....
 ....0cccccc0....
 ...0ccttcccc0...
-...0tcttcccc00..
+...0tcttcccc000.
 ...0tccTTc0xxxx0
-...0tccRR0XXXXXX
-...0ttccT0xXXXXx
-...0ccccc0xxxxxx
+...0tccRR0XXXXX0
+...0ttccT0xXXXX0
+...0ccccc0xxxxx0
 ...0cccccc000000
 ..0cccccccccc0..
 ..000000000000..

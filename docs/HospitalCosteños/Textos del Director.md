@@ -1,5 +1,7 @@
 # Textos del Director
 
+> Regla de pantalla (2026-10-17): en el juego se quita la ¡ inicial y se deja el ! final, porque la ¡ de Pixelify Sans parece una i.
+
 > ✅ **Aprobado** el 2026-10-17: "revisé el elenco y los textos y me gustan bastante, aprobados :D". Habla Don Ernesto Cassiani (ver [[Elenco]]). Mensajes cortos: caben en un cuadro de diálogo de 2–3 líneas a 480×270.
 
 ## Menú principal
@@ -15,7 +17,7 @@
 | Ajustes | "Volumen, parpadeo de cámaras y pantalla completa." |
 | Créditos | "Quién hizo esto y con qué música." |
 
-- Línea de ayuda: "Flechas: elegir  ·  Enter: ¡dale!"
+- Línea de ayuda: "Flechas: elegir  ·  Enter: dale" (sin ¡ ni !; la autora: "quita los ¡!", 2026-10-17)
 - Sin partida guardada, al lado de Continuar: "(aún no hay partida)"
 
 ## Tutorial, Día 1 (uno por pantalla)
@@ -59,3 +61,53 @@
 ## Exceso de trabajo (cuando un doctor llega a 4/4)
 
 - "¡Oiga! {doctor} ya tiene cuatro pacientes a cargo. Repártame el trabajo, que con este calor nadie aguanta tanto." (`{doctor}` = nombre completo con Dr./Dra.)
+
+## Pantalla de cámaras
+
+> ✅ Aprobado el 2026-10-17: "me gustan" (textos de las vistas de cámaras) y "me gusta" (avisos del builder). Ya escritos con la regla de pantalla.
+
+| Dónde | Texto |
+|---|---|
+| Barra superior | "Turno de 12 a 6" |
+| Panel | "Personal"; al elegir un paciente: "¿Quién lo atiende?" |
+| Ayuda al elegir paciente | "Elige a alguien del panel · Esc para cancelar" |
+| Mapa | "Mapa", "Monitoreo" |
+| Aviso sin cama | "No hay cama libre!" / "{Nombre} se queda dormido/dormida aquí mismo." / "Cuando se libere una cama, mándelo/mándela usted." |
+| Personal ocupado | "Un momentico" / "Esa persona todavía anda ocupada." |
+| Doctor con 4/4 | "Cupo lleno!" / "Ese doctor ya tiene sus 4 pacientes." |
+| Después de las 18:00 | "Turno terminado" / "Ya no se puede hacer nada más." |
+| Acción que ya no vale | "Ya no se puede" / "Eso ya no se puede hacer ahora." |
+| Demo, botones | "Siguiente paso", "Auto" (con Auto activo dice "Pausa") |
+| Habitación | "Dar de alta" |
+
+Pasos de la Demo (caja de la Demo, "Paso N de 4"):
+
+1. "Abrimos el turno: 2 doctores, 1 camillero, 3 habitaciones y 5 pacientes (3 severos)."
+2. "Cuatro pacientes se quedan dormidos en sitios distintos. Tres consiguen cama; al cuarto no le alcanza."
+3. "Alguien se despierta: se le da de alta y el del pasillo pasa a esa cama."
+4. "El reporte con las 4 consultas. Así quedó el turno!"
+
+## Pantallas del turno
+
+> Esperando aprobación (2026-10-17). Vistas en Figma, sección "Pantallas del turno (2026-10-17)"; copias en `preview/turno/`. Sin ¡ en ninguna.
+
+**Mensaje del Director** (tutorial, inicio del día, exceso de trabajo, fin de turno): "Clic para seguir"; contador del tutorial "4 / 9".
+
+**Reporte de fin de turno**
+
+| Parte | Texto |
+|---|---|
+| Título | "Fin del turno" · "Día N  ·  de 12 a 6  ·  X pacientes atendidos" |
+| Puntos | "Puntos", "de N posibles (P %)", "Excelente", "Bien", "Regular", "Mal", "Bonus severos", "Penalizaciones", "Cama sin alta", "Exceso de trabajo", "Sin atender", "Total" |
+| 5.1 | "Se quedaron sin cama": "Al cerrar el turno: nadie." / "Durante el turno: 1 vez." (o "N veces.") / "{Nombre}, {lugar}" / "(después pasó a la 101)" |
+| 5.2 | "Episodios por doctor" (nombre, cantidad y debajo los pacientes) |
+| 5.3 | "Camas" (número y ocupante, o "libre") · "Veces sin cama: N" |
+| 5.4 | "Pacientes severos" ("cama 102", "despierta"/"despierto") · "3 severos, 2 atendidos por doctor" |
+| Si no caben | "y N más" |
+| Botones | "Siguiente día", "Menú" |
+
+**Pausa**: "Pausa", "Continuar", "Ajustes", "Salir al menú"; descripciones: "El turno sigue donde iba." · "Volumen, parpadeo y pantalla completa." · "Ojo: este turno no cuenta."; "Reloj parado en las HH:MM"; "Esc: seguir jugando".
+
+**Ajustes**: "Ajustes", "Volumen música", "Volumen efectos", "Parpadeo al dormirse", "Parpadeo al despertarse", "Pantalla completa", "Apagado" / "Prendido", "Volver"; descripciones: "Izquierda y derecha para subir o bajar." · "La cámara titila cuando alguien se duerme." · "La cámara titila cuando alguien se despierta." · "Llena toda la pantalla."; ayuda: "Flechas: elegir  ·  Izq/Der: cambiar  ·  Esc: volver".
+
+**Panel de 5 personas** (días 3 a 5), nombres y roles cortos: "Dra. Karen", "Dr. Álvaro", "Dra. Luz Dary", "Chepe", "El Mono" · "Neurología", "Del sueño", "General", "Camillero".
