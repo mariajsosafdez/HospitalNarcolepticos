@@ -750,10 +750,13 @@ func TestSameSeedSameGame(t *testing.T) {
 		}
 		return string(raw)
 	}
-	if run(42) != run(42) {
+	// Se juega dos veces con la misma semilla: si la lógica es determinista,
+	// las dos fotos (snapshots) en JSON tienen que ser idénticas.
+	first, second := run(42), run(42)
+	if first != second {
 		t.Error("same seed gave different games")
 	}
-	if run(42) == run(43) {
+	if first == run(43) {
 		t.Error("different seeds gave the same game")
 	}
 }
