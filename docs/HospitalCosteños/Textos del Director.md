@@ -113,3 +113,18 @@ Pasos de la Demo (caja de la Demo, "Paso N de 4"):
 **Panel de 5 personas** (días 3 a 5), nombres y roles cortos: "Dra. Karen", "Dr. Álvaro", "Dra. Luz Dary", "Chepe", "El Mono" · "Neurología", "Del sueño", "General", "Camillero".
 
 **Créditos** (✅ aprobado con cambios, 2026-10-18): "Créditos" · "Hospital de los Costeños con Narcolepsia" · "El hueco más profundo de Montería" · Don Ernesto: "Gracias por la ayuda, vale!" (la autora: "pon \"gracias por la ayuda vale!\""; sin ¡ inicial) · "Hecho por": "Maria José Sosa" · "Clase": "Compiladores y Lenguajes", "Universidad EIA", "Profesor Sebastián Zapata Ramírez" (la autora: "Es clase de Compiladores y lenguajes :P") · "Herramientas": "Hecho en Go con Ebitengine" · "Fuentes": "Pixelify Sans (Stefie Justprince)", "VT323 (Peter Hull)", "Licencia SIL OFL 1.1" · "Música y sonidos": por ahora "(se completa cuando la autora elija la música)"; las líneas finales (CC0/CC-BY) salen de [[Sonido]] · "Arte y código hechos con ayuda de IA (Claude, de Anthropic)" (la autora: "Sip") · "Volver" · "Esc o clic: volver al menú".
+
+## Demo guiada (rework, propuesta del 2026-10-18, esperando aprobación)
+
+El reloj solo corre durante las animaciones y la cámara cambia sola a donde pasa cada cosa. En pantalla se quita la ¡ inicial.
+
+| Parte | Cámara | Recuadro | Texto de Don Ernesto |
+|---|---|---|---|
+| 1 | CAM 1A Recepción | Paso 1 de 4 | "Abrimos el turno: 2 doctores, 1 camillero, 3 habitaciones y 5 pacientes, 3 de ellos severos." |
+| 2.1 | CAM 2 → CAM 7A | Paso 2 de 4 · Yesid (1 de 4) | "Yesid se quedó dormido en la fila del sancocho. La Dra. Karen se lo lleva a la 101." |
+| 2.2 | CAM 8 → CAM 7B | Paso 2 de 4 · Yeimy (2 de 4) | "Yeimy se durmió en plena champeta. El Dr. Álvaro la acomoda en la 102." |
+| 2.3 | CAM 5 → CAM 7C | Paso 2 de 4 · Rafa (3 de 4) | "Rafa cayó rendido en la fila de rayos X. Chepe lo lleva en la camilla a la 103." |
+| 2.4 | CAM 4 | Paso 2 de 4 · Wilfrido (4 de 4) | "Wilfrido se durmió en el Pasillo Oeste. La Dra. Karen lo atiende, pero no hay cama libre: se queda ahí mismo." |
+| 3.1 | CAM 7A | Paso 3 de 4 · Alta (1 de 2) | "Yesid ya se despertó. Le damos de alta y la 101 queda libre." |
+| 3.2 | CAM 4 → CAM 7A | Paso 3 de 4 · Traslado (2 de 2) | "Ahora sí: Chepe lleva a Wilfrido a la 101." |
+| 4 | Reporte | Paso 4 de 4 | "El reporte con las 4 consultas. ¡Así quedó el turno!" |
