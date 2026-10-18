@@ -42,16 +42,29 @@ type RoomLine struct {
 }
 
 // SevereLine es un paciente severo con sus episodios del día (consulta 5.4).
+// Room (0 = sin cama) y Asleep dicen dónde está y cómo, para el reporte.
 type SevereLine struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Episodes int    `json:"episodes"`
+	Room     int    `json:"room"`
+	Asleep   bool   `json:"asleep"` // dormido y todavía sin cama
+}
+
+// NoBedLine es un paciente que se quedó sin cama durante el turno (parte de
+// la consulta 5.1). LaterRoom != 0 si después consiguió cama.
+type NoBedLine struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Location  string `json:"location"` // dónde se quedó dormido
+	LaterRoom int    `json:"laterRoom"`
 }
 
 // Report es el reporte completo del turno.
 type Report struct {
 	Day        int            `json:"day"`
 	Hallway    []PatientLine  `json:"hallway"`
+	NoBed      []NoBedLine    `json:"noBed"` // los que se quedaron sin cama en algún momento
 	Doctors    []DoctorLine   `json:"doctors"`
 	Rooms      []RoomLine     `json:"rooms"`
 	FreeRooms  int            `json:"freeRooms"`
@@ -61,6 +74,9 @@ type Report struct {
 	Total      int            `json:"total"`
 	Stars      int            `json:"stars"`
 	Overworked []string       `json:"overworked"`
+	Attended   int            `json:"attended"` // pacientes que llegaron a una cama
+	Possible   int            `json:"possible"` // puntos posibles (120 por episodio)
+	Percent    int            `json:"percent"`  // puntos logrados sobre los posibles
 }
 
 // Report arma el reporte con el estado de este momento. Al terminar el turno
@@ -73,6 +89,19 @@ func (s *Shift) Report() Report {
 		Total:      s.score.Total(),
 		Stars:      s.Stars(),
 		Overworked: s.Overworked(),
+		Attended:   s.score.Attended(),
+		Possible:   PossiblePoints(s.score.Episodes),
+		Percent:    PointsPercent(s.score.Total(), s.score.Episodes),
+	}
+
+	// Parte de 5.1: quiénes se quedaron sin cama durante el turno y si
+	// después pasaron a una.
+	for _, e := range s.noBedEvents {
+		line := NoBedLine{ID: e.patient.patient.ID(), Name: e.patient.patient.Name(), Location: e.location}
+		if room := e.patient.patient.Room(); room != nil {
+			line.LaterRoom = room.Number()
+		}
+		r.NoBed = append(r.NoBed, line)
 	}
 
 	// Consulta 5.1: dormidos fuera de una cama.
@@ -115,7 +144,14 @@ func (s *Shift) Report() Report {
 
 	// Consulta 5.4: el map no tiene orden, así que se ordena por ID.
 	for p, episodes := range s.h.SevereReport() {
-		r.Severe = append(r.Severe, SevereLine{ID: p.ID(), Name: p.Name(), Episodes: episodes})
+		line := SevereLine{ID: p.ID(), Name: p.Name(), Episodes: episodes}
+		if room := p.Room(); room != nil {
+			line.Room = room.Number()
+		}
+		if g := s.FindPatient(p.ID()); g != nil {
+			line.Asleep = g.state == AsleepWaiting || g.state == NoBedWaiting
+		}
+		r.Severe = append(r.Severe, line)
 	}
 	slices.SortFunc(r.Severe, func(a, b SevereLine) int { return cmp.Compare(a.ID, b.ID) })
 	return r

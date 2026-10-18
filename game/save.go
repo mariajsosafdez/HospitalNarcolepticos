@@ -28,6 +28,7 @@ type SaveData struct {
 	LastUnlockedDay int         `json:"lastUnlockedDay"`
 	BestStars       [MaxDay]int `json:"bestStars"`
 	Settings        Settings    `json:"settings"`
+	TutorialSeen    bool        `json:"tutorialSeen"` // el tutorial del Día 1 ya se vio completo
 }
 
 // NewSaveData devuelve una partida nueva: solo el día 1 desbloqueado.
@@ -45,6 +46,21 @@ func (d *SaveData) RecordShift(day, stars int) {
 	if day < MaxDay {
 		d.LastUnlockedDay = max(d.LastUnlockedDay, day+1)
 	}
+}
+
+// HasProgress dice si hay algo que continuar: algún día jugado hasta el
+// final (estrellas guardadas) o un día siguiente desbloqueado. Guardar solo
+// los ajustes no cuenta, para que "Continuar" no se prenda sin haber jugado.
+func (d SaveData) HasProgress() bool {
+	if d.LastUnlockedDay > 1 {
+		return true
+	}
+	for _, stars := range d.BestStars {
+		if stars > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // SaveStore lee y escribe el JSON de guardado. La ruta se inyecta al crearlo:

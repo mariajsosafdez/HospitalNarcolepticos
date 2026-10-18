@@ -22,6 +22,14 @@ const (
 	neverTick = 1 << 60
 )
 
+// noBedEvent recuerda un paciente que se quedó sin cama y el lugar donde
+// estaba dormido en ese momento (el reporte 5.1 lo muestra aunque después
+// haya pasado a una cama).
+type noBedEvent struct {
+	patient  *GamePatient
+	location string
+}
+
 // Message es una línea del registro de eventos que la vista puede mostrar.
 type Message struct {
 	Tick int    `json:"tick"`
@@ -48,6 +56,7 @@ type Shift struct {
 	camera       CameraID // cámara que mira el jugador
 	score        ScoreBreakdown
 	noBedCount   int            // veces que un paciente se quedó sin cama
+	noBedEvents  []noBedEvent   // quién se quedó sin cama y dónde (para el reporte)
 	overworked   []string       // IDs de doctores con exceso de trabajo
 	episodeTimes map[string]int // ID de episodio -> tick de juego en que ocurrió
 	messages     []Message
@@ -437,6 +446,7 @@ func (s *Shift) Assign(patientID, staffID string) error {
 	if regErr != nil {
 		g.state = NoBedWaiting
 		s.noBedCount++
+		s.noBedEvents = append(s.noBedEvents, noBedEvent{g, g.sleepLocation})
 		s.log("%s atendió a %s pero no hay cama: se queda en %s.", m.Name(), g.patient.Name(), g.sleepLocation)
 		return fmt.Errorf("assign %s: %w", patientID, regErr)
 	}

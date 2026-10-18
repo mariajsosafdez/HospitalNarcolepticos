@@ -110,6 +110,25 @@ func (s ScoreBreakdown) Total() int {
 	return s.WaitPoints + s.SevereBonus + s.BedPenalty + s.OverworkLost + s.Unattended
 }
 
+// Attended cuenta los pacientes que sí llegaron a una cama (todas las notas
+// de espera menos las de los que quedaron sin atender).
+func (s ScoreBreakdown) Attended() int { return s.Excellent + s.Good + s.Regular + s.Bad }
+
+// PossiblePoints son los puntos máximos del turno: 120 por episodio.
+func PossiblePoints(episodes int) int { return episodes * maxPointsPerEpisode }
+
+// PointsPercent dice qué porcentaje (0 a 100, entero) de los puntos posibles
+// se logró. Sin episodios no hay nada que medir y devuelve 0. Es pura para
+// probarla con una tabla.
+func PointsPercent(points, episodes int) int {
+	possible := PossiblePoints(episodes)
+	if possible <= 0 {
+		return 0
+	}
+	percent := (points*100 + possible/2) / possible // redondeo al más cercano
+	return min(max(percent, 0), 100)
+}
+
 // addWait registra la espera de un paciente que llegó a una cama.
 func (s *ScoreBreakdown) addWait(minutes int) {
 	rating, points := RateWait(minutes)
