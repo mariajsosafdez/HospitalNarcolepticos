@@ -282,7 +282,12 @@ Fórmula original: `pacientes = doctores × 4 + 2`. ✅ **Cambio:** el Elenco ti
 
 Ejemplo: en el Día 5, el exceso de trabajo de un doctor resta 100 en vez de 50.
 
-**Estrellas:** `porcentaje = puntos / (episodios × 120)`. 1★ < 30 %, 2★ < 50 %, 3★ < 70 %, 4★ < 85 %, 5★ el resto. Si el resultado es negativo, se queda en 1★ (nunca 0).
+**Estrellas:** `porcentaje = puntos / (episodios × 120)`. 1★ < 30 %, 2★ < 50 %, 3★ < 70 %, 4★ < **80 %**, 5★ el resto. Si el resultado es negativo, se queda en 1★ (nunca 0).
+
+✅ **Cambios del 2026-10-18** (después de la prueba del tester):
+- El límite de 5★ bajó de 85 % a **80 %**: un turno perfecto sin severos daba 83 % y se quedaba en 4★ ("okeyy").
+- **Redondeo:** las restas de cada tipo se suman primero y el multiplicador del día se aplica y redondea **una sola vez** por tipo, no en cada cobro ("okey"). Así ×1,25 y ×1,75 son exactos.
+- **Cama sin alta:** el primer −2 llega a los **25 min** despierto (15 de gracia + 10), y luego cada 10 min. Queda escrito así para no tener dos lecturas.
 
 ✅ **Con 1★ aparece un mensaje divertido del Director** regañando por la mala administración (varios textos al azar). Con 5★, uno de felicitación.
 

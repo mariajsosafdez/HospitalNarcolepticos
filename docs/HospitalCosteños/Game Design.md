@@ -211,3 +211,5 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-18 | Las restas al terminar el turno se quedan; un tester comprueba cada caso | Revisión | "ok, haz prubas replicando terminar el turno con esos casos y mira que la resta de puntos si sea correcta" |
 | 2026-10-18 | Pantalla completa que llene la pantalla a cualquier resolución (escala fraccionaria nítida) | Con escala entera quedaba pequeña | "bro la verdad está un poco popó, no hay manera de que se adapte a la resolución de cada pantalla?" |
 | 2026-10-18 | Textos de la Demo guiada aprobados | — | "me gustan" |
+| 2026-10-18 | 5★ desde el 80 % (antes 85 %) | El turno perfecto sin severos no llegaba a 5★ | "okeyy" |
+| 2026-10-18 | Las restas se suman y se redondean una vez por tipo con el multiplicador del día | El redondeo por cobro castigaba de más en los días 2 y 4 | "okey" |
