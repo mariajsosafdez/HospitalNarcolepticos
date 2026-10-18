@@ -324,17 +324,22 @@ func (s *Shift) chargeBedPenalty(g *GamePatient, now int) {
 	}
 }
 
-// finish congela el turno. Los que siguen dormidos sin cama cuentan como Mal.
+// finish congela el turno. Decisión de la autora: los que siguen dormidos
+// sin cama RESTAN puntos ("realmente no se atendieron"). Los que van en la
+// camilla sí fueron atendidos: su espera se califica como si llegaran ya.
 func (s *Shift) finish() {
 	if s.finished {
 		return
 	}
 	s.finished = true
+	now := s.clock.Tick()
 	for _, g := range s.patients {
 		switch g.state {
-		case AsleepWaiting, NoBedWaiting, Carried:
-			s.score.Unattended += pointsBad
+		case AsleepWaiting, NoBedWaiting:
+			s.score.Unattended -= ScalePenalty(unattendedPenalty, s.cfg.Day)
 			s.score.Episodes++
+		case Carried:
+			s.score.addWait(TicksToMinutes(now - g.sleepTick))
 		}
 	}
 	s.log("Terminó el turno: %d puntos, %d estrellas.", s.score.Total(), s.Stars())

@@ -66,15 +66,15 @@ var (
 type dayRow struct {
 	doctors, orderlies, rooms int
 	cameras                   []CameraID
-	patients                  int // objetivo de la especificación: doctores x 4 + 2
+	patients                  int // cuántos del Elenco vienen ese día
 }
 
 var dayTable = [...]dayRow{
 	{2, 1, 3, []CameraID{"1A", "1B", "2", "3"}, 10},
 	{2, 1, 4, []CameraID{"1A", "1B", "2", "3", "4"}, 10},
-	{3, 1, 4, []CameraID{"1A", "1B", "2", "3", "4", "5"}, 14},
-	{3, 2, 5, []CameraID{"1A", "1B", "2", "3", "4", "5", "6"}, 14},
-	{3, 2, 6, []CameraID{"1A", "1B", "2", "3", "4", "5", "6", "8"}, 14},
+	{3, 1, 4, []CameraID{"1A", "1B", "2", "3", "4", "5"}, 10},
+	{3, 2, 5, []CameraID{"1A", "1B", "2", "3", "4", "5", "6"}, 10},
+	{3, 2, 6, []CameraID{"1A", "1B", "2", "3", "4", "5", "6", "8"}, 10},
 }
 
 // MaxDay es el último día del juego.
@@ -82,8 +82,9 @@ const MaxDay = 5
 
 // ConfigForDay arma la configuración del día 1 a 5.
 //
-// El Elenco solo tiene 10 pacientes, y los días 3 a 5 piden 14 (doctores x 4
-// + 2). Mientras no haya más personajes aprobados, esos días usan los 10.
+// Decisión de la autora (2026-10-17): como el Elenco tiene 10 pacientes, los
+// días 3 a 5 también traen 10 (la dificultad sube por cámaras, camas y
+// penalizaciones). Si sobra tiempo se agregan personajes y se sube a 12.
 func ConfigForDay(day int) (DayConfig, error) {
 	if day < 1 || day > MaxDay {
 		return DayConfig{}, ErrInvalidDay

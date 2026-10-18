@@ -177,3 +177,7 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-17 | Elenco fijo y textos del Director aprobados | — | "revisé el elenco y los textos y me gustan bastante, aprobados :D" |
 | 2026-10-17 | Menú aprobado con cambios: sin sombrero, sin esquinas de cámara ni REC, ¡ a tamaño 10, atardecer fijo, descripciones del agente aprobadas | Revisión de la vista | "yo creo que es mejor quitarlo" / "nop" / "ok" / "me gusta tu recomendacion" / "me gustan como estan" |
 | 2026-10-17 | Tag `entrega-base` en `main` como respaldo; builder arranca con `game/`, `-web` y `nogame`; arte sigue con el elenco y la cámara de la Demo | Plan de trabajo | "Sip" |
+| 2026-10-17 | La ventana del juego arranca más pequeña: ×2 (960×540) en vez de ×3 | Se veía muy grande | "tal vez la pantalla del juego puede iniciar mas pequeña? la veo muy grande" |
+| 2026-10-17 | Días 3–5 con 10 pacientes (el elenco tiene 10); subir a 12 con personajes extra si sobra tiempo | Elenco fijo | "okeyyy" |
+| 2026-10-17 | Aprobadas las decisiones del builder: nivel según el elenco, CAM 2 conectada al Pasillo Este, `MoveToBed` = traslado + medio descanso, errores internos en inglés | Revisión | "sip" / "ok" |
+| 2026-10-17 | Dormido sin atender al final del turno resta 10 (× multiplicador del día) en vez de sumar | No fueron atendidos | "cambiemoslo mejor por -10, porque realmente no se atendieron" |

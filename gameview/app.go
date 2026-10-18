@@ -16,7 +16,7 @@ const (
 	// Resolución lógica del juego (pixel art) y cuánto se agranda en pantalla.
 	logicalWidth  = 480
 	logicalHeight = 270
-	windowScale   = 3
+	windowScale   = 2 // 960x540: cabe cómodo en pantallas de portátil
 
 	windowTitle = "Hospital de los Costeños con Narcolepsia"
 )

@@ -34,6 +34,7 @@ const (
 	bedPenalty        = 2  // base, por cada 10 min tras la gracia
 	bedGraceMinutes   = 15
 	bedPenaltyEvery   = 10
+	unattendedPenalty = 10 // base, por cada dormido sin atender al final
 
 	maxPointsPerEpisode = 120 // para calcular el porcentaje de estrellas
 )

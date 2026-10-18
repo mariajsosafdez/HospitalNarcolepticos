@@ -239,15 +239,15 @@ Cada acción es un método de `Shift` que devuelve `error` si no se puede hacer.
 
 **Regla de la autora:** el número de pacientes de cada partida no debe pasar mucho del cupo total de los doctores, para que los doctores se usen y los camilleros sean el apoyo.
 
-Fórmula *(propuesta)*: `pacientes = doctores × 4 + 2`.
+Fórmula original: `pacientes = doctores × 4 + 2`. ✅ **Cambio:** el Elenco tiene 10 pacientes, así que **todos los días traen 10** ("okeyyy"). La dificultad sube por cámaras, camas y penalizaciones. Si sobra tiempo se agregan personajes y se sube a 12.
 
 | Día | Doctores | Camilleros | Habitaciones | Cámaras comunes | Pacientes |
 |---|---|---|---|---|---|
 | 1 | 2 | 1 | 3 | 1A, 1B, 2, 3 | 10 |
 | 2 | 2 | 1 | 4 | + 4 | 10 |
-| 3 | 3 | 1 | 4 | + 5 | 14 |
-| 4 | 3 | 2 | 5 | + 6 | 14 |
-| 5 | 3 | 2 | 6 | todas | 14 |
+| 3 | 3 | 1 | 4 | + 5 | 10 |
+| 4 | 3 | 2 | 5 | + 6 | 10 |
+| 5 | 3 | 2 | 6 | todas | 10 |
 
 - Los pacientes llegan repartidos entre 12:00 y ~16:00. Al llegar se llama `h.AdmitPatient(p)`.
 - Reparto de niveles *(propuesto)*: 40 % Leve, 35 % Moderado, 25 % Severo (al menos 2 severos, como el enunciado).
@@ -268,7 +268,8 @@ Fórmula *(propuesta)*: `pacientes = doctores × 4 + 2`.
 | Severo atendido por doctor | +20 |
 | Despierto en cama sin alta | −2 por cada 10 min de juego, después de 15 min de gracia |
 | Doctor llega a 4/4 (exceso de trabajo) | −50, una vez por doctor |
-| Paciente dormido sin atender al terminar el turno | cuenta como Mal (+10) |
+| Paciente dormido sin atender al terminar el turno (`AsleepWaiting` o `NoBedWaiting`) | **−10** ✅ ("cambiemoslo mejor por -10, porque realmente no se atendieron"), con multiplicador del día |
+| Paciente en camilla al terminar el turno | su espera se califica normal: sí fue atendido |
 
 ✅ Tabla aprobada.
 

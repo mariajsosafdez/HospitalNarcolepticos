@@ -923,3 +923,22 @@ func TestMoveRulesAfterDischarge(t *testing.T) {
 		t.Errorf("left the room through %s, want 4", cam)
 	}
 }
+
+// TestUnattendedAtEndSubtractPoints: al terminar el turno, cada paciente que
+// sigue dormido sin atender RESTA puntos, y la resta crece con el día.
+func TestUnattendedAtEndSubtractPoints(t *testing.T) {
+	for _, day := range []int{1, 5} {
+		s := newCustomShift(t, day, 2, 1, 3, 3)
+		if err := s.ForceSleep("P-001", "2", "cafeteria (sancocho line)"); err != nil {
+			t.Fatal(err)
+		}
+		advance(s, ShiftTicks)
+		if !s.Finished() {
+			t.Fatalf("day %d: shift did not finish", day)
+		}
+		want := -ScalePenalty(unattendedPenalty, day) // día 1: -10, día 5: -20
+		if got := s.Score().Unattended; got != want {
+			t.Errorf("day %d: Unattended = %d, want %d", day, got, want)
+		}
+	}
+}
