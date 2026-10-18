@@ -188,3 +188,4 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-17 | Textos nuevos del agente de arte aprobados (pantalla de cámaras y pasos de la Demo) | — | "me gustan" |
 | 2026-10-17 | Se dibujan todas las salas que faltan | — | "dibuja también las salas faltantes" |
 | 2026-10-17 | La línea de ayuda queda "Enter: dale" sin ¡! | La ¡ de Pixelify parece una i | "quita los ¡!" |
+| 2026-10-17 | En pantalla se quita la ¡ inicial y se deja el ! final (las notas conservan el español correcto) | La ¡ de Pixelify Sans parece una i | "Me gusta" |
