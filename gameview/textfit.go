@@ -98,7 +98,7 @@ func reportLines(r game.Report) []reportLine {
 		if len(parts) > 0 {
 			detail = strings.Join(parts, ", ")
 		}
-		add(false, "   %s (%d/%d): %s", d.Name, d.Patients, game.DoctorQuota, detail)
+		add(false, "   %s (%d/%d): %s", displayName(d.ID, d.Name), d.Patients, game.DoctorQuota, detail)
 	}
 
 	// Consulta 5.3: estado de las camas.

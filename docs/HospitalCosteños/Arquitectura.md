@@ -82,6 +82,10 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 
 **Fuentes.** Pixelify Sans (variable, eje `wght` con `SetVariation`) y VT323, embebidas con `go:embed` y dibujadas con `text/v2` de Ebitengine. Las dos son SIL OFL 1.1 y sus `OFL-*.txt` están junto a los `.ttf`.
 
+**Texto nítido: se dibuja a tamaño de pantalla.** Las dos fuentes son vectoriales (no una cuadrícula de píxeles exacta): dibujadas a 8 o 10 px en el lienzo de 480x270 y agrandadas después, salían suavizadas y borrosas (y el borde de 1 px del rótulo, un manchón). Ahora `App.Layout` elige el mayor factor entero `Env.Scale` que cabe en la ventana y devuelve 480x270 por ese factor; todo lo que se dibuja (`FillRect`, `DrawSprite`, `Text`) multiplica sus coordenadas por `Scale` (arte sin suavizar) y el texto usa letras de `tamaño * Scale`, igual que Figma al exportar a x4. Las coordenadas de las pantallas siguen siendo las de 480x270. La imagen de la cámara (168x123) se pinta con `Scale = 1` y se agranda aparte. Las capturas de `-agent` se repintan al factor pedido (`shot` = 1, `shot4` = 4). El sello de la cámara vuelve a 10 px (como la nota de Figma) con borde de 1 píxel del juego.
+
+**Nombres en español en la vista.** La Demo usa los datos en inglés del enunciado ("Dr. Karen Ospina / Neurology"), que no se tocan. `gameview/names.go` busca por ID (D-001 a D-003) el nombre y la especialidad del Elenco y se usa en las tarjetas del panel y en el reporte.
+
 **Texto en pantalla sin ¡.** Decisión de la autora (2026-10-17): lo que se ve en el juego pierde el `¡` de apertura y conserva el `!` del cierre, porque en Pixelify Sans el `¡` parece una `i`. Se hace en un solo lugar: `screenText` (en `layout.go`, con test de tabla) lo usan `drawText` y la medición de ancho. Los textos del código y de las notas conservan el español correcto.
 
 **Dos relojes.** `game.Clock` cuenta los ticks del turno y se detiene en la pausa. `Env.Tick` cuenta los ticks de la interfaz (parpadeos, animaciones) y sigue corriendo. Nada lee el reloj del computador, por eso las capturas de la puerta de pruebas son iguales cada vez.
@@ -124,7 +128,7 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | `move X Y` | Pone el mouse en (X, Y) del lienzo de 480x270 (gasta 1 tick) |
 | `click X Y` | Mueve el mouse y hace clic (1 tick) |
 | `key Nombre` | Pulsa una tecla: `Up Down Left Right Enter Escape Space M 1`..`8` |
-| `shot ruta` | Captura PNG a 1x (480x270) |
+| `shot ruta` | Captura PNG a 1x (480x270), pintada otra vez a ese tamaño |
 | `shot4 ruta` | Captura PNG a 4x (1920x1080) |
 | `dump ruta` | JSON: `ui` (escena, cámara, paciente elegido, botón bajo el mouse, aviso, pausa o reporte, paso de la Demo...) y `game` (`game.Snapshot` completo) |
 | `sleep ID CAM` | Duerme al paciente en esa cámara (`ForceSleep`, la misma ayuda de la Demo) |

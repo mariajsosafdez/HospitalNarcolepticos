@@ -195,7 +195,7 @@ var pageButtonRect = rect{436, 20, 40, 11}
 // "Camillero".
 func staffRole(m *game.StaffMember) string {
 	if m.IsDoctor() {
-		return m.Doctor().Specialty()
+		return displaySpecialty(m.ID(), m.Doctor().Specialty())
 	}
 	return "Camillero"
 }

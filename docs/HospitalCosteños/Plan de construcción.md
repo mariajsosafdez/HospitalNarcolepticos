@@ -9,7 +9,7 @@ Una pantalla solo se programa cuando su vista de Figma está ✅ aprobada en el 
 | # | Hito | Qué incluye | Estado |
 |---|---|---|---|
 | 0 | Base de reglas | Paquete `game/` completo y probado, banderas `-web` y `nogame`, ventana vacía de Ebitengine | ✅ hecho |
-| 1 | **Demo** | Menú, vista de cámara, panel de personal, modo Demo con "Siguiente paso" y "Auto", reporte con las 4 consultas. Usa `game.NewDemo` | ✅ jugable: menú, cámaras, panel, mapa, Demo en 4 pasos y puerta de pruebas. Reporte provisional (sin vista aprobada) |
+| 1 | **Demo** | Menú, vista de cámara, panel de personal, modo Demo con "Siguiente paso" y "Auto", reporte con las 4 consultas. Usa `game.NewDemo` | ✅ jugable: menú, cámaras, panel, mapa, Demo en 4 pasos y puerta de pruebas. Reporte provisional (sin vista aprobada). Texto nítido a tamaño de pantalla y nombres en español en la Demo |
 | 2 | **Día 1 + reporte** | Turno jugable de 3 min con 4 cámaras comunes + 3 habitaciones, asignar, mover a cama, dar de alta, pausa, reporte de fin de turno con estrellas y mensaje del Director | en curso: el Día 1 ya se juega (asignar, mover a cama, alta, pausa mínima, reporte provisional). Falta la vista de Pausa y del Reporte |
 | 3 | **Días 2 a 5** | Más cámaras, doctores, camilleros y habitaciones por día, penalizaciones que suben, autoguardado y desbloqueo de días, ajustes | pendiente |
 | 4 | **Sonido** | Música y efectos CC0/CC-BY, volúmenes de los ajustes. Cada elección "por defecto, la autora confirma de oído" | pendiente |
