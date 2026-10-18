@@ -50,6 +50,20 @@ func startScene(env *Env) (Scene, error) {
 		}
 		scene.finishShift()
 		return scene.toReport, nil
+	case "pause":
+		// Un Día 1 en la pausa (como si se hubiera pulsado Esc).
+		scene, err := newShiftScene(env, opts.Day, opts.Seed, false, game.CameraID(opts.Camera))
+		if err != nil {
+			return nil, err
+		}
+		scene.paused, scene.pauseSel = true, pauseContinue
+		scene.shift.Pause()
+		return scene, nil
+	case "settings":
+		// El menú con los ajustes abiertos (desde la pausa: -scene pause, Down, Enter).
+		menu := newMenu(env)
+		menu.settings = newSettingsView(env)
+		return menu, nil
 	case "director":
 		// El regaño por exceso de trabajo, con la Dra. Karen, sobre un Día 1.
 		scene, err := newShiftScene(env, 1, opts.Seed, false, game.CameraID(opts.Camera))
@@ -264,6 +278,7 @@ func resizeNearest(src *image.RGBA, w, h int) *image.RGBA {
 // dumpFile es el JSON del volcado: la interfaz y el turno.
 type dumpFile struct {
 	UI   UIState        `json:"ui"`
+	Save game.SaveData  `json:"save"` // el guardado en memoria (ajustes, días desbloqueados, estrellas)
 	Game *game.Snapshot `json:"game,omitempty"`
 }
 
@@ -272,7 +287,7 @@ func (d *agentDriver) dump(a *App, path string) error {
 	ui := a.scene.State()
 	ui.UITick = a.env.Tick
 	ui.MouseX, ui.MouseY = a.in.MouseX, a.in.MouseY
-	out := dumpFile{UI: ui}
+	out := dumpFile{UI: ui, Save: a.env.Save}
 	if shift := a.scene.Shift(); shift != nil {
 		snap := shift.Snapshot()
 		out.Game = &snap

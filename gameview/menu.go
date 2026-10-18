@@ -61,6 +61,7 @@ type menuScene struct {
 	selected int
 	overlay  string // texto de "Próximamente" mientras esté abierto
 	hovered  string
+	settings *settingsView // ajustes abiertos
 }
 
 func newMenu(env *Env) *menuScene { return &menuScene{env: env} }
@@ -72,6 +73,9 @@ func (m *menuScene) Shift() *game.Shift { return nil }
 
 func (m *menuScene) State() UIState {
 	st := UIState{Scene: "menu", Selected: menuItems[m.selected].label, HoveredButton: m.hovered}
+	if m.settings != nil {
+		st.Overlay, st.Selected = "settings", m.settings.State()
+	}
 	if m.overlay != "" {
 		st.Overlay = "Próximamente: " + m.overlay
 	}
@@ -80,6 +84,12 @@ func (m *menuScene) State() UIState {
 
 // Update lee flechas, mouse y Enter.
 func (m *menuScene) Update(in *Input) Scene {
+	if m.settings != nil {
+		if m.settings.Update(in) {
+			m.settings = nil
+		}
+		return nil
+	}
 	if m.overlay != "" {
 		if in.Click || in.Pressed("Enter") || in.Pressed("Escape") || in.Pressed("Space") {
 			m.overlay = ""
@@ -133,6 +143,8 @@ func (m *menuScene) activate() Scene {
 			return nil
 		}
 		return scene
+	case optSettings:
+		m.settings = newSettingsView(m.env)
 	case optHowToPlay:
 		scene, err := newPracticeScene(m.env, m.env.newSeed(), 0, "")
 		if err != nil {
@@ -212,10 +224,13 @@ func (m *menuScene) Draw(dst *ebiten.Image) {
 	if m.overlay != "" {
 		drawComingSoon(e, dst, m.overlay)
 	}
+	if m.settings != nil {
+		m.settings.Draw(dst)
+	}
 }
 
 // drawComingSoon pinta el aviso provisional de las pantallas sin vista
-// aprobada todavía (Cómo jugar, Ajustes, Créditos).
+// aprobada todavía (por ahora solo Créditos).
 func drawComingSoon(e *Env, dst *ebiten.Image, title string) {
 	box := rect{140, 100, 200, 56}
 	drawBox(e, dst, box)

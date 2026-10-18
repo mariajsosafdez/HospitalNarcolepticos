@@ -82,6 +82,7 @@ type UIState struct {
 	HoveredButton   string       `json:"hoveredButton,omitempty"`   // botón bajo el mouse
 	Notice          string       `json:"notice,omitempty"`          // título del aviso visible
 	Overlay         string       `json:"overlay,omitempty"`         // pausa, reporte, mensaje, próximamente
+	Blinking        []string     `json:"blinking,omitempty"`        // botones del mapa que están parpadeando
 	Message         string       `json:"message,omitempty"`         // mensaje del Director abierto
 	MessageIndex    int          `json:"messageIndex,omitempty"`    // línea (desde 1) del mensaje
 	MessageCount    int          `json:"messageCount,omitempty"`    // cuántas líneas tiene

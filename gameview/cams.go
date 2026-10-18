@@ -51,13 +51,16 @@ type camsScene struct {
 
 	selected string // ID del paciente elegido ("" = ninguno)
 	cursor   int    // con teclado: tarjeta del panel marcada (-1 = ninguna)
-	pauseSel int    // en la pausa: 0 = Seguir, 1 = Menú
+	pauseSel int    // en la pausa: 0 = Continuar, 1 = Ajustes, 2 = Salir al menú
 	notice   *notice
 	paused   bool
-	toReport *reportScene // reporte listo para abrirse (fin del turno o paso 4 de la Demo)
-	msg      *messageBox  // mensaje del Director abierto (el reloj del turno se detiene)
-	practice bool         // "Cómo jugar": solo el tutorial, y al terminar vuelve al menú
-	recorded bool         // el resultado del turno ya se guardó
+	toReport *reportScene                 // reporte listo para abrirse (fin del turno o paso 4 de la Demo)
+	msg      *messageBox                  // mensaje del Director abierto (el reloj del turno se detiene)
+	practice bool                         // "Cómo jugar": solo el tutorial, y al terminar vuelve al menú
+	settings *settingsView                // ajustes abiertos desde la pausa
+	prev     map[string]game.PatientState // estado de cada paciente en el tick anterior (para los parpadeos)
+	blinks   map[game.CameraID]blink      // botones del mapa que están parpadeando
+	recorded bool                         // el resultado del turno ya se guardó
 
 	mouseX, mouseY int
 	hovered        string
@@ -124,9 +127,17 @@ func (c *camsScene) State() UIState {
 	switch {
 	case c.msg != nil:
 		st.Overlay = "message"
+	case c.settings != nil:
+		st.Overlay = "settings"
+		st.Selected = c.settings.State()
 	case c.paused:
 		st.Overlay = "pause"
-		st.Selected = [2]string{"resume", "menu"}[c.pauseSel]
+		st.Selected = [3]string{"resume", "settings", "menu"}[c.pauseSel]
+	}
+	for _, id := range mapCameras {
+		if _, ok := c.blinks[id]; ok {
+			st.Blinking = append(st.Blinking, string(id))
+		}
 	}
 	return st
 }
@@ -167,6 +178,7 @@ func (c *camsScene) update(in *Input) Scene {
 	}
 	c.shift.Tick()
 	c.updateWalkers()
+	c.trackBlinks()
 	if c.notice != nil && c.env.Tick >= c.notice.until {
 		c.notice = nil
 	}
@@ -247,7 +259,7 @@ func (c *camsScene) handleInput(in *Input) Scene {
 			c.selected = ""
 		default:
 			c.paused = true
-			c.pauseSel = 0
+			c.pauseSel = pauseContinue
 			c.shift.Pause()
 		}
 		return nil
@@ -418,6 +430,7 @@ func (c *camsScene) switchCamera(id game.CameraID) {
 	if err := c.shift.SwitchCamera(id); err == nil {
 		c.selected = ""
 		c.cursor = -1
+		delete(c.blinks, id) // ya se miró la cámara que avisaba
 	}
 }
 
@@ -479,11 +492,8 @@ func (c *camsScene) roomPatient() *game.GamePatient {
 // volcado de pruebas).
 func (c *camsScene) hoverTarget(x, y int) string {
 	if c.paused {
-		switch {
-		case pauseResumeRect.contains(x, y):
-			return "resume"
-		case pauseMenuRect.contains(x, y):
-			return "menu"
+		if i := pauseItemAt(x, y); i >= 0 {
+			return [3]string{"resume", "settings", "menu"}[i]
 		}
 		return ""
 	}
@@ -517,42 +527,45 @@ func (c *camsScene) hoverTarget(x, y int) string {
 	return ""
 }
 
-// updatePause atiende la pausa. Izquierda/Arriba marcan "Seguir" y
-// Derecha/Abajo "Menú"; Enter (o clic) ejecuta el marcado. Esc sigue y M sale.
-// El mouse marca el botón que toca, igual que las flechas.
+// updatePause atiende la pausa (o los ajustes abiertos desde ella). Arriba y
+// abajo (o izquierda y derecha) marcan Continuar, Ajustes o Salir al menú,
+// Enter ejecuta lo marcado y Esc sigue jugando. El mouse marca lo que toca.
 func (c *camsScene) updatePause(in *Input) Scene {
-	switch {
-	case in.Pressed("Left"), in.Pressed("Up"):
-		c.pauseSel = 0
-	case in.Pressed("Right"), in.Pressed("Down"):
-		c.pauseSel = 1
-	}
-	if in.Moved {
-		switch c.hovered {
-		case "resume":
-			c.pauseSel = 0
-		case "menu":
-			c.pauseSel = 1
+	if c.settings != nil {
+		if c.settings.Update(in) {
+			c.settings = nil
 		}
+		return nil
+	}
+	switch {
+	case in.Pressed("Up"), in.Pressed("Left"):
+		c.pauseSel = stepPause(c.pauseSel, -1)
+	case in.Pressed("Down"), in.Pressed("Right"):
+		c.pauseSel = stepPause(c.pauseSel, 1)
+	}
+	hover := pauseItemAt(in.MouseX, in.MouseY)
+	if hover >= 0 && in.Moved {
+		c.pauseSel = hover
 	}
 	chosen := -1
 	switch {
 	case in.Pressed("Escape"):
-		chosen = 0
-	case in.Pressed("M"):
-		chosen = 1
+		chosen = pauseContinue
 	case in.Pressed("Enter"), in.Pressed("Space"):
 		chosen = c.pauseSel
-	case in.Click && c.hovered == "resume":
-		chosen = 0
-	case in.Click && c.hovered == "menu":
-		chosen = 1
+	case in.Click && hover >= 0:
+		chosen = hover
 	}
 	switch chosen {
-	case 0:
+	case pauseContinue:
 		c.paused = false
 		c.shift.Resume()
-	case 1:
+	case pauseSettings:
+		c.pauseSel = pauseSettings
+		c.settings = newSettingsView(c.env)
+	case pauseExit:
+		// Salir al menú abandona el turno SIN guardarlo: el resultado solo se
+		// guarda al terminar un turno (finishShift).
 		return newMenu(c.env)
 	}
 	return nil

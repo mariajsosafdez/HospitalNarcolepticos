@@ -16,13 +16,10 @@ import (
 
 // Rectángulos fijos de la pantalla (a 1x).
 var (
-	demoBoxRect     = rect{8, 200, 328, 62}
-	demoNextRect    = rect{210, 244, 70, 13}
-	demoAutoRect    = rect{286, 244, 42, 13}
-	pauseBoxRect    = rect{140, 96, 200, 70}
-	pauseResumeRect = rect{150, 142, 80, 13}
-	pauseMenuRect   = rect{250, 142, 80, 13}
-	noticeRect      = rect{60, 203, 220, 46}
+	demoBoxRect  = rect{8, 200, 328, 62}
+	demoNextRect = rect{210, 244, 70, 13}
+	demoAutoRect = rect{286, 244, 42, 13}
+	noticeRect   = rect{60, 203, 220, 46}
 )
 
 // dischargeRect es el botón "Dar de alta", centrado bajo la cama (con la cama
@@ -237,6 +234,9 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 	}
 	if c.paused {
 		c.drawPause(dst)
+	}
+	if c.settings != nil {
+		c.settings.Draw(dst)
 	}
 }
 
@@ -565,6 +565,13 @@ func (c *camsScene) drawMap(dst *ebiten.Image) {
 		case locked:
 			key = 'X'
 		}
+		if b, ok := c.blinks[id]; ok && id != current {
+			// Parpadeo suave de una cámara donde alguien se durmió (mango) o se
+			// despertó (menta). Solo en las cámaras que no se están mirando.
+			if alpha := blinkAlpha(e.Tick - b.start); alpha > 0 {
+				e.FillRect(dst, r, blinkKey(b.wake), alpha)
+			}
+		}
 		if id != c.hoverLocked { // con el candado encima, el rótulo se esconde
 			e.Text(dst, string(id), r.x+r.w/2, r.y, textStyle{fontVT, stampFontSize, key, alignCenter})
 		}
@@ -619,17 +626,6 @@ func (c *camsScene) drawDemoBox(dst *ebiten.Image) {
 		autoLabel, autoFill = "Pausa", 'm'
 	}
 	c.drawButton(dst, demoAutoRect, autoLabel, autoFill, c.hovered == "auto")
-}
-
-// drawPause pinta la pausa mínima (la vista de Pausa todavía no está aprobada).
-func (c *camsScene) drawPause(dst *ebiten.Image) {
-	e := c.env
-	e.FillRect(dst, rect{0, 0, screenW, screenH}, '0', 0.45)
-	drawBox(e, dst, pauseBoxRect)
-	e.Text(dst, "Pausa", pauseBoxRect.x+pauseBoxRect.w/2, pauseBoxRect.y+8, textStyle{fontPixelBold, 10, '2', alignCenter})
-	e.Text(dst, "Esc: seguir · M: menú", pauseBoxRect.x+pauseBoxRect.w/2, pauseBoxRect.y+26, textStyle{fontPixel, 8, '1', alignCenter})
-	c.drawButton(dst, pauseResumeRect, "Seguir", 'm', c.pauseSel == 0)
-	c.drawButton(dst, pauseMenuRect, "Menú", 'k', c.pauseSel == 1)
 }
 
 // stampFontSize es el tamaño de VT323 del rótulo y de los botones del mapa:
