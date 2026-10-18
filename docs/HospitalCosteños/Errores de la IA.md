@@ -19,6 +19,8 @@ Registro honesto de errores reales que cometieron Claude y sus agentes durante e
 | 2026-10-18 | Builder | Un `sed` pensado para la tarjeta compacta también cambió la tarjeta normal | Comparación automática de la captura contra la vista aprobada | Restaurar la tarjeta normal |
 | 2026-10-18 | Builder | Supuso que los puntos del reporte iban alineados a la derecha, pero en el diseño van a la izquierda | Comparación de la captura con la vista aprobada | Alinearlos como en el diseño |
 | 2026-10-18 | Builder | Python en Windows escribió finales de línea CRLF en archivos `.go` | `gofmt -l` | `gofmt -w` antes de cada commit |
+| 2026-10-18 | Builder | Corrió `git stash` por error mientras probaba, y guardó temporalmente los cambios sin commit del agente de arte | El mismo agente | `git stash pop` inmediato; los cambios quedaron intactos. Lección: con agentes en paralelo, nunca comandos de git que toquen el árbol completo |
+| 2026-10-18 | Fuente + builder | La fuente Pixelify une "fi" y "fl" en un solo símbolo (ligadura): "fila" se leía "Ala" | El agente tester, leyendo las capturas | Desactivar las ligaduras (`liga`, `clig`, `dlig`) con un test |
 | 2026-10-17 | Sesión principal | Un `python -` en un comando quedó esperando entrada y colgó la terminal | El comando no terminó en 2 minutos | Detenerlo y hacer las ediciones a mano |
 
 ## Otros datos para AI_USAGE.md
