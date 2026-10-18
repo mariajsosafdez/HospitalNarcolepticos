@@ -106,8 +106,8 @@ func (c *creditsScene) Draw(dst *ebiten.Image) {
 	// 4. Don Ernesto con su marco.
 	e.FillRect(dst, rect{403, 11, 50, 50}, '0', 1)
 	e.DrawSprite(dst, a.Image("director_retrato"), 404, 12, false)
-	e.Text(dst, "Don Ernesto", 300, 22, textStyle{fontPixelBold, 8, '2', alignLeft})
-	e.Text(dst, "Gracias por la ayuda, vale!", 300, 33, textStyle{fontPixel, 8, '1', alignLeft})
+	e.Text(dst, "Don Ernesto", 294, 22, textStyle{fontPixelBold, 8, '2', alignLeft})
+	e.Text(dst, "Gracias por la ayuda, vale!", 294, 33, textStyle{fontPixel, 8, '1', alignLeft})
 	e.FillRect(dst, rect{24, 64, 432, 1}, 'k', 1)
 
 	// 5. Columna izquierda (x = 28): rótulos en negrita, datos en normal.

@@ -120,6 +120,8 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 
 **Sprites por ID.** `spriteKeys` (`layout.go`) da la clave de los PNG por ID de persona (P-007 es `mane`, no `abelardo`). `TestEveryCastMemberHasSprites` comprueba que todo el elenco tenga sus PNG embebidos.
 
+**Dígitos en pixel art.** Pixelify Sans dibuja el 5 como una S, así que `drawText` (`text.go`) parte la línea en tandas (`splitRuns`, `digits.go`): los dígitos van con los sprites `ui_digitos_8` (Pixelify 8 Regular y Bold), `ui_digitos_10b` y `ui_digitos_18b` (`digitSpecFor` da avance, alto y línea base) y lo demás con la fuente. Cada cuadro se vuelve una máscara blanca (`Assets.digitMask`) y se tiñe con `ColorScale`, así funcionan `TextShadow` y `TextOutline`. `Fonts.lineWidth` (y `Width`) miden los dígitos como `avance * cantidad`, para que el centrado y la alineación a la derecha sigan bien. Otros tamaños y VT323 no cambian. Prueba: `go run . -agent -scale 3 -scene day -day 5 -input guion.txt -quit` (`wait 5; shotwin ruta`).
+
 ## Puerta de pruebas (-agent)
 
 Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas, sacar capturas y volcar el estado sin mirar la ventana. Con `-agent` **no se imprime el escenario ni la simulación** (silencio total, solo errores) y no se escribe el guardado real.

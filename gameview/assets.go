@@ -23,6 +23,7 @@ type Assets struct {
 	images  map[string]*ebiten.Image // los mismos PNG listos para dibujar
 	frames  map[frameKey]*ebiten.Image
 	silhs   map[silhouetteKey]*ebiten.Image
+	masks   map[frameKey]*ebiten.Image // dígitos en blanco (ver digits.go)
 	palette map[byte]color.RGBA
 	pixel   *ebiten.Image // 1x1 blanco: sirve para rellenar rectángulos
 }
@@ -45,6 +46,7 @@ func LoadAssets() (*Assets, error) {
 		images:  make(map[string]*ebiten.Image),
 		frames:  make(map[frameKey]*ebiten.Image),
 		silhs:   make(map[silhouetteKey]*ebiten.Image),
+		masks:   make(map[frameKey]*ebiten.Image),
 		palette: make(map[byte]color.RGBA),
 	}
 	entries, err := fs.ReadDir(art.Files, "png")

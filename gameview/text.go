@@ -78,7 +78,7 @@ func (f *Fonts) face(family fontFamily, size int) *text.GoTextFace {
 // Width mide el ancho del texto en píxeles del juego (a 1x). Mide con la
 // letra 8 veces más grande y divide, para no acumular el error de redondeo.
 func (f *Fonts) Width(s string, family fontFamily, size int) int {
-	return (f.screenWidth(s, family, size*8) + 4) / 8
+	return (f.lineWidth(s, family, size, 8) + 4) / 8
 }
 
 // screenWidth mide el ancho en píxeles de pantalla con el tamaño ya escalado.
@@ -107,10 +107,28 @@ func (e *Env) drawText(dst *ebiten.Image, s string, family fontFamily, size, x, 
 	px, py := x*k, y*k
 	switch align {
 	case alignCenter:
-		px -= e.Fonts.screenWidth(s, family, big) / 2
+		px -= e.Fonts.lineWidth(s, family, size, k) / 2
 	case alignRight:
-		px -= e.Fonts.screenWidth(s, family, big)
+		px -= e.Fonts.lineWidth(s, family, size, k)
 	}
+	spec, hasSprites := digitSpecFor(family, size)
+	if !hasSprites {
+		e.drawFontRun(dst, s, family, big, px, py, c)
+		return
+	}
+	// Los dígitos van como sprites y lo demás con la fuente, tanda por tanda.
+	for _, run := range splitRuns(s) {
+		if run.digits {
+			px += e.drawDigits(dst, run.text, spec, px, y, c)
+		} else {
+			e.drawFontRun(dst, run.text, family, big, px, py, c)
+			px += e.Fonts.screenWidth(run.text, family, big)
+		}
+	}
+}
+
+// drawFontRun dibuja un pedazo de texto con la fuente en el píxel de pantalla (px, py).
+func (e *Env) drawFontRun(dst *ebiten.Image, s string, family fontFamily, big, px, py int, c color.RGBA) {
 	op := &text.DrawOptions{}
 	op.GeoM.Translate(float64(px), float64(py))
 	op.ColorScale.ScaleWithColor(c)
