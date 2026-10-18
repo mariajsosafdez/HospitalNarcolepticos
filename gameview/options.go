@@ -22,6 +22,8 @@ type Options struct {
 	Quit      bool   // cerrar al terminar el guion
 	SavedDay  int    // finge una partida guardada con este último día
 	Scale     int    // factor de dibujo fijo (1 a 4); 0 = el de la ventana (2 por defecto)
+	ScreenW   int    // con -screen: tamaño de la imagen de la ventana (para probar bordes de pantalla completa)
+	ScreenH   int
 	Intro     bool   // -scene day: abre con el mensaje del Director del día (como el juego de verdad)
 	SavePath  string // archivo de guardado de PRUEBA (nunca el real); vacío = sin guardado
 }
@@ -41,6 +43,13 @@ func RegisterFlags(fs *flag.FlagSet) *Options {
 	fs.BoolVar(&o.Quit, "quit", false, "with -agent: close when the script ends")
 	fs.IntVar(&o.SavedDay, "saved", 0, "with -agent: pretend there is a save with this last unlocked day")
 	fs.IntVar(&o.Scale, "scale", 0, "with -agent: fixed drawing scale 1-4 (window is 480x270 times this)")
+	fs.Func("screen", "with -agent: emulate a window image of WxH (e.g. 1501x899) to test fullscreen borders", func(v string) error {
+		_, err := fmt.Sscanf(v, "%dx%d", &o.ScreenW, &o.ScreenH)
+		if err != nil || o.ScreenW < logicalWidth || o.ScreenH < logicalHeight {
+			return fmt.Errorf("screen %q must look like WxH, at least %dx%d", v, logicalWidth, logicalHeight)
+		}
+		return nil
+	})
 	fs.BoolVar(&o.Intro, "intro", false, "with -agent -scene day: open with the Director's message of that day")
 	fs.StringVar(&o.SavePath, "savepath", "", "with -agent: scratch save file to read and write (never the real one)")
 	return o

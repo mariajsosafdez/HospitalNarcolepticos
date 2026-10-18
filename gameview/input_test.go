@@ -23,7 +23,7 @@ func TestWindowToGame(t *testing.T) {
 		{10, 10, 0, 10, 10}, // una escala inválida se trata como 1
 	}
 	for _, tt := range tests {
-		x, y := windowToGame(tt.wx, tt.wy, tt.scale)
+		x, y := windowToGame(tt.wx, tt.wy, viewport{scale: tt.scale})
 		if x != tt.x || y != tt.y {
 			t.Errorf("windowToGame(%d,%d,%d) = (%d,%d), want (%d,%d)", tt.wx, tt.wy, tt.scale, x, y, tt.x, tt.y)
 		}
@@ -35,11 +35,51 @@ func TestWindowToGame(t *testing.T) {
 func TestGameToWindowRoundTrip(t *testing.T) {
 	for scale := 1; scale <= 4; scale++ {
 		for _, p := range [][2]int{{0, 0}, {1, 1}, {100, 92}, {479, 269}, {26, 85}} {
-			wx, wy := gameToWindow(p[0], p[1], scale)
-			x, y := windowToGame(wx, wy, scale)
+			wx, wy := gameToWindow(p[0], p[1], viewport{scale, 5, 7})
+			x, y := windowToGame(wx, wy, viewport{scale, 5, 7})
 			if x != p[0] || y != p[1] {
 				t.Errorf("scale %d: (%d,%d) -> window (%d,%d) -> (%d,%d)", scale, p[0], p[1], wx, wy, x, y)
 			}
+		}
+	}
+}
+
+// Con bordes oscuros (pantalla completa que no es múltiplo exacto) el cursor
+// se mide desde la esquina del lienzo, no desde la de la ventana.
+func TestWindowToGameWithOffset(t *testing.T) {
+	tests := []struct {
+		wx, wy int
+		v      viewport
+		x, y   int
+	}{
+		{30, 20, viewport{3, 30, 20}, 0, 0},                  // esquina del lienzo
+		{30 + 1439, 20 + 809, viewport{3, 30, 20}, 479, 269}, // última esquina
+		{29, 19, viewport{3, 30, 20}, -1, -1},                // en el borde oscuro
+		{30 + 1440, 20, viewport{3, 30, 20}, 480, 0},         // pasado el lienzo
+		{100, 100, viewport{2, 10, 0}, 45, 50},
+	}
+	for _, tt := range tests {
+		x, y := windowToGame(tt.wx, tt.wy, tt.v)
+		if x != tt.x || y != tt.y {
+			t.Errorf("windowToGame(%d,%d,%+v) = (%d,%d), want (%d,%d)", tt.wx, tt.wy, tt.v, x, y, tt.x, tt.y)
+		}
+	}
+}
+
+func TestFitScreen(t *testing.T) {
+	tests := []struct{ w, h, k, ox, oy int }{
+		{1920, 1080, 4, 0, 0},
+		{960, 540, 2, 0, 0},
+		{2560, 1440, 5, 80, 45},  // 2400x1350 centrado
+		{1366, 768, 2, 203, 114}, // portátil común
+		{1920, 1200, 4, 0, 60},   // 16:10: bordes arriba y abajo
+		{1501, 899, 3, 30, 44},
+		{480, 270, 1, 0, 0},
+	}
+	for _, tt := range tests {
+		k, ox, oy := fitScreen(tt.w, tt.h)
+		if k != tt.k || ox != tt.ox || oy != tt.oy {
+			t.Errorf("fitScreen(%d,%d) = %d,%d,%d want %d,%d,%d", tt.w, tt.h, k, ox, oy, tt.k, tt.ox, tt.oy)
 		}
 	}
 }
@@ -73,7 +113,7 @@ func TestMenuHoverAtEveryScale(t *testing.T) {
 			var in Input
 			in.reset()
 			r := optionRect(i)
-			in.moveToWindow((r.x+r.w/2)*scale+1, (r.y+r.h/2)*scale+1, scale)
+			in.moveToWindow((r.x+r.w/2)*scale+1, (r.y+r.h/2)*scale+1, viewport{scale: scale})
 			m.Update(&in)
 			if m.hovered != menuItems[i].label {
 				t.Errorf("scale %d: over option %d hovered %q, want %q", scale, i, m.hovered, menuItems[i].label)

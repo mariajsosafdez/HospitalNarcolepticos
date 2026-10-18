@@ -37,36 +37,43 @@ func (in *Input) moveTo(x, y int) {
 	in.MouseX, in.MouseY = x, y
 }
 
+// viewport dice dónde cae el lienzo de 480x270 dentro de la imagen de la
+// ventana: agrandado scale veces y corrido (offX, offY) píxeles de ventana
+// (los bordes oscuros de la pantalla completa, cuando la ventana no es un
+// múltiplo exacto de 480x270).
+type viewport struct{ scale, offX, offY int }
+
 // moveToWindow recibe la posición del cursor tal como la da Ebitengine (en el
-// espacio que devolvió Layout: 480x270 por scale) y la pasa a píxeles del
-// juego. Es el ÚNICO camino del cursor a las pantallas: el juego de verdad y
-// la puerta de pruebas pasan por aquí.
-func (in *Input) moveToWindow(wx, wy, scale int) {
-	x, y := windowToGame(wx, wy, scale)
+// espacio que devolvió Layout, la imagen entera de la ventana) y la pasa a
+// píxeles del juego. Es el ÚNICO camino del cursor a las pantallas: el juego
+// de verdad y la puerta de pruebas pasan por aquí.
+func (in *Input) moveToWindow(wx, wy int, v viewport) {
+	x, y := windowToGame(wx, wy, v)
 	in.moveTo(x, y)
 }
 
 // moveToGameCell es para la puerta de pruebas: pone el cursor en el medio del
 // cuadro (x, y) del juego, pero como posición de VENTANA, y la hace pasar por
 // la misma conversión que el cursor real.
-func (in *Input) moveToGameCell(x, y, scale int) {
-	wx, wy := gameToWindow(x, y, scale)
-	in.moveToWindow(wx, wy, scale)
+func (in *Input) moveToGameCell(x, y int, v viewport) {
+	wx, wy := gameToWindow(x, y, v)
+	in.moveToWindow(wx, wy, v)
 }
 
-// windowToGame convierte una posición del cursor (píxeles de la ventana
-// lógica, que mide 480x270 por scale) en píxeles del juego (480x270). Divide
-// hacia abajo, también con negativos (el cursor puede salirse de la ventana).
-func windowToGame(wx, wy, scale int) (int, int) {
-	scale = max(scale, 1)
-	return floorDiv(wx, scale), floorDiv(wy, scale)
+// windowToGame convierte una posición del cursor (píxeles de la imagen de la
+// ventana) en píxeles del juego (480x270): quita el corrimiento de los bordes
+// y divide por la escala. Divide hacia abajo, también con negativos (el
+// cursor puede caer en el borde oscuro o fuera de la ventana).
+func windowToGame(wx, wy int, v viewport) (int, int) {
+	scale := max(v.scale, 1)
+	return floorDiv(wx-v.offX, scale), floorDiv(wy-v.offY, scale)
 }
 
 // gameToWindow es la inversa para la puerta de pruebas: da el píxel del medio
 // del cuadro (x, y) del juego, que es donde caería el cursor de una persona.
-func gameToWindow(x, y, scale int) (int, int) {
-	scale = max(scale, 1)
-	return x*scale + scale/2, y*scale + scale/2
+func gameToWindow(x, y int, v viewport) (int, int) {
+	scale := max(v.scale, 1)
+	return x*scale + scale/2 + v.offX, y*scale + scale/2 + v.offY
 }
 
 // floorDiv divide redondeando hacia abajo (la división de Go redondea hacia 0).
@@ -98,10 +105,10 @@ func checkKeyName(name string) error {
 }
 
 // readReal llena el Input con el teclado y el mouse de verdad.
-func (in *Input) readReal(scale int) {
+func (in *Input) readReal(v viewport) {
 	in.reset()
 	x, y := ebiten.CursorPosition()
-	in.moveToWindow(x, y, scale)
+	in.moveToWindow(x, y, v)
 	in.Click = inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)
 	for name, key := range keyNames {
 		if inpututil.IsKeyJustPressed(key) {

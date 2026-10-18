@@ -192,11 +192,11 @@ func (d *agentDriver) update(a *App) error {
 		case stepWait:
 			d.waitLeft = s.n
 		case stepMove:
-			a.in.moveToGameCell(s.x, s.y, a.env.Scale)
+			a.in.moveToGameCell(s.x, s.y, a.viewport())
 			a.step()
 			return nil
 		case stepClick:
-			a.in.moveToGameCell(s.x, s.y, a.env.Scale)
+			a.in.moveToGameCell(s.x, s.y, a.viewport())
 			a.in.Click = true
 			a.step()
 			return nil
@@ -243,15 +243,20 @@ func (d *agentDriver) force(a *App, s step) error {
 }
 
 // takeShot toma la captura pendiente, si hay una. Lee los píxeles de la
-// imagen que Draw acaba de pintar a Env.Scale (la misma que ve la ventana) y,
-// si se pidió otro tamaño, la reescala sin suavizar. Así una captura nunca
-// muestra algo distinto de lo que dibuja el juego de verdad.
-func (d *agentDriver) takeShot(screen *ebiten.Image) {
+// imagen que Draw acaba de pintar: el lienzo del juego (480x270 por Env.Scale,
+// sin bordes) y, si se pidió otro tamaño, la reescala sin suavizar. Con
+// shotwin (scale 0) sale la ventana ENTERA, con sus bordes oscuros si los hay.
+// Así una captura nunca muestra algo distinto de lo que dibuja el juego de verdad.
+func (d *agentDriver) takeShot(canvas, window *ebiten.Image) {
 	if d.pending == nil {
 		return
 	}
 	req := d.pending
 	d.pending = nil
+	screen := canvas
+	if req.scale == 0 {
+		screen = window
+	}
 	b := screen.Bounds()
 	pix := make([]byte, 4*b.Dx()*b.Dy())
 	screen.ReadPixels(pix)

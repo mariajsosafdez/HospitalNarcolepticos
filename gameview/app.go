@@ -7,6 +7,7 @@ package gameview
 import (
 	"errors"
 	"fmt"
+	"math"
 	"path/filepath"
 	"time"
 
@@ -124,6 +125,17 @@ type App struct {
 	scene Scene
 	in    Input
 	agent *agentDriver // nil en el juego de verdad
+
+	// Tamaño de la imagen de la ventana y dónde cae el lienzo dentro de ella
+	// (ver fitScreen). Layout los actualiza antes de cada Draw.
+	winW, winH int
+	offX, offY int
+	canvas     *ebiten.Image // lienzo de 480x270 por Scale, cuando hay bordes
+}
+
+// viewport es la ubicación actual del lienzo en la ventana.
+func (a *App) viewport() viewport {
+	return viewport{a.env.Scale, a.offX, a.offY}
 }
 
 // Update lo llama Ebitengine 60 veces por segundo: cada llamada es un tick
@@ -132,7 +144,7 @@ func (a *App) Update() error {
 	if a.agent != nil {
 		return a.agent.update(a)
 	}
-	a.in.readReal(a.env.Scale)
+	a.in.readReal(a.viewport())
 	a.step()
 	return nil
 }
@@ -145,13 +157,31 @@ func (a *App) step() {
 	}
 }
 
-// Draw pinta un cuadro en la imagen de la ventana, que mide 480x270 por
-// Env.Scale (lo que devolvió Layout). Si el tester pidió una captura, se saca
-// de ESTA imagen: es exactamente lo que ve la ventana.
+// Draw pinta un cuadro. El lienzo del juego mide 480x270 por Env.Scale (un
+// factor ENTERO). Si la imagen de la ventana tiene justo ese tamaño se pinta
+// directo; si no (pantalla completa o ventana que no es múltiplo exacto) se
+// pinta en un lienzo aparte y se pega centrado, sobre bordes oscuros, sin
+// agrandar ni suavizar: así cada píxel del juego sigue siendo un bloque
+// exacto y el texto no se ve borroso.
 func (a *App) Draw(screen *ebiten.Image) {
-	a.scene.Draw(screen)
+	k := a.env.Scale
+	canvas := screen
+	if b := screen.Bounds(); b.Dx() != logicalWidth*k || b.Dy() != logicalHeight*k {
+		if a.canvas == nil || a.canvas.Bounds().Dx() != logicalWidth*k || a.canvas.Bounds().Dy() != logicalHeight*k {
+			a.canvas = ebiten.NewImage(logicalWidth*k, logicalHeight*k)
+		}
+		canvas = a.canvas
+		canvas.Clear()
+	}
+	a.scene.Draw(canvas)
+	if canvas != screen {
+		screen.Fill(a.env.Assets.Color('0')) // los bordes: el marrón más oscuro de la paleta
+		op := &ebiten.DrawImageOptions{}     // filtro por defecto: vecino más cercano
+		op.GeoM.Translate(float64(a.offX), float64(a.offY))
+		screen.DrawImage(canvas, op)
+	}
 	if a.agent != nil {
-		a.agent.takeShot(screen)
+		a.agent.takeShot(canvas, screen)
 	}
 }
 
@@ -161,18 +191,60 @@ func layoutScale(w, h int) int {
 	return max(1, min(w/logicalWidth, h/logicalHeight))
 }
 
-// Layout elige el factor y devuelve ese tamaño: el juego se dibuja directo a
-// resolución de pantalla (sin agrandar una imagen chica), que es lo que
-// mantiene el texto nítido. Por eso el cursor llega en ese mismo espacio y
-// hay que dividirlo por Scale (ver Input.moveToWindow). Con -scale (modo
-// pruebas) el factor es fijo, aunque la ventana real sea de otro tamaño.
-func (a *App) Layout(outsideWidth, outsideHeight int) (int, int) {
-	k := layoutScale(outsideWidth, outsideHeight)
+// fitScreen reparte una imagen de ventana de w x h: el factor entero k y el
+// corrimiento (ox, oy) que centra el lienzo de 480k x 270k. Lo que sobra son
+// los bordes oscuros. Es pura para poder probarla.
+func fitScreen(w, h int) (k, ox, oy int) {
+	k = layoutScale(w, h)
+	return k, (w - logicalWidth*k) / 2, (h - logicalHeight*k) / 2
+}
+
+// setWindowSize recibe el tamaño de la imagen de la ventana y calcula el
+// factor y el corrimiento. En el modo pruebas -scale fija el factor (aunque
+// la ventana sea de otro tamaño).
+func (a *App) setWindowSize(w, h int) {
+	k, ox, oy := fitScreen(w, h)
 	if a.env.Opts.Agent && a.env.Opts.Scale > 0 {
 		k = a.env.Opts.Scale
+		ox, oy = (w-logicalWidth*k)/2, (h-logicalHeight*k)/2
 	}
 	a.env.Scale = k
-	return logicalWidth * k, logicalHeight * k
+	a.winW, a.winH, a.offX, a.offY = w, h, ox, oy
+}
+
+// Layout decide el tamaño de la imagen de la ventana. En el juego de verdad es
+// el tamaño real de la ventana (uno a uno: Ebitengine no la reescala, que es
+// lo que la volvía borrosa), y el lienzo de 480x270 se agranda dentro de ella
+// por un factor entero (ver Draw). En el modo pruebas el tamaño sale de
+// -screen o, si no, de 480x270 por -scale.
+func (a *App) Layout(outsideWidth, outsideHeight int) (int, int) {
+	w, h := outsideWidth, outsideHeight
+	if o := a.env.Opts; o.Agent {
+		switch {
+		case o.ScreenW > 0:
+			w, h = o.ScreenW, o.ScreenH
+		case o.Scale > 0:
+			w, h = logicalWidth*o.Scale, logicalHeight*o.Scale
+		}
+	}
+	a.setWindowSize(w, h)
+	return w, h
+}
+
+// LayoutF es Layout para pantallas con zoom del sistema (150 % en Windows, por
+// ejemplo): Ebitengine da el tamaño en puntos y la ventana tiene más píxeles
+// reales. Se multiplica por el factor para que la imagen tenga un píxel por
+// cada píxel real, y así tampoco se reescala. Ebitengine usa esta función
+// cuando existe.
+func (a *App) LayoutF(outsideWidth, outsideHeight float64) (float64, float64) {
+	if a.env.Opts.Agent {
+		w, h := a.Layout(int(outsideWidth), int(outsideHeight))
+		return float64(w), float64(h)
+	}
+	s := ebiten.Monitor().DeviceScaleFactor()
+	w, h := int(math.Round(outsideWidth*s)), int(math.Round(outsideHeight*s))
+	a.setWindowSize(w, h)
+	return float64(w), float64(h)
 }
 
 // newApp arma la aplicación: carga arte y fuentes y elige la primera pantalla.
@@ -229,7 +301,11 @@ func Run(opts Options) error {
 	if err != nil {
 		return err
 	}
-	ebiten.SetWindowSize(logicalWidth*app.env.Scale, logicalHeight*app.env.Scale)
+	if opts.Agent && opts.ScreenW > 0 {
+		ebiten.SetWindowSize(opts.ScreenW, opts.ScreenH)
+	} else {
+		ebiten.SetWindowSize(logicalWidth*app.env.Scale, logicalHeight*app.env.Scale)
+	}
 	ebiten.SetWindowTitle(windowTitle)
 	if opts.Agent {
 		scene, err := startScene(app.env)
