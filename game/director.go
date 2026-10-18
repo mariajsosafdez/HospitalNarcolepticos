@@ -74,6 +74,38 @@ func endLinesFor(stars int) []string {
 	}
 }
 
+// Índices de endLinesOneStar según la causa principal del mal turno.
+const (
+	oneStarUnattended = 0 // gente durmiendo en la cafetería
+	oneStarBed        = 1 // camas ocupadas por gente despierta
+	oneStarOverwork   = 2 // doctores cansados
+	oneStarGeneric    = 3 // la del carnaval
+)
+
+// OneStarLine escoge la frase de 1★ que coincide con lo que más restó: cama
+// sin alta, exceso de trabajo, dormidos sin atender (cause = ScoreBreakdown
+// .MainPenalty) o, si no hubo causa clara, la genérica. Es determinista.
+func OneStarLine(cause string) string {
+	switch cause {
+	case "bed":
+		return endLinesOneStar[oneStarBed]
+	case "overwork":
+		return endLinesOneStar[oneStarOverwork]
+	case "unattended":
+		return endLinesOneStar[oneStarUnattended]
+	}
+	return endLinesOneStar[oneStarGeneric]
+}
+
+// ReportLine es la frase del Director para el reporte: con 1★ la que
+// corresponde a la causa; con las demás estrellas, una al azar (EndLine).
+func ReportLine(stars int, cause string, seed int64) string {
+	if stars <= 1 {
+		return OneStarLine(cause)
+	}
+	return EndLine(stars, seed)
+}
+
 // EndLine escoge la frase del director para el reporte de fin de turno. La
 // elección es al azar PERO con la semilla del turno: la misma semilla y las
 // mismas estrellas dan siempre la misma frase (así se puede probar).

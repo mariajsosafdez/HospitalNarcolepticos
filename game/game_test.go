@@ -422,13 +422,63 @@ func TestScalePenalty(t *testing.T) {
 	}
 }
 
+// TestPenaltyRoundedOncePerType: los puntos de cada tipo salen de
+// redondeo(cobros x base x multiplicador), una sola vez, para los 5 días.
+func TestPenaltyRoundedOncePerType(t *testing.T) {
+	tests := []struct {
+		day, bed, overwork, unattended int // cobros
+		wantBed, wantOverwork, wantUn  int
+	}{
+		{1, 4, 1, 1, -8, -50, -10},
+		{2, 4, 1, 1, -10, -63, -13}, // cama: 4 x 2 x 1,25 = 10; sin atender: 12,5 -> 13
+		{2, 1, 0, 2, -3, 0, -25},    // 1 cobro: 2,5 -> 3; 2 sin atender: 25 exacto
+		{3, 3, 2, 3, -9, -150, -45},
+		{4, 2, 1, 1, -7, -88, -18}, // 2 x 2 x 1,75 = 7; 17,5 -> 18; 87,5 -> 88
+		{5, 5, 3, 2, -20, -300, -40},
+		{5, 0, 0, 0, 0, 0, 0},
+	}
+	for _, tt := range tests {
+		sc := ScoreBreakdown{BedCharges: tt.bed, OverworkEvents: tt.overwork, UnattendedCount: tt.unattended}
+		sc.recomputePenalties(tt.day)
+		if sc.BedPenalty != tt.wantBed || sc.OverworkLost != tt.wantOverwork || sc.Unattended != tt.wantUn {
+			t.Errorf("day %d %+v: got %d/%d/%d, want %d/%d/%d", tt.day, tt, sc.BedPenalty, sc.OverworkLost, sc.Unattended, tt.wantBed, tt.wantOverwork, tt.wantUn)
+		}
+	}
+}
+
+func TestMainPenaltyAndOneStarLine(t *testing.T) {
+	tests := []struct {
+		sc    ScoreBreakdown
+		cause string
+		line  string
+	}{
+		{ScoreBreakdown{BedPenalty: -20, OverworkLost: -50, Unattended: -10}, "overwork", endLinesOneStar[2]},
+		{ScoreBreakdown{BedPenalty: -30, OverworkLost: -25}, "bed", endLinesOneStar[1]},
+		{ScoreBreakdown{Unattended: -30, BedPenalty: -4}, "unattended", endLinesOneStar[0]},
+		{ScoreBreakdown{BedPenalty: -10, Unattended: -10}, "bed", endLinesOneStar[1]}, // empate: gana cama
+		{ScoreBreakdown{}, "", endLinesOneStar[3]},
+	}
+	for _, tt := range tests {
+		if got := tt.sc.MainPenalty(); got != tt.cause {
+			t.Errorf("MainPenalty(%+v) = %q, want %q", tt.sc, got, tt.cause)
+		}
+		if got := ReportLine(1, tt.cause, 7); got != tt.line {
+			t.Errorf("ReportLine(1, %q) = %q", tt.cause, got)
+		}
+	}
+	// Con más de 1★ la causa no cambia la frase.
+	if got := ReportLine(3, "bed", 7); got != EndLine(3, 7) {
+		t.Errorf("3 stars: %q", got)
+	}
+}
+
 func TestStars(t *testing.T) {
 	tests := []struct {
 		points, episodes, want int
 	}{
 		{0, 10, 1}, {-80, 10, 1},
 		{359, 10, 1}, {360, 10, 2}, // 30 % de 1200
-		{600, 10, 3}, {840, 10, 4}, {1020, 10, 5}, {1200, 10, 5},
+		{600, 10, 3}, {840, 10, 4}, {959, 10, 4}, {960, 10, 5}, {1200, 10, 5}, // 5★ desde el 80 %
 		{50, 0, 5},
 	}
 	for _, tt := range tests {
@@ -576,7 +626,7 @@ func TestDayConfigs(t *testing.T) {
 }
 
 func TestAwakeInBedPenalty(t *testing.T) {
-	s := newCustomShift(t, 2, 2, 1, 3, 3) // día 2: -2 x 1,25 = -3 por cobro
+	s := newCustomShift(t, 2, 2, 1, 3, 3) // día 2: n cobros de -2 x 1,25, redondeado UNA vez
 	mustSleepAndAssign(t, s, "P-001", "O-001")
 	advance(s, orderlyTransferTicks)
 	if err := s.ForceWake("P-001"); err != nil {
@@ -589,9 +639,10 @@ func TestAwakeInBedPenalty(t *testing.T) {
 	}{
 		{15, 0},  // dentro de la gracia
 		{24, 0},  // todavía no se cumplen los 10 min extra
-		{25, -3}, // primer cobro
+		{25, -3}, // primer cobro: 2,5 -> 3
 		{34, -3},
-		{45, -9}, // 35 y 45 min
+		{35, -5}, // 2 cobros: 4 x 1,25 = 5 exacto (antes, por cobro, daba 6)
+		{45, -8}, // 3 cobros: 6 x 1,25 = 7,5 -> 8
 	}
 	elapsed := 0
 	for _, tt := range tests {

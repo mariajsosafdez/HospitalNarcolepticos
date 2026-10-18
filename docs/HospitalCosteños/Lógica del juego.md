@@ -288,6 +288,9 @@ Ejemplo: en el Día 5, el exceso de trabajo de un doctor resta 100 en vez de 50.
 - El límite de 5★ bajó de 85 % a **80 %**: un turno perfecto sin severos daba 83 % y se quedaba en 4★ ("okeyy").
 - **Redondeo:** las restas de cada tipo se suman primero y el multiplicador del día se aplica y redondea **una sola vez** por tipo, no en cada cobro ("okey"). Así ×1,25 y ×1,75 son exactos.
 - **Cama sin alta:** el primer −2 llega a los **25 min** despierto (15 de gracia + 10), y luego cada 10 min. Queda escrito así para no tener dos lecturas.
+- **Implementación:** `ScoreBreakdown` guarda cuántas veces se cobró cada tipo (`BedCharges`, `OverworkEvents`, `UnattendedCount`) y `recomputePenalties` saca los puntos de cada tipo con `redondeo(cobros × base × multiplicador)`. Ejemplo Día 2: 4 cobros de cama = 10 (no 12); 1 dormido sin atender = 12,5 → 13; 2 = 25.
+- **El reporte explica cada resta** (✅ aprobado): "Penalizaciones" muestra "Día N · ×M", cada fila trae el número de cobros y los nombres de quienes costaron "Sin cama o sin atender" van bajo esa fila (`Report.Unattended`). La caja 5.1 sigue mostrando solo `PatientsInHallway()`.
+- **Frase de 1★:** `Report.Cause` (= `ScoreBreakdown.MainPenalty`, la penalización de mayor valor absoluto) escoge la frase del Director en `game.ReportLine`; empate: cama, exceso de trabajo, sin atender.
 
 ✅ **Con 1★ aparece un mensaje divertido del Director** regañando por la mala administración (varios textos al azar). Con 5★, uno de felicitación.
 

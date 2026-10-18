@@ -41,7 +41,9 @@
 | 4 | "Contratamos al Mono Arrieta. No habla mucho, pero carga como tres. Hoy abre el Patio de las palmeras." |
 | 5 | "Último día de la semana, y viene lleno. Usted ya sabe cómo es la vaina. ¡Confío en usted!" |
 
-## Fin de turno con 1★ (uno al azar)
+## Fin de turno con 1★ (la que coincide con la causa)
+
+Con 1★ la frase depende de la penalización que más restó (✅ aprobado 2026-10-18, "mostrar por qué se restó"): cama sin alta → la 2.ª; sin cama o sin atender → la 1.ª; exceso de trabajo → la 3.ª; sin causa clara (empate en cero) → la 4.ª. Un empate entre tipos gana cama, luego exceso de trabajo, luego sin atender.
 
 - "¡Erda! Me dicen que había gente durmiendo en la cafetería encima del sancocho. ¿Usted estaba vigilando o también se durmió?"
 - "Tres camas ocupadas por gente despierta pidiendo almuerzo, y usted mirando el patio. Así no, mi llave."
@@ -97,8 +99,8 @@ Pasos de la Demo (caja de la Demo, "Paso N de 4"):
 
 | Parte | Texto |
 |---|---|
-| Título | "Fin del turno" · "Día N  ·  de 12 a 6  ·  X pacientes atendidos" |
-| Puntos | "Puntos", "de N posibles (P %)", "Excelente", "Bien", "Regular", "Mal", "Bonus severos", "Penalizaciones", "Cama sin alta", "Exceso de trabajo", "Sin atender", "Total" |
+| Título | "Fin del turno" · "Día N  ·  de 12 a 6  ·  X pacientes atendidos" ("Nadie fue atendido" si son 0) |
+| Puntos | "Puntos", "de N posibles (P %)", "Excelente", "Bien", "Regular", "Mal", "Bonus severos", "Penalizaciones" con "Día N · ×1,25" a la derecha, "Cama sin alta", "Exceso de trabajo", "Sin cama o sin atender" (antes "Sin atender"), cada una con cuántas veces se cobró y los puntos; bajo la última, los nombres: "Eder, Abelardo, Marelvis y 4 más"; "Total" |
 | 5.1 | "Atendidos sin cama" (antes "Se quedaron sin cama"; la autora: "mejor"): "Al cerrar el turno: nadie." / "Durante el turno: 1 vez." (o "N veces.") / "{Nombre}, {lugar}" / "(después pasó a la 101)" |
 | 5.2 | "Episodios por doctor" (nombre, cantidad y debajo los pacientes) |
 | 5.3 | "Camas" (número y ocupante, o "libre") · "Veces sin cama: N" |

@@ -63,8 +63,12 @@ func signedPoints(n int) string {
 	return "0"
 }
 
-// attendedText es "4 pacientes atendidos" (o "1 paciente atendido").
+// attendedText es "4 pacientes atendidos", "1 paciente atendido" o, si nadie
+// llegó a una cama, "Nadie fue atendido".
 func attendedText(n int) string {
+	if n == 0 {
+		return "Nadie fue atendido"
+	}
 	if n == 1 {
 		return "1 paciente atendido"
 	}
@@ -79,6 +83,42 @@ func reportSubtitle(day int, demo bool, attended int) string {
 		who = "Demo"
 	}
 	return fmt.Sprintf("%s  ·  de 12 a 6  ·  %s", who, attendedText(attended))
+}
+
+// multiplierText escribe el multiplicador de penalizaciones del día desde su
+// porcentaje: 100 -> "×1", 125 -> "×1,25", 150 -> "×1,5", 200 -> "×2".
+func multiplierText(percent int) string {
+	whole, frac := percent/100, percent%100
+	switch {
+	case frac == 0:
+		return fmt.Sprintf("×%d", whole)
+	case frac%10 == 0:
+		return fmt.Sprintf("×%d,%d", whole, frac/10)
+	}
+	return fmt.Sprintf("×%d,%02d", whole, frac)
+}
+
+// unattendedText escribe quiénes costaron "Sin cama o sin atender": primeros
+// nombres separados por coma y, si no caben en maxW, "y N más" al final. Con
+// nadie devuelve "". measure mide el texto en píxeles.
+func unattendedText(names []string, maxW int, measure func(string) int) string {
+	if len(names) == 0 {
+		return ""
+	}
+	first := make([]string, len(names))
+	for i, n := range names {
+		first[i] = firstName(n)
+	}
+	for k := len(first); k >= 1; k-- {
+		text := strings.Join(first[:k], ", ")
+		if k < len(first) {
+			text += fmt.Sprintf(" y %d más", len(first)-k)
+		}
+		if measure(text) <= maxW {
+			return text
+		}
+	}
+	return fitText(first[0], maxW, measure)
 }
 
 // capWithMore deja a lo sumo max líneas; si sobran, la última se cambia por
@@ -236,7 +276,7 @@ func newReportScene(env *Env, shift *game.Shift, demo bool) *reportScene {
 		shift:  shift,
 		report: r,
 		demo:   demo,
-		line:   game.EndLine(r.Stars, shift.Seed()),
+		line:   game.ReportLine(r.Stars, r.Cause, shift.Seed()),
 	}
 }
 
@@ -477,23 +517,31 @@ func (s *reportScene) drawPointsCard(dst *ebiten.Image) {
 		e.Text(dst, signedPoints(row.value), r.x+128, y, textStyle{fontPixel, 8, 'g', alignLeft}) // los puntos van alineados a la izquierda, siempre en verde
 	}
 	e.FillRect(dst, rect{r.x + 6, r.y + 91, 146, 1}, 'k', 1)
-	e.Text(dst, "Penalizaciones", r.x+6, r.y+95, textStyle{fontPixelBold, 8, '2', alignLeft})
+	e.Text(dst, "Penalizaciones", r.x+6, r.y+94, textStyle{fontPixelBold, 8, '2', alignLeft})
+	if !s.demo { // la Demo no es un día: no tiene multiplicador
+		e.Text(dst, fmt.Sprintf("Día %d · %s", s.report.Day, multiplierText(game.PenaltyPercent(s.report.Day))), r.x+148, r.y+94, textStyle{fontPixel, 8, 'x', alignRight})
+	}
 	penalties := []struct {
-		label string
-		value int
+		label        string
+		count, value int
 	}{
-		{"Cama sin alta", sc.BedPenalty},
-		{"Exceso de trabajo", sc.OverworkLost},
-		{"Sin atender", sc.Unattended},
+		{"Cama sin alta", sc.BedCharges, sc.BedPenalty},
+		{"Exceso de trabajo", sc.OverworkEvents, sc.OverworkLost},
+		{"Sin cama o sin atender", sc.UnattendedCount, sc.Unattended},
 	}
 	for i, p := range penalties {
-		y := r.y + 105 + 11*i
+		y := r.y + 104 + 10*i
 		e.Text(dst, p.label, r.x+6, y, textStyle{fontPixel, 8, '1', alignLeft})
+		e.Text(dst, fmt.Sprint(p.count), r.x+110, y, textStyle{fontPixel, 8, 'x', alignCenter}) // cuántas veces se cobró
 		e.Text(dst, signedPoints(p.value), r.x+148, y, textStyle{fontPixel, 8, valueKey(p.value), alignRight})
 	}
-	e.FillRect(dst, rect{r.x + 6, r.y + 139, 146, 1}, 'k', 1)
-	e.Text(dst, "Total", r.x+6, r.y+145, textStyle{fontPixelBold, 10, '1', alignLeft})
-	e.Text(dst, fmt.Sprint(s.report.Total), r.x+148, r.y+145, textStyle{fontPixelBold, 10, '1', alignRight})
+	measure := func(t string) int { return e.Fonts.Width(t, fontPixel, 8) }
+	if names := unattendedText(s.report.Unattended, 139, measure); names != "" {
+		e.Text(dst, names, r.x+13, r.y+134, textStyle{fontPixel, 8, 'x', alignLeft}) // quiénes, bajo su fila
+	}
+	e.FillRect(dst, rect{r.x + 6, r.y + 145, 146, 1}, 'k', 1)
+	e.Text(dst, "Total", r.x+6, r.y+149, textStyle{fontPixelBold, 10, '1', alignLeft})
+	e.Text(dst, fmt.Sprint(s.report.Total), r.x+148, r.y+149, textStyle{fontPixelBold, 10, '1', alignRight})
 }
 
 // drawDirectorCard pinta la frase de Don Ernesto según las estrellas.

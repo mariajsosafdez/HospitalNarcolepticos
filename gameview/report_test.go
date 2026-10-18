@@ -32,7 +32,7 @@ func TestReportTexts(t *testing.T) {
 	if signedPoints(-4) != "-4" || signedPoints(0) != "0" {
 		t.Error("signedPoints with negatives or zero")
 	}
-	if attendedText(1) != "1 paciente atendido" || attendedText(4) != "4 pacientes atendidos" || attendedText(0) != "0 pacientes atendidos" {
+	if attendedText(1) != "1 paciente atendido" || attendedText(4) != "4 pacientes atendidos" || attendedText(0) != "Nadie fue atendido" {
 		t.Error("attendedText")
 	}
 	if got := reportSubtitle(1, false, 4); got != "Día 1  ·  de 12 a 6  ·  4 pacientes atendidos" {
@@ -141,6 +141,35 @@ func TestLocationText(t *testing.T) {
 	for _, tt := range tests {
 		if got := locationText(tt.in); got != tt.want {
 			t.Errorf("locationText(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+func TestMultiplierText(t *testing.T) {
+	tests := map[int]string{100: "×1", 125: "×1,25", 150: "×1,5", 175: "×1,75", 200: "×2"}
+	for percent, want := range tests {
+		if got := multiplierText(percent); got != want {
+			t.Errorf("multiplierText(%d) = %q, want %q", percent, got, want)
+		}
+	}
+}
+
+func TestUnattendedText(t *testing.T) {
+	measure := func(s string) int { return len(s) * 5 } // 5 px por letra, basta para probar
+	tests := []struct {
+		names []string
+		maxW  int
+		want  string
+	}{
+		{nil, 100, ""},
+		{[]string{"Yesid Mendoza"}, 100, "Yesid"},
+		{[]string{"Yesid Mendoza", "Wilfrido Berrio"}, 100, "Yesid, Wilfrido"},
+		{[]string{"Yesid Mendoza", "Wilfrido Berrio", "Karina Pérez"}, 100, "Yesid y 2 más"},
+		{[]string{"Yesid Mendoza", "Wilfrido Berrio", "Karina Pérez"}, 200, "Yesid, Wilfrido, Karina"},
+	}
+	for _, tt := range tests {
+		if got := unattendedText(tt.names, tt.maxW, measure); got != tt.want {
+			t.Errorf("unattendedText(%v, %d) = %q, want %q", tt.names, tt.maxW, got, tt.want)
 		}
 	}
 }

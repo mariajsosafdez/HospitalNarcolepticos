@@ -57,14 +57,19 @@ func RateWait(minutes int) (WaitRating, int) {
 // porcentaje (x1,0 a x2,0). Se usan enteros para no redondear mal.
 var penaltyPercent = [...]int{100, 125, 150, 175, 200}
 
+// PenaltyPercent es el multiplicador del día en porcentaje (100 = x1,0). Un
+// día fuera de rango usa el día 1. La vista lo muestra en el reporte.
+func PenaltyPercent(day int) int {
+	if day >= 1 && day <= len(penaltyPercent) {
+		return penaltyPercent[day-1]
+	}
+	return 100
+}
+
 // ScalePenalty multiplica una penalización base por el multiplicador del día,
 // redondeando al entero más cercano. Un día fuera de rango usa el día 1.
 func ScalePenalty(base, day int) int {
-	percent := 100
-	if day >= 1 && day <= len(penaltyPercent) {
-		percent = penaltyPercent[day-1]
-	}
-	return (base*percent + 50) / 100
+	return (base*PenaltyPercent(day) + 50) / 100
 }
 
 // Stars convierte puntos y episodios en estrellas: porcentaje =
@@ -83,7 +88,7 @@ func Stars(points, episodes int) int {
 		return 2
 	case percent < 70:
 		return 3
-	case percent < 85:
+	case percent < 80:
 		return 4
 	default:
 		return 5
@@ -103,6 +108,37 @@ type ScoreBreakdown struct {
 	OverworkLost int `json:"overworkLost"` // exceso de trabajo de los doctores
 	Unattended   int `json:"unattended"`   // dormidos sin cama al terminar el turno
 	Episodes     int `json:"episodes"`     // episodios que cuentan para las estrellas
+
+	// Cuántas veces se cobró cada penalización. Los puntos de arriba salen de
+	// aquí: se multiplica una sola vez y se redondea una sola vez por tipo.
+	BedCharges      int `json:"bedCharges"`      // cobros de "cama sin alta"
+	OverworkEvents  int `json:"overworkEvents"`  // doctores que llegaron a 4/4
+	UnattendedCount int `json:"unattendedCount"` // dormidos sin cama a las 18:00
+}
+
+// recomputePenalties calcula los puntos de cada penalización a partir de
+// cuántas veces se cobró: redondeo(cobros x base x multiplicador del día),
+// UNA sola vez por tipo (no por cobro), así ×1,25 y ×1,75 son exactos.
+func (s *ScoreBreakdown) recomputePenalties(day int) {
+	s.BedPenalty = -ScalePenalty(s.BedCharges*bedPenalty, day)
+	s.OverworkLost = -ScalePenalty(s.OverworkEvents*overworkPenalty, day)
+	s.Unattended = -ScalePenalty(s.UnattendedCount*unattendedPenalty, day)
+}
+
+// MainPenalty dice qué tipo de penalización pesó más (en valor absoluto):
+// "bed", "overwork" o "unattended". Si no hubo ninguna, "". En un empate gana
+// el primero de esa lista. Sirve para escoger la frase del Director.
+func (s ScoreBreakdown) MainPenalty() string {
+	best, kind := 0, ""
+	for _, c := range []struct {
+		kind  string
+		value int
+	}{{"bed", -s.BedPenalty}, {"overwork", -s.OverworkLost}, {"unattended", -s.Unattended}} {
+		if c.value > best {
+			best, kind = c.value, c.kind
+		}
+	}
+	return kind
 }
 
 // Total suma todas las filas.

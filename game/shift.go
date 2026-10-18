@@ -58,6 +58,7 @@ type Shift struct {
 	attendedIDs  map[string]bool // pacientes DISTINTOS que llegaron a una cama (un paciente puede dormirse varias veces)
 	noBedCount   int             // veces que un paciente se quedó sin cama
 	noBedEvents  []noBedEvent    // quién se quedó sin cama y dónde (para el reporte)
+	unattended   []*GamePatient  // los que seguían dormidos sin cama a las 18:00 (cuestan "sin atender")
 	overworked   []string        // IDs de doctores con exceso de trabajo
 	episodeTimes map[string]int  // ID de episodio -> tick de juego en que ocurrió
 	messages     []Message
@@ -339,7 +340,8 @@ func (s *Shift) chargeBedPenalty(g *GamePatient, now int) {
 		due = (elapsed - bedGraceMinutes) / bedPenaltyEvery
 	}
 	for g.bedPenalties < due {
-		s.score.BedPenalty -= ScalePenalty(bedPenalty, s.cfg.Day)
+		s.score.BedCharges++
+		s.score.recomputePenalties(s.cfg.Day)
 		g.bedPenalties++
 	}
 }
@@ -356,8 +358,10 @@ func (s *Shift) finish() {
 	for _, g := range s.patients {
 		switch g.state {
 		case AsleepWaiting, NoBedWaiting:
-			s.score.Unattended -= ScalePenalty(unattendedPenalty, s.cfg.Day)
+			s.score.UnattendedCount++
+			s.score.recomputePenalties(s.cfg.Day)
 			s.score.Episodes++
+			s.unattended = append(s.unattended, g)
 		case Carried:
 			s.score.addWait(TicksToMinutes(now - g.sleepTick))
 			s.markAttended(g)
@@ -551,7 +555,8 @@ func (s *Shift) checkOverwork(m *StaffMember) {
 	}
 	m.overworkCharged = true
 	s.overworked = append(s.overworked, m.ID())
-	s.score.OverworkLost -= ScalePenalty(overworkPenalty, s.cfg.Day)
+	s.score.OverworkEvents++
+	s.score.recomputePenalties(s.cfg.Day)
 	s.log("%s llegó a %d/%d pacientes: exceso de trabajo.", m.Name(), DoctorQuota, DoctorQuota)
 }
 

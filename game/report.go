@@ -74,9 +74,12 @@ type Report struct {
 	Total      int            `json:"total"`
 	Stars      int            `json:"stars"`
 	Overworked []string       `json:"overworked"`
-	Attended   int            `json:"attended"` // pacientes DISTINTOS que llegaron a una cama
-	Possible   int            `json:"possible"` // puntos posibles (120 por episodio)
-	Percent    int            `json:"percent"`  // puntos logrados sobre los posibles
+	Unattended []string       `json:"unattended"` // nombres de quienes costaron "sin cama o sin atender"
+	Cause      string         `json:"cause"`      // la penalización que más pesó: bed, overwork, unattended o ""
+
+	Attended int `json:"attended"` // pacientes DISTINTOS que llegaron a una cama
+	Possible int `json:"possible"` // puntos posibles (120 por episodio)
+	Percent  int `json:"percent"`  // puntos logrados sobre los posibles
 }
 
 // Report arma el reporte con el estado de este momento. Al terminar el turno
@@ -89,9 +92,14 @@ func (s *Shift) Report() Report {
 		Total:      s.score.Total(),
 		Stars:      s.Stars(),
 		Overworked: s.Overworked(),
+		Cause:      s.score.MainPenalty(),
 		Attended:   len(s.attendedIDs),
 		Possible:   PossiblePoints(s.score.Episodes),
 		Percent:    PointsPercent(s.score.Total(), s.score.Episodes),
+	}
+
+	for _, g := range s.unattended {
+		r.Unattended = append(r.Unattended, g.patient.Name())
 	}
 
 	// Parte de 5.1: quiénes se quedaron sin cama durante el turno y si
