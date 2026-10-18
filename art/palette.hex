@@ -1,0 +1,52 @@
+# Paleta cálida de HospitalCosteños (2026-10-17).
+# Formato: clave #rrggbb nombre. La clave es un solo carácter; "." queda reservado
+# para transparente y las líneas que empiezan con "#" son comentarios.
+
+# Oscuros cálidos para contornos (nunca negro puro)
+0 #2b1b17 cacao
+1 #4a2c25 cafe-oscuro
+2 #6b4136 ladrillo-oscuro
+x #8a7a70 gris-calido
+X #c9bcae gris-claro
+
+# Terracota y coral
+t #a85a3c terracota
+T #c8744c terracota-clara
+c #e8826a coral
+C #f4a58a coral-claro
+
+# Mango, sol y naranja
+o #e8762d naranja-atardecer
+m #f2a33a mango
+M #f9c95c mango-claro
+y #ffe08a amarillo-sol
+
+# Crema y arena (paredes)
+w #fff3dc crema-clara
+W #f6e1bd crema-pared
+k #dcc095 arena
+s #b89870 arena-oscura
+
+# Hospital: menta y verde agua
+a #b8e6cf menta-clara
+A #7ccbb0 menta
+q #4a9e94 verde-agua
+
+# Mar y cielo
+B #86c2d8 cielo-mediodia
+b #3f7fa6 azul-mar
+n #2e4a6b azul-noche
+
+# Atardecer
+p #c4607a rosa-atardecer
+v #7a4a73 morado-atardecer
+
+# Vegetación (palmeras)
+l #a8cf6a verde-lima
+g #5f9e4a verde-palma
+G #3d6b3a verde-palma-oscuro
+
+# Manillas por nivel (Leve / Moderado / Severo)
+L #6cc45a manilla-leve
+Y #ffd23f manilla-moderado
+R #d9433b manilla-severo
