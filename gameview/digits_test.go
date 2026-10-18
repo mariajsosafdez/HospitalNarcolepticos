@@ -56,22 +56,24 @@ func TestLineWidthDigits(t *testing.T) {
 		s      string
 		family fontFamily
 		size   int
-		k      int
-		want   int
+		k      float64
+		want   float64
 	}{
 		{"105", fontPixel, 8, 1, 15},
 		{"105", fontPixel, 8, 3, 45},
 		{"58", fontPixelBold, 10, 2, 24},
 		{"123", fontPixelBold, 18, 4, 132},
+		{"105", fontPixel, 8, 1.5, 22.5}, // escala fraccionaria
+		{"58", fontPixelBold, 10, 2.25, 27},
 	}
 	for _, tt := range tests {
 		if got := fonts.lineWidth(tt.s, tt.family, tt.size, tt.k); got != tt.want {
-			t.Errorf("lineWidth(%q, %d, %d) = %d, want %d", tt.s, tt.size, tt.k, got, tt.want)
+			t.Errorf("lineWidth(%q, %d, %v) = %v, want %v", tt.s, tt.size, tt.k, got, tt.want)
 		}
 	}
 	// Con letras: el ancho es el de la fuente más los dígitos.
-	want := fonts.screenWidth("Día ", fontPixel, 16) + 5*2
+	want := fonts.screenWidth("Día ", fontPixel, 16) + 5*2.0
 	if got := fonts.lineWidth("Día 5", fontPixel, 8, 2); got != want {
-		t.Errorf("Día 5 = %d, want %d", got, want)
+		t.Errorf("Día 5 = %v, want %v", got, want)
 	}
 }

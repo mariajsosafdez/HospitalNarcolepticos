@@ -2,6 +2,7 @@ package gameview
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -38,10 +39,13 @@ func (in *Input) moveTo(x, y int) {
 }
 
 // viewport dice dónde cae el lienzo de 480x270 dentro de la imagen de la
-// ventana: agrandado scale veces y corrido (offX, offY) píxeles de ventana
-// (los bordes oscuros de la pantalla completa, cuando la ventana no es un
-// múltiplo exacto de 480x270).
-type viewport struct{ scale, offX, offY int }
+// ventana: agrandado scale veces (puede ser fraccionario) y corrido (offX,
+// offY) píxeles de ventana (los bordes oscuros de la pantalla completa, cuando
+// la ventana no es 16:9).
+type viewport struct {
+	scale      float64
+	offX, offY int
+}
 
 // moveToWindow recibe la posición del cursor tal como la da Ebitengine (en el
 // espacio que devolvió Layout, la imagen entera de la ventana) y la pasa a
@@ -62,27 +66,24 @@ func (in *Input) moveToGameCell(x, y int, v viewport) {
 
 // windowToGame convierte una posición del cursor (píxeles de la imagen de la
 // ventana) en píxeles del juego (480x270): quita el corrimiento de los bordes
-// y divide por la escala. Divide hacia abajo, también con negativos (el
+// y divide por la escala. Redondea hacia abajo, también con negativos (el
 // cursor puede caer en el borde oscuro o fuera de la ventana).
 func windowToGame(wx, wy int, v viewport) (int, int) {
-	scale := max(v.scale, 1)
-	return floorDiv(wx-v.offX, scale), floorDiv(wy-v.offY, scale)
+	scale := v.scale
+	if scale <= 0 {
+		scale = 1
+	}
+	return int(math.Floor(float64(wx-v.offX) / scale)), int(math.Floor(float64(wy-v.offY) / scale))
 }
 
 // gameToWindow es la inversa para la puerta de pruebas: da el píxel del medio
 // del cuadro (x, y) del juego, que es donde caería el cursor de una persona.
 func gameToWindow(x, y int, v viewport) (int, int) {
-	scale := max(v.scale, 1)
-	return x*scale + scale/2 + v.offX, y*scale + scale/2 + v.offY
-}
-
-// floorDiv divide redondeando hacia abajo (la división de Go redondea hacia 0).
-func floorDiv(a, b int) int {
-	q := a / b
-	if a%b != 0 && (a < 0) != (b < 0) {
-		q--
+	scale := v.scale
+	if scale <= 0 {
+		scale = 1
 	}
-	return q
+	return v.offX + int(math.Floor((float64(x)+0.5)*scale)), v.offY + int(math.Floor((float64(y)+0.5)*scale))
 }
 
 // keyNames traduce el nombre de una tecla del juego a la de Ebitengine. Es la

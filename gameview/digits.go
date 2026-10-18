@@ -63,19 +63,19 @@ func splitRuns(s string) []textRun {
 }
 
 // lineWidth mide la línea en píxeles de pantalla: size está en píxeles del
-// juego y k es cuántos píxeles de pantalla mide cada uno. Los dígitos miden
-// advance*k cada uno; lo demás se mide con la fuente.
-func (f *Fonts) lineWidth(s string, family fontFamily, size, k int) int {
+// juego y k es cuántos píxeles de pantalla mide cada uno (puede tener
+// decimales). Los dígitos miden advance*k cada uno; lo demás se mide con la fuente.
+func (f *Fonts) lineWidth(s string, family fontFamily, size int, k float64) float64 {
 	spec, hasSprites := digitSpecFor(family, size)
 	if !hasSprites {
-		return f.screenWidth(s, family, size*k)
+		return f.screenWidth(s, family, float64(size)*k)
 	}
-	total := 0
+	total := 0.0
 	for _, run := range splitRuns(s) {
 		if run.digits {
-			total += len(run.text) * spec.advance * k
+			total += float64(len(run.text)*spec.advance) * k
 		} else {
-			total += f.screenWidth(run.text, family, size*k)
+			total += f.screenWidth(run.text, family, float64(size)*k)
 		}
 	}
 	return total
@@ -110,21 +110,22 @@ func (a *Assets) digitMask(sprite string, d int) *ebiten.Image {
 
 // drawDigits dibuja una tanda de dígitos con su esquina izquierda en el píxel
 // de pantalla px; y es la y del juego que recibió drawText. Devuelve el ancho
-// dibujado en píxeles de pantalla.
-func (e *Env) drawDigits(dst *ebiten.Image, digits string, spec digitSpec, px, y int, c color.RGBA) int {
-	k := e.Scale
-	top := float64((y + spec.base - spec.height) * k)
+// dibujado en píxeles de pantalla. Cada dígito se pega con vecino más cercano
+// en un rectángulo de píxeles enteros (ver imageGeo).
+func (e *Env) drawDigits(dst *ebiten.Image, digits string, spec digitSpec, px float64, y int, c color.RGBA) float64 {
+	top := float64(y + spec.base - spec.height)
+	start := px
 	for _, r := range digits {
 		mask := e.Assets.digitMask(spec.sprite, int(r-'0'))
 		if mask == nil {
 			return 0
 		}
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(float64(k), float64(k))
-		op.GeoM.Translate(float64(px), top)
+		b := mask.Bounds()
+		op := &ebiten.DrawImageOptions{Filter: ebiten.FilterNearest}
+		op.GeoM = e.imageGeo(b.Dx(), b.Dy(), px/e.Scale, top, 1, false)
 		op.ColorScale.ScaleWithColor(c)
 		dst.DrawImage(mask, op)
-		px += spec.advance * k
+		px += float64(spec.advance) * e.Scale
 	}
-	return len(digits) * spec.advance * k
+	return px - start
 }

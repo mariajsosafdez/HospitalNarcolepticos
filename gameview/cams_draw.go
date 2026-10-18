@@ -186,11 +186,7 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 
 	// 3 y 4. La cámara: fondo, camas y pacientes a 168x123, luego a x2.
 	hasBackground := c.drawFeed(light, cam, camInfo)
-	op := &ebiten.DrawImageOptions{}
-	k := float64(e.Scale)
-	op.GeoM.Scale(feedScale*k, feedScale*k)
-	op.GeoM.Translate(feedScreenX*k, feedScreenY*k)
-	dst.DrawImage(c.feed, op)
+	e.drawImage(dst, c.feed, feedScreenX, feedScreenY, feedScale, false, 1)
 	if !hasBackground {
 		e.Text(dst, "Fondo pendiente", feedScreenX+168, 70, textStyle{fontPixel, 8, '2', alignCenter})
 	}
@@ -276,7 +272,7 @@ func (c *camsScene) drawFeed(light int, cam game.CameraID, info game.Camera) boo
 	// La imagen de la cámara es chica (168x123): se pinta a 1x y luego se
 	// agranda junto con el resto de la pantalla.
 	saved := e.Scale
-	e.Scale = 1
+	e.Scale = 1.0
 	defer func() { e.Scale = saved }()
 
 	bg := backgroundName(cam, a.Names())
@@ -355,12 +351,7 @@ func (c *camsScene) drawOverlay(dst *ebiten.Image, name string, frames, frame in
 	if img == nil {
 		return
 	}
-	op := &ebiten.DrawImageOptions{}
-	k := float64(c.env.Scale)
-	op.GeoM.Scale(k, k)
-	op.GeoM.Translate(feedScreenX*k, feedScreenY*k)
-	op.ColorScale.ScaleAlpha(alpha)
-	dst.DrawImage(img, op)
+	c.env.drawImage(dst, img, feedScreenX, feedScreenY, 1, false, alpha)
 }
 
 // drawStamp pinta el rótulo de la cámara con borde oscuro de 1 px.

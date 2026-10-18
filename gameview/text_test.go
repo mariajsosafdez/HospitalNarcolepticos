@@ -15,7 +15,7 @@ func TestNoLigatures(t *testing.T) {
 			whole := fonts.screenWidth(pair, family, 160)
 			parts := fonts.screenWidth(pair[:1], family, 160) + fonts.screenWidth(pair[1:], family, 160)
 			if diff := whole - parts; diff < -10 || diff > 10 {
-				t.Errorf("family %d %q: junto %d, suelto %d", family, pair, whole, parts)
+				t.Errorf("family %d %q: junto %v, suelto %v", family, pair, whole, parts)
 			}
 		}
 	}

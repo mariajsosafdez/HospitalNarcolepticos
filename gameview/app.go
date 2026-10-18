@@ -36,10 +36,12 @@ type Env struct {
 	// reloj del turno: sigue corriendo aunque el juego esté en pausa.
 	Tick int
 
-	// Scale es cuántas veces se agranda el lienzo de 480x270 en pantalla (1,
-	// 2, 3...). Todo lo que se dibuja lo multiplica, y el texto usa letras de
-	// ese tamaño: así queda nítido en cualquier ventana.
-	Scale int
+	// Scale es cuántas veces se agranda el lienzo de 480x270 en pantalla.
+	// Puede ser fraccionario (1,5; 2,25...): la pantalla se llena sea cual
+	// sea su resolución. Todo lo que se dibuja lo multiplica (y lo redondea a
+	// píxeles enteros de pantalla), y el texto usa letras de ese tamaño: así
+	// queda nítido en cualquier ventana.
+	Scale float64
 
 	Save    game.SaveData
 	Store   *game.SaveStore // nil en la puerta de pruebas: nunca escribe el guardado real
@@ -126,11 +128,13 @@ type App struct {
 	in    Input
 	agent *agentDriver // nil en el juego de verdad
 
-	// Tamaño de la imagen de la ventana y dónde cae el lienzo dentro de ella
-	// (ver fitScreen). Layout los actualiza antes de cada Draw.
-	winW, winH int
-	offX, offY int
-	canvas     *ebiten.Image // lienzo de 480x270 por Scale, cuando hay bordes
+	// Tamaño de la imagen de la ventana, tamaño del lienzo del juego (480x270
+	// por Scale, redondeado) y dónde cae dentro de la ventana (ver fitScreen).
+	// Layout los actualiza antes de cada Draw.
+	winW, winH   int
+	canvW, canvH int
+	offX, offY   int
+	canvas       *ebiten.Image // lienzo del juego, cuando hay bordes
 }
 
 // viewport es la ubicación actual del lienzo en la ventana.
@@ -158,17 +162,16 @@ func (a *App) step() {
 }
 
 // Draw pinta un cuadro. El lienzo del juego mide 480x270 por Env.Scale (un
-// factor ENTERO). Si la imagen de la ventana tiene justo ese tamaño se pinta
-// directo; si no (pantalla completa o ventana que no es múltiplo exacto) se
-// pinta en un lienzo aparte y se pega centrado, sobre bordes oscuros, sin
-// agrandar ni suavizar: así cada píxel del juego sigue siendo un bloque
-// exacto y el texto no se ve borroso.
+// factor que puede ser fraccionario). Si la imagen de la ventana tiene justo
+// ese tamaño se pinta directo; si no (sobran franjas porque la pantalla no es
+// 16:9) se pinta en un lienzo aparte y se pega centrado, sobre bordes oscuros,
+// sin agrandar ni suavizar: el lienzo y la ventana tienen la misma resolución,
+// así que no hay nada que se emborrone.
 func (a *App) Draw(screen *ebiten.Image) {
-	k := a.env.Scale
 	canvas := screen
-	if b := screen.Bounds(); b.Dx() != logicalWidth*k || b.Dy() != logicalHeight*k {
-		if a.canvas == nil || a.canvas.Bounds().Dx() != logicalWidth*k || a.canvas.Bounds().Dy() != logicalHeight*k {
-			a.canvas = ebiten.NewImage(logicalWidth*k, logicalHeight*k)
+	if b := screen.Bounds(); b.Dx() != a.canvW || b.Dy() != a.canvH {
+		if a.canvas == nil || a.canvas.Bounds().Dx() != a.canvW || a.canvas.Bounds().Dy() != a.canvH {
+			a.canvas = ebiten.NewImage(a.canvW, a.canvH)
 		}
 		canvas = a.canvas
 		canvas.Clear()
@@ -185,37 +188,37 @@ func (a *App) Draw(screen *ebiten.Image) {
 	}
 }
 
-// layoutScale elige el mayor factor entero (mínimo 1) con el que el lienzo de
-// 480x270 cabe en una ventana de w x h. Es pura para poder probarla.
-func layoutScale(w, h int) int {
-	return max(1, min(w/logicalWidth, h/logicalHeight))
+// fitScreen reparte una imagen de ventana de w x h: la escala s (la mayor con
+// la que 480x270 cabe, sin exigir que sea entera), el tamaño del lienzo
+// (cw x ch, en píxeles de pantalla) y el corrimiento (ox, oy) que lo centra.
+// Lo que sobra son los bordes oscuros: ninguno si la pantalla es 16:9. Es pura
+// para poder probarla.
+func fitScreen(w, h int) (s float64, cw, ch, ox, oy int) {
+	s = math.Min(float64(w)/logicalWidth, float64(h)/logicalHeight)
+	s = math.Max(s, 0.1) // ventana de 0 píxeles (minimizada): que no divida entre 0
+	cw = min(int(math.Round(logicalWidth*s)), max(w, 1))
+	ch = min(int(math.Round(logicalHeight*s)), max(h, 1))
+	return s, cw, ch, (w - cw) / 2, (h - ch) / 2
 }
 
-// fitScreen reparte una imagen de ventana de w x h: el factor entero k y el
-// corrimiento (ox, oy) que centra el lienzo de 480k x 270k. Lo que sobra son
-// los bordes oscuros. Es pura para poder probarla.
-func fitScreen(w, h int) (k, ox, oy int) {
-	k = layoutScale(w, h)
-	return k, (w - logicalWidth*k) / 2, (h - logicalHeight*k) / 2
-}
-
-// setWindowSize recibe el tamaño de la imagen de la ventana y calcula el
-// factor y el corrimiento. En el modo pruebas -scale fija el factor (aunque
-// la ventana sea de otro tamaño).
+// setWindowSize recibe el tamaño de la imagen de la ventana y calcula la
+// escala, el lienzo y el corrimiento. En el modo pruebas -scale fija la escala
+// (aunque la ventana sea de otro tamaño).
 func (a *App) setWindowSize(w, h int) {
-	k, ox, oy := fitScreen(w, h)
+	s, cw, ch, ox, oy := fitScreen(w, h)
 	if a.env.Opts.Agent && a.env.Opts.Scale > 0 {
-		k = a.env.Opts.Scale
-		ox, oy = (w-logicalWidth*k)/2, (h-logicalHeight*k)/2
+		s = float64(a.env.Opts.Scale)
+		cw, ch = logicalWidth*a.env.Opts.Scale, logicalHeight*a.env.Opts.Scale
+		ox, oy = (w-cw)/2, (h-ch)/2
 	}
-	a.env.Scale = k
-	a.winW, a.winH, a.offX, a.offY = w, h, ox, oy
+	a.env.Scale = s
+	a.winW, a.winH, a.canvW, a.canvH, a.offX, a.offY = w, h, cw, ch, ox, oy
 }
 
 // Layout decide el tamaño de la imagen de la ventana. En el juego de verdad es
 // el tamaño real de la ventana (uno a uno: Ebitengine no la reescala, que es
 // lo que la volvía borrosa), y el lienzo de 480x270 se agranda dentro de ella
-// por un factor entero (ver Draw). En el modo pruebas el tamaño sale de
+// por un factor fraccionario (ver Draw). En el modo pruebas el tamaño sale de
 // -screen o, si no, de 480x270 por -scale.
 func (a *App) Layout(outsideWidth, outsideHeight int) (int, int) {
 	w, h := outsideWidth, outsideHeight
@@ -261,7 +264,7 @@ func newApp(opts Options, store *game.SaveStore) (*App, error) {
 	if opts.Agent && opts.Scale > 0 {
 		startScale = opts.Scale
 	}
-	env := &Env{Scale: startScale, Assets: assets, Fonts: fonts, Opts: opts, Store: store, Save: game.NewSaveData()}
+	env := &Env{Scale: float64(startScale), Assets: assets, Fonts: fonts, Opts: opts, Store: store, Save: game.NewSaveData()}
 	if store != nil {
 		if data, err := store.Load(); err == nil {
 			env.Save = data
@@ -304,7 +307,10 @@ func Run(opts Options) error {
 	if opts.Agent && opts.ScreenW > 0 {
 		ebiten.SetWindowSize(opts.ScreenW, opts.ScreenH)
 	} else {
-		ebiten.SetWindowSize(logicalWidth*app.env.Scale, logicalHeight*app.env.Scale)
+		ebiten.SetWindowSize(logicalWidth*int(app.env.Scale), logicalHeight*int(app.env.Scale))
+	}
+	if !opts.Agent {
+		ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled) // la ventana se puede agrandar y el juego se adapta
 	}
 	ebiten.SetWindowTitle(windowTitle)
 	if opts.Agent {
