@@ -1,6 +1,7 @@
 // P-002 Yeimy: dormida de pie a mitad de un paso de champeta, brazos arriba doblados en los codos, 2 cuadros de 16x28.
 // Revisión 2026-10-17: brazos redibujados (salen del hombro, codo a la altura del hombro, manos a la altura de la cabeza).
-// El cuadro 2 sube las manos 1 px (vaivén del baile dormida). Manilla R en la muñeca derecha.
+// El cuadro 2 sube las manos 3 px (vaivén del baile dormida). Manilla R en la muñeca derecha.
+// Retoque 2026-10-18: en el cuadro 2 los brazos llegan 2 px más arriba y bajan pegados al hombro con 3 px (0t0), sin cuello de 1 px.
 // Generado con un script de apoyo (fuera del repo); se puede retocar a mano.
 ................
 ................
@@ -35,17 +36,17 @@
 ................
 ................
 ................
-....000000......
-...00000000.....
-.00yyyyyyyy0..0.
-0t000000000000t0
-0t000000000t00t0
-0t000000tttt00R0
-0t00000ttt2t00R0
+.0..000000....0.
+0t000000000..0t0
+0t0yyyyyyyy0.0t0
+0t000000000000R0
+0t000000000t00R0
+0t000000tttt00t0
+0t00000ttt2t00t0
 0t00010tttttt0t0
 0t0011tttttt00t0
 0t0.012tttt0.0t0
-.0...002tt0...0.
+0t0..002tt0..0t0
 0t000pppppp000t0
 0tppppppppppppt0
 .000vppppppp000.
