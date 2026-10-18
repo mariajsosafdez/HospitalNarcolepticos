@@ -82,7 +82,11 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 
 **Fuentes.** Pixelify Sans (variable, eje `wght` con `SetVariation`) y VT323, embebidas con `go:embed` y dibujadas con `text/v2` de Ebitengine. Las dos son SIL OFL 1.1 y sus `OFL-*.txt` están junto a los `.ttf`.
 
-**Texto nítido: se dibuja a tamaño de pantalla.** Las dos fuentes son vectoriales (no una cuadrícula de píxeles exacta): dibujadas a 8 o 10 px en el lienzo de 480x270 y agrandadas después, salían suavizadas y borrosas (y el borde de 1 px del rótulo, un manchón). Ahora `App.Layout` elige el mayor factor entero `Env.Scale` que cabe en la ventana y devuelve 480x270 por ese factor; todo lo que se dibuja (`FillRect`, `DrawSprite`, `Text`) multiplica sus coordenadas por `Scale` (arte sin suavizar) y el texto usa letras de `tamaño * Scale`, igual que Figma al exportar a x4. Las coordenadas de las pantallas siguen siendo las de 480x270. La imagen de la cámara (168x123) se pinta con `Scale = 1` y se agranda aparte. Las capturas de `-agent` se repintan al factor pedido (`shot` = 1, `shot4` = 4). El sello de la cámara vuelve a 10 px (como la nota de Figma) con borde de 1 píxel del juego.
+**Texto nítido: se dibuja a tamaño de pantalla.** Las dos fuentes son vectoriales (no una cuadrícula de píxeles exacta): dibujadas a 8 o 10 px en el lienzo de 480x270 y agrandadas después, salían suavizadas y borrosas (y el borde de 1 px del rótulo, un manchón). Ahora `App.Layout` elige el mayor factor entero `Env.Scale` que cabe en la ventana y devuelve 480x270 por ese factor; todo lo que se dibuja (`FillRect`, `DrawSprite`, `Text`) multiplica sus coordenadas por `Scale` (arte sin suavizar) y el texto usa letras de `tamaño * Scale`, igual que Figma al exportar a x4. Las coordenadas de las pantallas siguen siendo las de 480x270. La imagen de la cámara (168x123) se pinta con `Scale = 1` y se agranda aparte. Las capturas de `-agent` ya no se repintan: salen de la imagen que acaba de pintar `App.Draw` (ver el cursor, abajo). El sello de la cámara vuelve a 10 px (como la nota de Figma) con borde de 1 píxel del juego.
+
+**El cursor llega en el espacio de `Layout`, no en 480x270.** `ebiten.CursorPosition()` devuelve coordenadas del tamaño que devolvió `Layout` (480x270 por `Scale`). Las pantallas hacen toda su detección (hover, clics) en píxeles del juego, así que el cursor se divide por `Scale` en **un solo sitio**: `windowToGame` (en `input.go`, con test de tabla para escalas 1 a 4, tamaños impares y cursor fuera de la ventana). `Input.moveToWindow` es el único camino del cursor a las pantallas; lo usan el juego de verdad (`readReal`) y la puerta de pruebas. Con la versión anterior (cursor sin dividir) en una ventana de 960x540 el hover caía el doble de abajo y a la derecha: "Nuevo turno" señalaba "Créditos" y los botones del mapa, de la Demo y de la pausa no respondían. El tamaño de la ventana se elige con `layoutScale` (pura, con test).
+
+**Teclado para atender.** Con un turno normal: Izquierda/Derecha eligen al paciente dormido de la cámara (de izquierda a derecha), Arriba/Abajo marcan una tarjeta del personal (borde blanco), Enter la manda. Sin paciente elegido, Enter da de alta al despierto de la habitación. En la pausa: Izquierda/Arriba marcan "Seguir", Derecha/Abajo "Menú", Enter ejecuta (Esc sigue, M sale); el mouse marca el botón igual que las flechas.
 
 **Nombres en español en la vista.** La Demo usa los datos en inglés del enunciado ("Dr. Karen Ospina / Neurology"), que no se tocan. `gameview/names.go` busca por ID (D-001 a D-003) el nombre y la especialidad del Elenco y se usa en las tarjetas del panel y en el reporte.
 
@@ -112,6 +116,7 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | `-frames N` | Ticks extra que corren después del guion |
 | `-quit` | Cierra al terminar (con `-quit` la ventana se saca de la pantalla). Sin `-quit` la ventana sigue abierta |
 | `-saved N` | Finge una partida guardada con último día desbloqueado N (activa "Continuar") |
+| `-scale N` | Factor de dibujo fijo (1 a 4). Sin la bandera, 2 (ventana de 960x540). Sirve para probar a 2x y 3x lo que ve la ventana real |
 
 | `-scene` | Qué abre |
 |---|---|
@@ -125,12 +130,13 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | Paso | Qué hace |
 |---|---|
 | `wait N` | Corre N ticks |
-| `move X Y` | Pone el mouse en (X, Y) del lienzo de 480x270 (gasta 1 tick) |
-| `click X Y` | Mueve el mouse y hace clic (1 tick) |
+| `move X Y` | Pone el mouse en el cuadro (X, Y) del lienzo de 480x270 (gasta 1 tick). Entra como **posición de ventana** (`gameToWindow`: el medio del cuadro por `-scale`) y pasa por la misma conversión que el cursor real |
+| `click X Y` | Igual que `move`, y hace clic (1 tick) |
 | `key Nombre` | Pulsa una tecla: `Up Down Left Right Enter Escape Space M 1`..`8` |
-| `shot ruta` | Captura PNG a 1x (480x270), pintada otra vez a ese tamaño |
-| `shot4 ruta` | Captura PNG a 4x (1920x1080) |
-| `dump ruta` | JSON: `ui` (escena, cámara, paciente elegido, botón bajo el mouse, aviso, pausa o reporte, paso de la Demo...) y `game` (`game.Snapshot` completo) |
+| `shot ruta` | Captura PNG a 1x (480x270), reescalada sin suavizar desde lo que pintó `Draw` |
+| `shot4 ruta` | Captura PNG a 4x (1920x1080), idem. Con `-scale 4` es exacta |
+| `shotwin ruta` | Captura tal cual la ventana: 480x270 por `-scale`. Es lo que ve la autora |
+| `dump ruta` | JSON: `ui` (escena, cámara, paciente elegido, `boxes` con el rectángulo donde se le da clic a cada paciente, `staffCursor`, botón bajo el mouse, aviso, pausa o reporte, paso de la Demo...) y `game` (`game.Snapshot` completo) |
 | `sleep ID CAM` | Duerme al paciente en esa cámara (`ForceSleep`, la misma ayuda de la Demo) |
 | `wake ID` | Despierta a un paciente que duerme en cama (`ForceWake`) |
 

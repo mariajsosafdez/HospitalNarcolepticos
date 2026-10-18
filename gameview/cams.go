@@ -50,6 +50,8 @@ type camsScene struct {
 	autoTick int  // ticks desde el último paso automático
 
 	selected  string // ID del paciente elegido ("" = ninguno)
+	cursor    int    // con teclado: tarjeta del panel marcada (-1 = ninguna)
+	pauseSel  int    // en la pausa: 0 = Seguir, 1 = Menú
 	notice    *notice
 	paused    bool
 	staffPage int
@@ -72,6 +74,7 @@ func newCams(env *Env, shift *game.Shift, demo *game.Demo, cam game.CameraID) (*
 		env:     env,
 		shift:   shift,
 		demo:    demo,
+		cursor:  -1,
 		walkers: make(map[string]*walker),
 		rng:     rand.New(rand.NewSource(shift.Seed() + 1)),
 		feed:    ebiten.NewImage(feedW, feedH),
@@ -98,6 +101,7 @@ func (c *camsScene) State() UIState {
 		Scene:           "cams",
 		Camera:          string(c.shift.CurrentCamera()),
 		SelectedPatient: c.selected,
+		StaffCursor:     c.cursorID(),
 		HoveredButton:   c.hovered,
 		StaffPage:       c.staffPage,
 		DemoStep:        c.demoStep,
@@ -105,6 +109,10 @@ func (c *camsScene) State() UIState {
 	}
 	if c.demo != nil {
 		st.Scene = "demo"
+	}
+	for _, p := range c.placements() {
+		r := p.screenRect()
+		st.Boxes = append(st.Boxes, PatientBox{p.patient.Patient().ID(), r.x, r.y, r.w, r.h})
 	}
 	if c.notice != nil {
 		st.Notice = c.notice.title
@@ -114,6 +122,7 @@ func (c *camsScene) State() UIState {
 		st.Overlay = "report"
 	case c.paused:
 		st.Overlay = "pause"
+		st.Selected = [2]string{"resume", "menu"}[c.pauseSel]
 	}
 	return st
 }
@@ -182,6 +191,7 @@ func (c *camsScene) handleInput(in *Input) Scene {
 			c.selected = ""
 		default:
 			c.paused = true
+			c.pauseSel = 0
 			c.shift.Pause()
 		}
 		return nil
@@ -194,10 +204,106 @@ func (c *camsScene) handleInput(in *Input) Scene {
 			}
 		}
 	}
+	c.handleKeys(in)
 	if !in.Click {
 		return nil
 	}
 	return c.handleClick(in.MouseX, in.MouseY)
+}
+
+// handleKeys es el camino del teclado para atender (sin mouse): Izquierda y
+// Derecha eligen al paciente dormido, Arriba y Abajo marcan una tarjeta del
+// personal y Enter la manda (o da de alta al de la habitación).
+func (c *camsScene) handleKeys(in *Input) {
+	dir := 0
+	switch {
+	case in.Pressed("Right"):
+		dir = 1
+	case in.Pressed("Left"):
+		dir = -1
+	}
+	if dir != 0 && c.demo == nil {
+		c.selected = nextPatient(c.sleeperIDs(), c.selected, dir)
+		c.cursor = -1
+	}
+	if c.selected != "" {
+		from, to := staffPage(len(c.shift.Staff()), c.staffPage)
+		switch {
+		case in.Pressed("Down"):
+			c.cursor = nextCursor(c.cursor, 1, to-from)
+		case in.Pressed("Up"):
+			c.cursor = nextCursor(c.cursor, -1, to-from)
+		}
+	}
+	if !in.Pressed("Enter") && !in.Pressed("Space") {
+		return
+	}
+	switch {
+	case c.selected != "" && c.cursor >= 0:
+		from, to := staffPage(len(c.shift.Staff()), c.staffPage)
+		if from+c.cursor < to {
+			c.assign(c.shift.Staff()[from+c.cursor])
+		}
+	case c.selected == "":
+		if g := c.roomPatient(); g != nil {
+			c.discharge(g)
+		}
+	}
+}
+
+// sleeperIDs lista, de izquierda a derecha, los pacientes dormidos que se ven
+// en la cámara y se pueden elegir.
+func (c *camsScene) sleeperIDs() []string {
+	list := c.placements()
+	slices.SortStableFunc(list, func(a, b placement) int { return a.x - b.x })
+	var ids []string
+	for _, p := range list {
+		if st := p.patient.State(); st == game.AsleepWaiting || st == game.NoBedWaiting {
+			ids = append(ids, p.patient.Patient().ID())
+		}
+	}
+	return ids
+}
+
+// cursorID dice qué persona del personal marca el teclado ("" = ninguna).
+func (c *camsScene) cursorID() string {
+	from, to := staffPage(len(c.shift.Staff()), c.staffPage)
+	if c.selected == "" || c.cursor < 0 || from+c.cursor >= to {
+		return ""
+	}
+	return c.shift.Staff()[from+c.cursor].ID()
+}
+
+// nextPatient elige el siguiente (dir = 1) o el anterior (dir = -1) de la
+// lista, dando la vuelta. Sin nadie elegido, Derecha toma el primero e
+// Izquierda el último. Es pura para poder probarla.
+func nextPatient(ids []string, current string, dir int) string {
+	if len(ids) == 0 {
+		return ""
+	}
+	i := slices.Index(ids, current)
+	switch {
+	case i < 0 && dir > 0:
+		return ids[0]
+	case i < 0:
+		return ids[len(ids)-1]
+	}
+	return ids[((i+dir)%len(ids)+len(ids))%len(ids)]
+}
+
+// nextCursor mueve la tarjeta marcada entre las n tarjetas, dando la vuelta.
+// Desde "ninguna" (-1), Abajo marca la primera y Arriba la última.
+func nextCursor(current, dir, n int) int {
+	if n <= 0 {
+		return -1
+	}
+	if current < 0 {
+		if dir > 0 {
+			return 0
+		}
+		return n - 1
+	}
+	return ((current+dir)%n + n) % n
 }
 
 // handleClick decide a qué le dio clic el jugador.
@@ -264,6 +370,7 @@ func (c *camsScene) handleClick(x, y int) Scene {
 func (c *camsScene) switchCamera(id game.CameraID) {
 	if err := c.shift.SwitchCamera(id); err == nil {
 		c.selected = ""
+		c.cursor = -1
 	}
 }
 
@@ -272,6 +379,7 @@ func (c *camsScene) assign(m *game.StaffMember) {
 	g := c.shift.FindPatient(c.selected)
 	if g == nil {
 		c.selected = ""
+		c.cursor = -1
 		return
 	}
 	var err error
@@ -281,6 +389,7 @@ func (c *camsScene) assign(m *game.StaffMember) {
 		err = c.shift.Assign(c.selected, m.ID())
 	}
 	c.selected = ""
+	c.cursor = -1
 	if err != nil {
 		c.showError(err, g.Patient().Name())
 	}
@@ -365,15 +474,42 @@ func (c *camsScene) hoverTarget(x, y int) string {
 	return ""
 }
 
-// updatePause atiende la pausa: Esc o "Seguir" reanuda, M o "Menú" sale.
+// updatePause atiende la pausa. Izquierda/Arriba marcan "Seguir" y
+// Derecha/Abajo "Menú"; Enter (o clic) ejecuta el marcado. Esc sigue y M sale.
+// El mouse marca el botón que toca, igual que las flechas.
 func (c *camsScene) updatePause(in *Input) Scene {
-	resume := in.Pressed("Escape") || in.Pressed("Enter") || (in.Click && c.hovered == "resume")
-	if resume {
+	switch {
+	case in.Pressed("Left"), in.Pressed("Up"):
+		c.pauseSel = 0
+	case in.Pressed("Right"), in.Pressed("Down"):
+		c.pauseSel = 1
+	}
+	if in.Moved {
+		switch c.hovered {
+		case "resume":
+			c.pauseSel = 0
+		case "menu":
+			c.pauseSel = 1
+		}
+	}
+	chosen := -1
+	switch {
+	case in.Pressed("Escape"):
+		chosen = 0
+	case in.Pressed("M"):
+		chosen = 1
+	case in.Pressed("Enter"), in.Pressed("Space"):
+		chosen = c.pauseSel
+	case in.Click && c.hovered == "resume":
+		chosen = 0
+	case in.Click && c.hovered == "menu":
+		chosen = 1
+	}
+	switch chosen {
+	case 0:
 		c.paused = false
 		c.shift.Resume()
-		return nil
-	}
-	if in.Pressed("M") || (in.Click && c.hovered == "menu") {
+	case 1:
 		return newMenu(c.env)
 	}
 	return nil

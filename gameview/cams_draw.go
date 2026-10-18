@@ -139,7 +139,12 @@ func (c *camsScene) placements() []placement {
 			p.footY = w.y
 			if state == game.AsleepWaiting || state == game.NoBedWaiting {
 				p.flip = false
-				p.zzz, p.effectX, p.effectY = true, p.x+p.w-5, p.y-16
+				// Dormido en el piso: la fila de abajo del sprite toca el piso
+				// (los pies del walker) y los sprites anchos no se salen de
+				// la cámara.
+				p.x = min(max(p.x, 0), feedW-p.w)
+				fxW, _ := a.FrameSize("fx_zzz", 3)
+				p.zzz, p.effectX, p.effectY = true, min(p.x+p.w-5, feedW-fxW), p.y-16
 			}
 		}
 		out = append(out, p)
@@ -214,7 +219,9 @@ func (c *camsScene) Draw(dst *ebiten.Image) {
 		c.drawSelectedLabel(dst, g)
 	}
 	if c.selected != "" {
-		e.TextShadow(dst, "Elige a alguien del panel · Esc para cancelar", 90, 253, textStyle{fontPixel, 8, 'w', alignLeft})
+		// Con borde oscuro como el rótulo, y pegado a la derecha para no
+		// chocar con el nombre del lugar (el más largo: "Patio de las palmeras").
+		e.TextOutline(dst, "Elige a alguien del panel · Esc para cancelar", 331, 253, textStyle{fontPixel, 8, 'w', alignRight})
 	}
 	if c.roomPatient() != nil {
 		c.drawButton(dst, dischargeRect(), "Dar de alta", 'm', c.hovered == "discharge")
@@ -442,6 +449,9 @@ func (c *camsScene) drawStaffPanel(dst *ebiten.Image) {
 		if c.selected != "" && state == game.StaffAvailable {
 			e.FillRect(dst, staffCardHighlight(slot), 'm', 1)
 		}
+		if c.selected != "" && slot == c.cursor {
+			e.FillRect(dst, staffCardHighlight(slot), 'w', 1) // la marca del teclado
+		}
 		e.DrawSprite(dst, a.Image("ui_tarjeta"), r.x, r.y, false)
 		c.drawHead(dst, m, r.x+4, r.y+4)
 
@@ -573,8 +583,8 @@ func (c *camsScene) drawPause(dst *ebiten.Image) {
 	drawBox(e, dst, pauseBoxRect)
 	e.Text(dst, "Pausa", pauseBoxRect.x+pauseBoxRect.w/2, pauseBoxRect.y+8, textStyle{fontPixelBold, 10, '2', alignCenter})
 	e.Text(dst, "Esc: seguir · M: menú", pauseBoxRect.x+pauseBoxRect.w/2, pauseBoxRect.y+26, textStyle{fontPixel, 8, '1', alignCenter})
-	c.drawButton(dst, pauseResumeRect, "Seguir", 'm', c.hovered == "resume")
-	c.drawButton(dst, pauseMenuRect, "Menú", 'k', c.hovered == "menu")
+	c.drawButton(dst, pauseResumeRect, "Seguir", 'm', c.pauseSel == 0)
+	c.drawButton(dst, pauseMenuRect, "Menú", 'k', c.pauseSel == 1)
 }
 
 // drawReport pinta el reporte con las 4 consultas. Es provisional: se cambia

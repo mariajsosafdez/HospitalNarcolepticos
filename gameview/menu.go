@@ -202,7 +202,11 @@ func (m *menuScene) Draw(dst *ebiten.Image) {
 
 	// 6. Divisor y descripción de la opción elegida.
 	e.FillRect(dst, rect{28, 198, 168, 1}, 'k', 1)
-	e.Text(dst, menuItems[m.selected].desc, 28, 202, textStyle{fontPixel, 8, '2', alignLeft})
+	// La descripción se parte en líneas que quepan en el panel (168 px).
+	measure := func(s string) int { return e.Fonts.Width(s, fontPixel, 8) }
+	for i, line := range wrapText(menuItems[m.selected].desc, 164, measure) {
+		e.Text(dst, line, 28, 202+11*i, textStyle{fontPixel, 8, '2', alignLeft})
+	}
 
 	// 7. Línea de ayuda.
 	e.TextShadow(dst, menuHelp, 24, 232, textStyle{fontPixel, 10, 'w', alignLeft})
