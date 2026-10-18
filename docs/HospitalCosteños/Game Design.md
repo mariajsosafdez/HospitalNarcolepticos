@@ -199,3 +199,7 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-18 | Zoom de cámaras confirmado normal; controles de teclado aprobados; retoque de Yeimy aprobado; plan del día aprobado (sonido ahora, tester en la noche, unir a `main` el 19 temprano) | Prueba de la autora | "ya está normal" / "funcionan bien :D" / "sip" |
 | 2026-10-18 | Camas al centro de la habitación y cada habitación con distinta organización y objetos | El mensaje del Director tapaba las camas | "podríamos mover las camas de las habitaciones al centro? y buscar que entre las habitaciones cambie un poco el diseño?" |
 | 2026-10-18 | Seis habitaciones distintas (101–106) con la cama al centro, aprobadas | — | "sip" |
+| 2026-10-18 | Créditos aprobados con cambios: la clase es Compiladores y Lenguajes; Don Ernesto: "Gracias por la ayuda, vale!"; se queda la línea de IA | Revisión | "Es clase de Compiladores y lenguajes :P" / "pon \"gracias por la ayuda vale!\"" / "Sip" |
+| 2026-10-18 | Dígitos dibujados en pixel art (el 5 de Pixelify parece una S) | Legibilidad | "okey" |
+| 2026-10-18 | El recuadro de la consulta 5.1 se titula "Atendidos sin cama" | Que no parezca contradictorio | "mejor" |
+| 2026-10-18 | Obstáculos en todas las salas para que nadie se duerma sobre los muebles | — | "me gusta" |
