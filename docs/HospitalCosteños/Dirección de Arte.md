@@ -47,7 +47,7 @@
 3. Las pantallas se arman en **Figma con Figwright**, usando esos PNG y la fuente real.
 4. Las copias PNG para revisar van en `docs/HospitalCosteños/preview/<tema>/`, así se ven aquí mismo en Obsidian.
 
-## Paleta (propuesta, esperando aprobación)
+## Paleta ✅
 
 31 colores en `art/palette.hex` (clave de un carácter, `#rrggbb`, nombre). Muestrario: `preview/paleta/paleta.png`.
 
@@ -58,7 +58,7 @@
 - **Manillas:** Leve `L` verde, Moderado `Y` amarillo, Severo `R` rojo.
 - **Luz por hora:** mediodía = `B` `w` `y`; tarde dorada = `M` `m`; atardecer = `o` `p` `v` `n`.
 
-## Fuente (propuesta, esperando aprobación)
+## Fuente ✅
 
 - **Pixelify Sans** (Stefie Justprince), licencia **SIL OFL 1.1**, Google Fonts: https://fonts.google.com/specimen/Pixelify+Sans. Subconjuntos latin y latin-ext; probada en Figma con á é í ó ú ü ñ Ñ ¿ ¡. Variable 400–700 (Regular y Bold).
   Tamaños a 1×: **18** Bold (título), **10** (opciones del menú), **8** (subtítulo, descripciones, ayudas).
@@ -69,7 +69,7 @@
 
 | Fecha | Qué | Dónde | Estado |
 |---|---|---|---|
-| 2026-10-17 | Paleta cálida de 31 colores | `art/palette.hex`, `preview/paleta/paleta.png`; Figma: página "Hospital Costeños — Pantallas", sección "Paleta (2026-10-17)" | Esperando aprobación |
-| 2026-10-17 | Fuentes: Pixelify Sans + VT323 (OFL) | Sección "Fuente" de esta nota | Esperando aprobación |
+| 2026-10-17 | Paleta cálida de 31 colores | `art/palette.hex`, `preview/paleta/paleta.png`; Figma: página "Hospital Costeños — Pantallas", sección "Paleta (2026-10-17)" | ✅ Aprobada junto con el menú |
+| 2026-10-17 | Fuentes: Pixelify Sans + VT323 (OFL) | Sección "Fuente" de esta nota | ✅ Aprobadas junto con el menú |
 | 2026-10-17 | Sprites del menú: `menu_fondo`, `palmera` (2 cuadros), `banca_sombrero`, `ui_panel_menu`, `ui_seleccion`, `ui_flecha` (2), `ui_rec` (2) | `art/sprites/*.txt` → `art/png/` (`go run ./tools/sprites`) | Esperando aprobación |
-| 2026-10-17 | Vista del menú principal: `Menu / default`, `Menu / hover Demo`, `Menu / sin partida guardada` | Figma: página "Hospital Costeños — Pantallas", sección "Menú principal (2026-10-17)"; `preview/menu/menu-default.png`, `menu-hover-demo.png`, `menu-sin-partida.png` | Esperando aprobación |
+| 2026-10-17 | Vista del menú principal: `Menu / default`, `Menu / hover Demo`, `Menu / sin partida guardada` | Figma: página "Hospital Costeños — Pantallas", sección "Menú principal (2026-10-17)"; `preview/menu/menu-default.png`, `menu-hover-demo.png`, `menu-sin-partida.png` | ✅ Aprobado con cambios: quitar el sombrero ("yo creo que es mejor quitarlo"), quitar esquinas de cámara y REC ("nop"), líneas que empiezan con ¡ a tamaño 10 ("ok"), atardecer fijo, descripciones aprobadas ("me gustan como estan") |

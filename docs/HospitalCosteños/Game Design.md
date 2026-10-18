@@ -175,3 +175,5 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-17 | Equipo de agentes (arte, builder, tester) en la rama `game` | Flujo de trabajo | "Sí, me parece bien :D" |
 | 2026-10-17 | Nueva cámara CAM 8 · Salón de champeta (la Demo coincide con `main.go`) | Lugar del escenario que faltaba | "Sipi" |
 | 2026-10-17 | Elenco fijo y textos del Director aprobados | — | "revisé el elenco y los textos y me gustan bastante, aprobados :D" |
+| 2026-10-17 | Menú aprobado con cambios: sin sombrero, sin esquinas de cámara ni REC, ¡ a tamaño 10, atardecer fijo, descripciones del agente aprobadas | Revisión de la vista | "yo creo que es mejor quitarlo" / "nop" / "ok" / "me gusta tu recomendacion" / "me gustan como estan" |
+| 2026-10-17 | Tag `entrega-base` en `main` como respaldo; builder arranca con `game/`, `-web` y `nogame`; arte sigue con el elenco y la cámara de la Demo | Plan de trabajo | "Sip" |
