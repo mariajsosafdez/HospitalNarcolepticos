@@ -11,8 +11,9 @@ Registro honesto de errores reales que cometieron Claude y sus agentes durante e
 | 2026-10-17 | Builder | La vista adivinaba quién empujaba la camilla con "el personal en traslado", y en la Demo fallaba | Capturas del modo de prueba | Agregar `GamePatient.Carrier()` en `game/` |
 | 2026-10-17 | Builder | Todo el texto se veía borroso: se dibujaba a 480×270 y luego se agrandaba | La sesión principal, al revisar las capturas ×4 | Dibujar a la resolución real de la ventana |
 | 2026-10-17 | Builder | Al arreglar lo anterior, la imagen de la cámara quedó con doble zoom | Capturas del modo de prueba | `Scale = 1` dentro de `drawFeed` |
-| 2026-10-17 | Builder | Después del cambio de resolución, el mouse quedó mal: el hover y los clics caían en otro lado (menú, mapa, pausa, Demo) | **La autora, jugando** | Ver el commit del arreglo. Lección: el modo de prueba hacía clic sin pasar por la conversión real del mouse, por eso los tests no lo vieron |
+| 2026-10-17 | Builder | Después del cambio de resolución, el mouse quedó mal: el hover y los clics caían en otro lado (menú, mapa, pausa, Demo) | **La autora, jugando** | Commit `94ba621`: una sola función pura `windowToGame` convierte el cursor, con test de tabla para escalas 1–4. El modo de prueba ahora hace clic por ese mismo camino y prueba a ×2 y ×3. Lección: el modo de prueba hacía clic sin pasar por la conversión real del mouse, por eso los tests no lo vieron |
 | 2026-10-17 | Arte | Sprites de cama y camilla con huecos en el contorno (faltaba la última columna en algunos) | La autora, mirando las imágenes, y un script de revisión de bordes | Redibujar las cuadrículas; el convertidor no tenía error |
+| 2026-10-18 | Builder | La pausa no tenía selección con teclado y no había forma de elegir pacientes con teclas | **La autora, jugando** | Flechas + Enter en la pausa y para elegir paciente y personal (commit `b6a9c2c`) |
 | 2026-10-17 | Sesión principal | Un `python -` en un comando quedó esperando entrada y colgó la terminal | El comando no terminó en 2 minutos | Detenerlo y hacer las ediciones a mano |
 
 ## Otros datos para AI_USAGE.md
