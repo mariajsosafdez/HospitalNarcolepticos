@@ -213,3 +213,4 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-18 | Textos de la Demo guiada aprobados | — | "me gustan" |
 | 2026-10-18 | 5★ desde el 80 % (antes 85 %) | El turno perfecto sin severos no llegaba a 5★ | "okeyy" |
 | 2026-10-18 | Las restas se suman y se redondean una vez por tipo con el multiplicador del día | El redondeo por cobro castigaba de más en los días 2 y 4 | "okey" |
+| 2026-10-19 | Cinco personajes easter egg a partir de fotos de la autora: gato (Severo), foto 2 (Leve), foto 3 (Leve, sin el Shrek), foto 4 (Severo), foto 5 (Moderado). Diseño primero, luego código. Las fotos no se suben al repo | Easter eggs (si sobra tiempo) | "Hola, vamos a hacer los personajes easter eggs (...) antes de programarlos hagamos los diseños en figma" |
