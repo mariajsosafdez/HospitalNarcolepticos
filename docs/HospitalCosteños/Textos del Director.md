@@ -130,3 +130,7 @@ El reloj solo corre durante las animaciones y la cámara cambia sola a donde pas
 | 3.1 | CAM 7A | Paso 3 de 4 · Alta (1 de 2) | "Yesid ya se despertó. Le damos de alta y la 101 queda libre." |
 | 3.2 | CAM 4 → CAM 7A | Paso 3 de 4 · Traslado (2 de 2) | "Ahora sí: Chepe lleva a Wilfrido a la 101." |
 | 4 | Reporte | Paso 4 de 4 | "El reporte con las 4 consultas. ¡Así quedó el turno!" |
+
+## Easter eggs ✅ (2026-10-19)
+
+- Cuando llega Misifu (solo el gato): "Erda, ¿y ese gato quién lo dejó entrar?" (en pantalla sin la ¡ inicial; aquí no lleva).

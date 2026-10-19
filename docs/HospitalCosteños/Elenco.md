@@ -40,9 +40,22 @@ Niveles: 3 Leves, 4 Moderados, 3 Severos (al menos 2 severos, como pide el enunc
 
 **Don Ernesto Cassiani**, director del hospital. Guayabera blanca, sombrero vueltiao y un ventilador de mano. Habla con refranes y mucho cariño, pero cuando el turno sale mal, regaña con drama. Sale en el tutorial y en los mensajes de fin de turno (ver [[Textos del Director]]).
 
-## Easter eggs (si sobra tiempo)
+## Easter eggs ✅ (2026-10-19)
 
-Personajes extra que aparecen muy de vez en cuando. Se definen después.
+Pacientes extra, raros, inspirados en fotos de la autora (las fotos no están en el repo; solo el pixel art). Sprites `pac_egg<N>_*`.
+
+| N | Nombre | Nivel | Cómo se ve |
+|---|---|---|---|
+| 1 | **Misifu** (gato) | Severo | Persa naranja y crema, cara aplastada de bravo, melena blanca. Collar rojo |
+| 2 | **Alejo Urrego** | Leve | Crespo oscuro, gafas rectangulares, camiseta azul oscuro, pulgar arriba |
+| 3 | **Samu Giraldo** | Leve | Mullet crespo, suéter gris |
+| 4 | **Cote** | Severo | Pelo ondulado, gafas redondas, camiseta crema, shorts de jean, medias con margaritas, reloj grande |
+| 5 | **Sebs** | Moderado | Crespo corto, camiseta blanca de maratón, shorts verdes, mano de rock |
+
+**Reglas** (palabras de la autora: "que sea raro que salga, por cierto, los dos que tienes severo se duermen mucho mas seguido que los demás, evitando el cooldown para poderse volver a dormir"):
+- En cada turno hay **15 % de probabilidad** de que llegue **un** easter egg al azar, como paciente extra.
+- **Misifu y Cote** (los severos) se duermen **mucho más seguido** que los demás y **no tienen la espera de 10 min** después del alta para volver a dormirse.
+- Solo para el gato, Don Ernesto dice al llegar: "Erda, ¿y ese gato quién lo dejó entrar?" ("sisiisisi solo para el gato").
 
 ## Lugar de la Demo ✅
 
