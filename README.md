@@ -191,3 +191,7 @@ go run . -agent -scene dayintro -day 2 -quit              # day 2 intro
 go run . -agent -scene pause -quit                        # pause screen (Down + Enter opens settings)
 go run . -agent -scene settings -savepath scratch.json -quit
 ```
+
+## Known limitations
+
+- The game has no sound or music (cut for time).

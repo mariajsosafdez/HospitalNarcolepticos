@@ -1,5 +1,7 @@
 # Sonido
 
+> 2026-10-19: el juego se entrega sin sonido (decisión de la autora: "no creo que nos dé el tiempo"). Esta nota queda como registro de la búsqueda.
+
 Dirección aprobada ([[Game Design#Registro de decisiones]]): *una pista tranquila de cumbia o champeta lo-fi en el menú y una más suave durante el turno, solo CC0 o CC-BY. Efectos: ronquido, pasos, ruedas de camilla, "ding" de alta.* Cálido, relajado, costeño, nunca de terror.
 
 > **La IA no puede oír: todo es por defecto hasta que la autora lo confirme de oído.** Las descripciones salen de las páginas de las pistas, sus etiquetas y medidas (duración, volumen). Nada está conectado al juego todavía.

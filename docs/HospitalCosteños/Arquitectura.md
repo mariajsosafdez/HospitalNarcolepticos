@@ -112,7 +112,7 @@ La versión de Ebitengine está fijada en **v2.8.8** porque pide `go 1.22.0`; la
 | `message.go` | Caja del Director (tutorial, inicio de día, exceso de trabajo). Mientras está abierta el reloj del turno se detiene (`shift.Pause`). |
 | `report.go` | Reporte de fin de turno. Las funciones puras (`noBedLines`, `doctorLines`, `bedCells`, `severeLines`, `capWithMore`, `signedPoints`...) arman el texto de cada caja y tienen tests de tabla. |
 | `pause.go` | Pausa (Continuar / Ajustes / Salir al menú) y el parpadeo de los botones del mapa (`blinkAlpha`, `stateEvent`). |
-| `settings.go` | Ajustes: volúmenes (de a 10), parpadeo al dormirse y al despertarse, pantalla completa. Cada cambio llama `Env.settingsChanged` (autoguarda). |
+| `settings.go` | Ajustes: parpadeo al dormirse y al despertarse, pantalla completa (el juego no tiene sonido, así que no hay volúmenes; los guardados viejos con campos de volumen se leen igual, `json` ignora lo que no conoce). Cada cambio llama `Env.settingsChanged` (autoguarda). |
 | `play.go` | `newShiftScene` y `newPracticeScene`: la única manera de armar un turno, usada por el menú, el reporte y la puerta de pruebas. |
 
 **Flujo.** Menú -> turno (`camsScene`) -> `finishShift` guarda (`Env.recordShift`: mejores estrellas + día siguiente desbloqueado) -> `reportScene` -> "Siguiente día" arma el día N+1 con el mensaje del Director de ese día, o "Menú". En la Demo (paso 4) y el Día 5 solo hay "Menú". "Salir al menú" desde la pausa abandona el turno sin guardarlo. "Cómo jugar" abre un Día 1 con los 9 mensajes del tutorial y al terminar vuelve al menú. El tutorial del Día 1 de "Nuevo turno" sale solo la primera vez (`SaveData.TutorialSeen`).

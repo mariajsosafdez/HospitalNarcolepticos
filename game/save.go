@@ -7,19 +7,20 @@ import (
 	"path/filepath"
 )
 
-// Settings son los ajustes del jugador (sección 10).
+// Settings son los ajustes del jugador (sección 10). El juego no tiene sonido,
+// así que no hay volúmenes: si un archivo viejo trae "musicVolume" o
+// "sfxVolume", json.Unmarshal ignora los campos que no conoce y el guardado
+// sigue leyéndose sin problema.
 type Settings struct {
 	BlinkOnSleep bool `json:"blinkOnSleep"` // parpadeo de cámara cuando alguien se duerme
 	BlinkOnWake  bool `json:"blinkOnWake"`  // ... y cuando alguien despierta
-	MusicVolume  int  `json:"musicVolume"`  // 0-100
-	SfxVolume    int  `json:"sfxVolume"`    // 0-100
 	Fullscreen   bool `json:"fullscreen"`
 }
 
-// DefaultSettings devuelve los ajustes de fábrica: parpadeos apagados,
-// música 70 %, efectos 80 %, ventana normal.
+// DefaultSettings devuelve los ajustes de fábrica: parpadeos apagados
+// y ventana normal.
 func DefaultSettings() Settings {
-	return Settings{MusicVolume: 70, SfxVolume: 80}
+	return Settings{}
 }
 
 // SaveData es lo que se autoguarda: el último día desbloqueado, las mejores

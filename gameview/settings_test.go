@@ -6,31 +6,8 @@ import (
 	"costenos-narcolepsia/game"
 )
 
-func TestStepVolume(t *testing.T) {
-	tests := []struct{ v, dir, want int }{
-		{70, 1, 80}, {70, -1, 60}, {100, 1, 100}, {0, -1, 0}, {95, 1, 100}, {5, -1, 0},
-	}
-	for _, tt := range tests {
-		if got := stepVolume(tt.v, tt.dir); got != tt.want {
-			t.Errorf("stepVolume(%d,%d) = %d, want %d", tt.v, tt.dir, got, tt.want)
-		}
-	}
-}
-
-func TestVolumeAt(t *testing.T) {
-	track := rect{262, 66, 60, 4}
-	tests := []struct{ x, want int }{
-		{262, 0}, {292, 50}, {322, 100}, {304, 70}, {200, 0}, {400, 100}, {264, 0}, {268, 10},
-	}
-	for _, tt := range tests {
-		if got := volumeAt(tt.x, track); got != tt.want {
-			t.Errorf("volumeAt(%d) = %d, want %d", tt.x, got, tt.want)
-		}
-	}
-}
-
 func TestStepRowsWrap(t *testing.T) {
-	if stepRow(0, -1) != setBack || stepRow(setBack, 1) != 0 || stepRow(2, 1) != 3 {
+	if stepRow(0, -1) != setBack || stepRow(setBack, 1) != 0 || stepRow(0, 1) != 1 {
 		t.Error("stepRow must wrap around")
 	}
 	if stepPause(0, -1) != pauseExit || stepPause(pauseExit, 1) != pauseContinue || stepPause(0, 1) != pauseSettings {

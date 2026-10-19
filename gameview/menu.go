@@ -21,8 +21,8 @@ var menuItems = [...]menuItem{
 	{"Continuar", "Sigue en el último día que desbloqueaste."},
 	{"Demo (escenario del enunciado)", "El escenario del enunciado, paso a paso."},
 	{"Cómo jugar", "Te explicamos el turno en un momentico."},
-	{"Ajustes", "Volumen, parpadeo de cámaras y pantalla completa."},
-	{"Créditos", "Quién hizo esto y con qué música."},
+	{"Ajustes", "Parpadeo de cámaras y pantalla completa."},
+	{"Créditos", "Quién hizo esto y con qué herramientas."},
 }
 
 // Índices de las opciones.

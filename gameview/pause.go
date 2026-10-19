@@ -25,7 +25,7 @@ var pauseLabels = [pauseItems]string{"Continuar", "Ajustes", "Salir al menú"}
 // "Salir al menú" avisa que el turno no se guarda (decisión de la autora).
 var pauseDescs = [pauseItems]string{
 	"El turno sigue donde iba.",
-	"Volumen, parpadeo y pantalla completa.",
+	"Parpadeo y pantalla completa.",
 	"Ojo: este turno no cuenta.",
 }
 

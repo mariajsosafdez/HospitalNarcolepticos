@@ -149,14 +149,9 @@ func (c *creditsScene) Draw(dst *ebiten.Image) {
 	e.Text(dst, "Pixelify Sans (Stefie Justprince)", 250, 80, data)
 	e.Text(dst, "VT323 (Peter Hull)", 250, 91, data)
 	e.Text(dst, "Licencia SIL OFL 1.1", 250, 102, faint)
-	e.Text(dst, "Música y sonidos", 250, 118, label)
-	// Pendiente: se llena con las líneas CC0/CC-BY de Sonido.md cuando la
-	// autora elija la música (máximo 2 líneas de ~32 caracteres).
-	e.Text(dst, "(se completa cuando la autora", 250, 128, faint)
-	e.Text(dst, "elija la música)", 250, 139, faint)
 	ai := textStyle{fontPixel, 8, '2', alignLeft}
-	e.Text(dst, "Arte y código hechos con ayuda de IA", 250, 155, ai)
-	e.Text(dst, "(Claude, de Anthropic)", 250, 166, ai)
+	e.Text(dst, "Arte y código hechos con ayuda de IA", 250, 122, ai)
+	e.Text(dst, "(Claude, de Anthropic)", 250, 133, ai)
 
 	// 7. Botón Volver (siempre elegido: es la única opción) y ayuda.
 	btn := rect{372, 174, 84, 16}
