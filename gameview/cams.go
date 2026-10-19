@@ -43,18 +43,19 @@ type camsScene struct {
 	autoWait int           // ticks que lleva esperando para empezar la siguiente parte (solo en Auto)
 	shownCam game.CameraID // cámara que se veía en el tick anterior (para soltar la selección si la Demo la cambia)
 
-	selected string // ID del paciente elegido ("" = ninguno)
-	cursor   int    // con teclado: tarjeta del panel marcada (-1 = ninguna)
-	pauseSel int    // en la pausa: 0 = Continuar, 1 = Ajustes, 2 = Salir al menú
-	notice   *notice
-	paused   bool
-	toReport *reportScene                 // reporte listo para abrirse (fin del turno o paso 4 de la Demo)
-	msg      *messageBox                  // mensaje del Director abierto (el reloj del turno se detiene)
-	practice bool                         // "Cómo jugar": solo el tutorial, y al terminar vuelve al menú
-	settings *settingsView                // ajustes abiertos desde la pausa
-	prev     map[string]game.PatientState // estado de cada paciente en el tick anterior (para los parpadeos)
-	blinks   map[game.CameraID]blink      // botones del mapa que están parpadeando
-	recorded bool                         // el resultado del turno ya se guardó
+	selected     string // ID del paciente elegido ("" = ninguno)
+	cursor       int    // con teclado: tarjeta del panel marcada (-1 = ninguna)
+	pauseSel     int    // en la pausa: 0 = Continuar, 1 = Ajustes, 2 = Salir al menú
+	notice       *notice
+	paused       bool
+	toReport     *reportScene                 // reporte listo para abrirse (fin del turno o paso 4 de la Demo)
+	msg          *messageBox                  // mensaje del Director abierto (el reloj del turno se detiene)
+	practice     bool                         // "Cómo jugar": solo el tutorial, y al terminar vuelve al menú
+	settings     *settingsView                // ajustes abiertos desde la pausa
+	prev         map[string]game.PatientState // estado de cada paciente en el tick anterior (para los parpadeos)
+	blinks       map[game.CameraID]blink      // botones del mapa que están parpadeando
+	recorded     bool                         // el resultado del turno ya se guardó
+	arrivalsSeen int                          // cuántas llegadas ya se miraron (para el comentario del Director sobre el gato)
 
 	mouseX, mouseY int
 	hovered        string
@@ -177,6 +178,7 @@ func (c *camsScene) update(in *Input) Scene {
 		c.updateDemo()
 	} else {
 		c.shift.Tick()
+		c.checkCatArrival()
 	}
 	c.updateWalkers()
 	c.trackBlinks()
@@ -717,4 +719,15 @@ func sortPlacements(list []placement) {
 		}
 		return 0
 	})
+}
+
+// checkCatArrival mira las llegadas nuevas del turno y, si entró Misifu,
+// abre el comentario del Director (solo el gato lo tiene).
+func (c *camsScene) checkCatArrival() {
+	ids := c.shift.ArrivedIDs()
+	fresh := ids[min(c.arrivalsSeen, len(ids)):]
+	c.arrivalsSeen = len(ids)
+	if slices.Contains(fresh, game.CatID) {
+		c.showMessage(msgCat, []string{game.CatArrivalLine}, 0)
+	}
 }

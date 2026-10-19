@@ -254,6 +254,8 @@ Fórmula original: `pacientes = doctores × 4 + 2`. ✅ **Cambio:** el Elenco ti
 - Reparto de niveles *(propuesto)*: 40 % Leve, 35 % Moderado, 25 % Severo (al menos 2 severos, como el enunciado).
 - Nombres costeños de una lista fija.
 
+**Easter eggs** (`eggs.go`, ✅ aprobados 2026-10-19): `RollEgg(seed)` es pura y da 15 % de que un turno normal (días 1 a 5; nunca la Demo ni "Cómo jugar") traiga **un** paciente extra de `castEggs` (E-001 Misifu, el gato, 6 años; E-002 Alejo Urrego y E-003 Samu Giraldo, Leves; E-004 Cote, Severo; E-005 Sebs, Moderado). Usa un azar aparte (`seed ^ eggSeedSalt`) para no cambiar el del turno; `DayConfig.WithEgg` lo agrega y llega a una hora al azar como los demás. **Misifu y Cote** (`hasFrequentSleep`) tienen 3 veces la probabilidad de dormirse (`frequentSleepFactor`) y no tienen la espera de 10 min tras el alta (`noSleepMinutesAfterDischarge`), pero respetan los últimos 20 min sin sueño. Al llegar el gato, la vista muestra `CatArrivalLine` de Don Ernesto (`Shift.ArrivedIDs`).
+
 ---
 
 ## 7. Puntuación (`score.go`)

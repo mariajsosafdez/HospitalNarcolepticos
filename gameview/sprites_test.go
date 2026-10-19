@@ -1,6 +1,7 @@
 package gameview
 
 import (
+	"fmt"
 	"io/fs"
 	"testing"
 
@@ -27,6 +28,25 @@ func TestEveryCastMemberHasSprites(t *testing.T) {
 				t.Errorf("%s (%s): missing %s.png", p.Name, p.ID, name)
 			}
 		}
+	}
+	// Los easter eggs no vienen en ConfigForDay: se prueban por separado.
+	for n := 1; n <= 5; n++ {
+		egg, ok := game.EggByNumber(n)
+		if !ok {
+			t.Fatalf("egg %d missing", n)
+		}
+		key := spriteKey(egg.ID, egg.Name)
+		if want := fmt.Sprintf("egg%d", n); key != want {
+			t.Errorf("%s: spriteKey = %q, want %q", egg.Name, key, want)
+		}
+		for _, suffix := range []string{"camina", "quieto", "dormido", "cama", "sentado"} {
+			if name := "pac_" + key + "_" + suffix; !has(name) {
+				t.Errorf("%s (%s): missing %s.png", egg.Name, egg.ID, name)
+			}
+		}
+	}
+	if !has("pac_egg1_camilla") {
+		t.Error("Misifu: missing pac_egg1_camilla.png (stretcher head layer)")
 	}
 	for _, d := range cfg.Doctors {
 		key := spriteKey(d.ID, d.Name)

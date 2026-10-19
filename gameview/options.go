@@ -26,6 +26,7 @@ type Options struct {
 	ScreenH   int
 	Intro     bool   // -scene day: abre con el mensaje del Director del día (como el juego de verdad)
 	SavePath  string // archivo de guardado de PRUEBA (nunca el real); vacío = sin guardado
+	Egg       int    // -egg N: fuerza al easter egg N (1 a 5) en el turno; llega en el tick 0
 }
 
 // RegisterFlags define las banderas en fs y devuelve las opciones que se
@@ -52,6 +53,7 @@ func RegisterFlags(fs *flag.FlagSet) *Options {
 	})
 	fs.BoolVar(&o.Intro, "intro", false, "with -agent -scene day: open with the Director's message of that day")
 	fs.StringVar(&o.SavePath, "savepath", "", "with -agent: scratch save file to read and write (never the real one)")
+	fs.IntVar(&o.Egg, "egg", 0, "with -agent: force easter egg 1-5 into the shift (1 Misifu, 2 Alejo, 3 Samu, 4 Cote, 5 Sebs); it arrives at tick 0")
 	return o
 }
 
@@ -77,6 +79,9 @@ func (o Options) validate() error {
 	}
 	if o.Scale < 0 || o.Scale > 4 {
 		return fmt.Errorf("scale %d out of range (0-4)", o.Scale)
+	}
+	if o.Egg < 0 || o.Egg > 5 {
+		return fmt.Errorf("egg %d out of range (0-5)", o.Egg)
 	}
 	if o.Frames < 0 {
 		return fmt.Errorf("frames %d must not be negative", o.Frames)

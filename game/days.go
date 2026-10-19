@@ -34,6 +34,10 @@ type DayConfig struct {
 	Cameras   []CameraID // zonas comunes desbloqueadas
 	Patients  []PatientData
 	Scripted  bool // true en la Demo: sin movimiento ni sueño al azar
+	// ArriveAtStart es el ID de un paciente que llega en el tick 0 en vez de a
+	// una hora al azar. Solo lo usa la puerta de pruebas (-egg) para ver un
+	// easter egg sin esperar horas de juego; vacío = nadie.
+	ArriveAtStart string
 }
 
 // Elenco fijo aprobado (docs/HospitalCosteños/Elenco.md).

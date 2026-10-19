@@ -14,7 +14,7 @@ Una pantalla solo se programa cuando su vista de Figma está ✅ aprobada en el 
 | 3 | **Días 2 a 5** | Más cámaras, doctores, camilleros y habitaciones por día, penalizaciones que suben, autoguardado y desbloqueo de días, ajustes | ✅ jugable: "Siguiente día", mensaje de inicio, panel de 5 personas, autoguardado, ajustes (parpadeos y pantalla completa reales; volúmenes guardados) |
 | 4 | **Sonido** | Música y efectos CC0/CC-BY, volúmenes de los ajustes. Cada elección "por defecto, la autora confirma de oído" | pendiente |
 | 5 | **Tutorial** | Mensajes de Don Ernesto Cassiani en el Día 1 | ✅ hecho: 9 mensajes (primera vez y "Cómo jugar") |
-| 6 | **Easter eggs** | Personajes extra, solo si sobra tiempo | pendiente |
+| 6 | **Easter eggs** | Cinco pacientes extra raros (15 % por turno) | ✅ hecho: sorteo con semilla, Misifu y Cote se duermen más seguido, Don Ernesto comenta al gato, bandera `-egg N`. Sprites de Cote en redibujo |
 
 Transversal: la **puerta de pruebas** (`-agent`, ver [[Arquitectura#Puerta de pruebas (-agent)]]) se construye con la primera pantalla y cada pantalla nueva debe poder alcanzarse con ella.
 

@@ -62,6 +62,7 @@ type Shift struct {
 	overworked   []string        // IDs de doctores con exceso de trabajo
 	episodeTimes map[string]int  // ID de episodio -> tick de juego en que ocurrió
 	messages     []Message
+	arrivedIDs   []string // IDs en orden de llegada (la vista avisa de los que llegan)
 	finished     bool
 }
 
@@ -125,7 +126,7 @@ func NewShift(cfg DayConfig, seed int64) (*Shift, error) {
 			return nil, err
 		}
 		arrival := slot*interval + s.rng.Intn(interval)
-		if cfg.Scripted {
+		if cfg.Scripted || data.ID == cfg.ArriveAtStart {
 			arrival = 0
 		}
 		s.pending = append(s.pending, &GamePatient{patient: patient, arrivalTick: arrival})
@@ -156,6 +157,7 @@ func (s *Shift) Finished() bool               { return s.finished }
 func (s *Shift) NoBedCount() int              { return s.noBedCount }
 func (s *Shift) Overworked() []string         { return slices.Clone(s.overworked) }
 func (s *Shift) Messages() []Message          { return slices.Clone(s.messages) }
+func (s *Shift) ArrivedIDs() []string         { return slices.Clone(s.arrivedIDs) }
 
 // Stars calcula las estrellas con los puntos de este momento.
 func (s *Shift) Stars() int { return Stars(s.score.Total(), s.score.Episodes) }
@@ -222,6 +224,7 @@ func (s *Shift) admitArrivals(now int) {
 			g.state = Wandering
 		}
 		s.patients = append(s.patients, g)
+		s.arrivedIDs = append(s.arrivedIDs, g.patient.ID())
 		s.log("%s llegó al hospital.", g.patient.Name())
 	}
 	s.pending = remaining
@@ -287,7 +290,7 @@ func (s *Shift) sleepIfDue(g *GamePatient, now int) {
 	if g.leaving || now < g.noSleepUntil || !sleepWindowOpen(now) {
 		return
 	}
-	if s.rng.Float64() < SleepChance(g.patient.Level(), g.camera) {
+	if s.rng.Float64() < sleepChanceFor(g.patient.ID(), g.patient.Level(), g.camera) {
 		s.fallAsleep(g, cameras[g.camera].Name, now)
 	}
 }
@@ -523,7 +526,7 @@ func (s *Shift) Discharge(patientID string) error {
 	g.camera = s.exitCamera(g.camera)
 	g.spot = 0
 	g.leaving = s.rng.Float64() < leaveChance(g.patient.Level())
-	g.noSleepUntil = now + MinutesToTicks(noSleepAfterMinute)
+	g.noSleepUntil = now + MinutesToTicks(noSleepMinutesAfterDischarge(g.patient.ID()))
 	g.nextMoveTick = now + nextMoveDelay(s.rng)
 	g.nextSleepCheck = g.noSleepUntil
 	if g.leaving {

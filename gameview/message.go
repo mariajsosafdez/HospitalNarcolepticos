@@ -23,6 +23,7 @@ const (
 	msgTutorial messageKind = iota // los 9 mensajes del Día 1
 	msgDayIntro                    // inicio de los días 2 a 5
 	msgOverwork                    // un doctor llegó a 4/4
+	msgCat                         // llegó Misifu, el gato
 )
 
 // messageBox es el mensaje que se está mostrando: una o varias líneas de

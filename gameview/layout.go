@@ -170,6 +170,8 @@ var spriteKeys = map[string]string{
 	"P-006": "nayeli", "P-007": "mane", "P-008": "kelly", "P-009": "eder", "P-010": "yuranis",
 	"D-001": "karen", "D-002": "alvaro", "D-003": "luzdary",
 	"O-001": "chepe", "O-002": "mono",
+	// Easter eggs: sus PNG son pac_egg<N>_*.
+	"E-001": "egg1", "E-002": "egg2", "E-003": "egg3", "E-004": "egg4", "E-005": "egg5",
 }
 
 // spriteKey devuelve la clave de los PNG de una persona: la de la tabla por

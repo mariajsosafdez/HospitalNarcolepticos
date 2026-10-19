@@ -382,6 +382,7 @@ func (c *camsScene) drawPlacement(feed *ebiten.Image, p placement) {
 			}
 		}
 		e.DrawSprite(feed, a.Frame(p.imgName, p.frames, p.index), p.x, p.y, p.flip)
+		c.drawCatHead(feed, p)
 	} else {
 		c.drawPlaceholder(feed, p)
 	}
@@ -727,4 +728,29 @@ func (c *camsScene) drawDischargeButton(dst *ebiten.Image) {
 		c.env.StrokeRect(dst, rect{r.x - 2, r.y - 2, r.w + 4, r.h + 5}, 'y', 1)
 	}
 	c.drawButtonState(dst, r, "Dar de alta", 'm', hover, pressed)
+}
+
+// Capa de la cabeza de Misifu sobre la camilla: 7x6 que se pinta en (14, 8)
+// de cada cuadro de CUALQUIER camilla y tapa la cabeza del paciente genérico.
+const (
+	catHeadX, catHeadY = 14, 8
+	catHeadW           = 7
+)
+
+// drawCatHead pinta la cabeza del gato si quien va en la camilla es Misifu.
+// Si la camilla va reflejada (camina a la izquierda), la capa se refleja con
+// ella: su esquina queda al otro lado del cuadro.
+func (c *camsScene) drawCatHead(feed *ebiten.Image, p placement) {
+	if p.patient.Patient().ID() != game.CatID || p.patient.State() != game.Carried {
+		return
+	}
+	a := c.env.Assets
+	if !a.Has("pac_egg1_camilla") {
+		return
+	}
+	x := p.x + catHeadX
+	if p.flip {
+		x = p.x + p.w - catHeadX - catHeadW
+	}
+	c.env.DrawSprite(feed, a.Image("pac_egg1_camilla"), x, p.y+catHeadY, p.flip)
 }

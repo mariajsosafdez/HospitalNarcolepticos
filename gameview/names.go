@@ -64,6 +64,12 @@ var patientShortNames = map[string]string{
 	"P-007": "Mañe Julio",
 	"P-005": "Marelvis", // "Marelvis Ortega" mide 64 px y no cabe
 	"P-008": "Kelly Ruiz",
+	// Easter eggs.
+	"E-001": "Misifu",
+	"E-002": "Alejo Urrego",
+	"E-003": "Samu Giraldo",
+	"E-004": "Cote",
+	"E-005": "Sebs",
 }
 
 // patientLabelName devuelve el nombre corto de un paciente por su ID; si no

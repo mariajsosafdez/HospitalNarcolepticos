@@ -119,3 +119,7 @@ func EndLine(stars int, seed int64) string {
 func OverworkLine(doctorName string) string {
 	return strings.Replace("¡Oiga! {doctor} ya tiene cuatro pacientes a cargo. Repártame el trabajo, que con este calor nadie aguanta tanto.", "{doctor}", doctorName, 1)
 }
+
+// CatArrivalLine es lo que dice Don Ernesto cuando llega Misifu, el gato
+// (solo el gato; Textos del Director.md, "Easter eggs").
+const CatArrivalLine = "Erda, ¿y ese gato quién lo dejó entrar?"

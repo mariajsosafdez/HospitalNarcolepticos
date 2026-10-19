@@ -59,3 +59,27 @@ func TestCastLabelNamesFit(t *testing.T) {
 		}
 	}
 }
+
+// Los easter eggs: nombre corto de la etiqueta (cabe en 60 px) y ninguno es mujer.
+func TestEggLabelNames(t *testing.T) {
+	fonts, err := LoadFonts()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"Misifu", "Alejo Urrego", "Samu Giraldo", "Cote", "Sebs"}
+	for n, label := range want {
+		egg, ok := game.EggByNumber(n + 1)
+		if !ok {
+			t.Fatalf("egg %d missing", n+1)
+		}
+		if got := patientLabelName(egg.ID, egg.Name); got != label {
+			t.Errorf("patientLabelName(%s) = %q, want %q", egg.ID, got, label)
+		}
+		if w := fonts.Width(label, fontPixel, 8); w > 60 {
+			t.Errorf("%q mide %d px", label, w)
+		}
+		if isFemale(egg.Name) {
+			t.Errorf("%s should not be female", egg.Name)
+		}
+	}
+}
