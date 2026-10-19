@@ -11,12 +11,15 @@ import (
 // 480x270. Se abre desde la opción "Créditos" del menú y Esc, Enter, Espacio
 // o un clic vuelven al menú con "Créditos" elegido.
 
-// Desfile de personajes por la acera (encima del fondo oscurecido).
+// Desfile de personajes por la acera (encima del fondo oscurecido). Pasa TODO
+// el elenco: 10 pacientes, 3 médicos, 2 camilleros y los 5 easter eggs.
 const (
 	paradeSpeed      = 16  // píxeles por segundo hacia la derecha
 	paradeFrameTicks = 9   // 0,15 s por cuadro a 60 ticks por segundo
 	paradeFrames     = 4   // cuadros de cada hoja *_camina
-	paradeSpan       = 524 // 480 de pantalla + 44 del más ancho: de ahí da la vuelta
+	paradeSlot       = 30  // lo que ocupa cada uno en la fila: 16 de ancho + 14 de aire
+	paradeStretcher  = 60  // Chepe con la camilla mide 44 de ancho y ocupa más
+	paradeSpan       = 630 // 19 puestos de 30 + el de la camilla: el desfile entero, de ahí da la vuelta
 	paradeMargin     = 44  // lo que sobresale por cada lado antes de volver a entrar
 	paradeY          = 200 // arriba de los sprites: los pies quedan en y = 224
 )
@@ -29,21 +32,39 @@ type paradeWalker struct {
 	start  int
 }
 
-var parade = [...]paradeWalker{
-	{"doc_karen_camina", 40, 0},
-	{"doc_alvaro_camina", 62, 2},
-	{"doc_luzdary_camina", 84, 1},
-	{"cam_chepe_camilla", 110, 0}, // el de la camilla mide 44 de ancho
-	{"cam_mono_camina", 160, 3},
-	{"pac_kelly_camina", 318, 0},
-	{"pac_wilfrido_camina", 340, 2},
-	{"pac_yuranis_camina", 362, 1},
-	{"pac_rafa_camina", 384, 3},
+// paradeSprites es el orden del desfile: médicos, camilleros, pacientes y,
+// al final, los easter eggs (Misifu camina en cuatro patas). Chepe empuja la
+// camilla.
+var paradeSprites = [...]string{
+	"doc_karen_camina", "doc_alvaro_camina", "doc_luzdary_camina",
+	"cam_chepe_camilla", "cam_mono_camina",
+	"pac_yesid_camina", "pac_yeimy_camina", "pac_rafa_camina", "pac_wilfrido_camina",
+	"pac_marelvis_camina", "pac_nayeli_camina", "pac_mane_camina", "pac_kelly_camina",
+	"pac_eder_camina", "pac_yuranis_camina",
+	"pac_egg1_camina", "pac_egg2_camina", "pac_egg3_camina", "pac_egg4_camina", "pac_egg5_camina",
+}
+
+// parade reparte a todos parejo por la fila: cada uno en su puesto, con el
+// cuadro de arranque distinto (i mod 4).
+var parade = buildParade()
+
+func buildParade() []paradeWalker {
+	walkers := make([]paradeWalker, 0, len(paradeSprites))
+	x := 0
+	for i, sprite := range paradeSprites {
+		walkers = append(walkers, paradeWalker{sprite, x, (i * 3) % paradeFrames})
+		if sprite == "cam_chepe_camilla" {
+			x += paradeStretcher
+		} else {
+			x += paradeSlot
+		}
+	}
+	return walkers
 }
 
 // paradeX da la x de un personaje del desfile en el tick dado: camina a la
 // derecha y el que sale por ese lado vuelve a entrar por el izquierdo.
-// x = ((x0 + 44 + 16·t) mod 524) - 44, con t = tick/60 segundos. Se calcula
+// x = ((x0 + 44 + 16·t) mod 630) - 44, con t = tick/60 segundos. Se calcula
 // con enteros (todo multiplicado por 60) para no acumular errores.
 func paradeX(x0, tick int) int {
 	n := ((x0+paradeMargin)*60 + paradeSpeed*tick) % (paradeSpan * 60)

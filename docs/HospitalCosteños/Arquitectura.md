@@ -166,7 +166,7 @@ Un tester (persona o agente) puede saltar a una pantalla, mandar clics y teclas,
 | `report` | Juega el día `-day` entero con `game.AutoStep` (jugador automático), guarda como un turno real y abre el reporte |
 | `pause` | Un Día 1 en la pausa (`key Down`, `key Enter` abre los Ajustes) |
 | `settings` | El menú con los Ajustes abiertos (usar con `-savepath`) |
-| `credits` | Los Créditos (`credits.go`), con el menú detrás: `key Escape`, `key Enter` o `click` vuelven al menú con "Créditos" elegido. El desfile depende solo de los ticks: `wait N` antes del `shot` lo mueve (16 px/s, 60 ticks = 16 px) |
+| `credits` | Los Créditos (`credits.go`), con el menú detrás: `key Escape`, `key Enter` o `click` vuelven al menú con "Créditos" elegido. El desfile (`paradeSprites`: los 20 del elenco, 10 pacientes, 3 médicos, 2 camilleros y los 5 easter eggs, cada uno una vez; `TestParadeHasWholeCast` lo comprueba desde las tablas del juego) mide 630 px, más que la pantalla, y recorre toda la acera. Depende solo de los ticks: `wait N` antes del `shot` lo mueve (16 px/s, 60 ticks = 16 px); con `wait 800` entre capturas se ven otras partes |
 | `demo` | La Demo guiada con su caja de controles, después de la parte `-step` (ver abajo "Demo guiada"). `dump` trae `demoPart` (1 a 8), `demoStep` (el "Paso N de 4"), `demoPlaying` (una parte se anima: el reloj corre) y `demoBeat` (`mingle`, `sleep`, `arrive`, `carry`, `nobed`, `leave`, `bed`, `wake`, `highlight`, `discharge`) |
 
 **Guion.** Un paso por línea (o varios con `;`); `#` empieza un comentario. Un paso desconocido o con argumentos mal escritos **hace fallar el arranque** con el número de línea.
