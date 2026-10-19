@@ -1,4 +1,4 @@
-// Easter egg 4, Cote (Severo, manilla R): pelo ondulado castaño, gafas redondas plateadas, camiseta crema, bermuda de jean, medias negras con margaritas, reloj grande: dormido acostado en el piso boca arriba, 2 cuadros de 34x14 (respira).
+// Easter egg 4, Cote (Severo, manilla R): mullet largo ondulado castaño (cae hasta los hombros), sin gafas, camiseta crema, bermuda de jean, medias negras con margaritas, reloj grande: dormido acostado en el piso boca arriba, 2 cuadros de 34x14 (respira).
 // La cabeza va a la izquierda. La fila 13 (la de abajo) es el piso: alinear esa fila con el piso de la cámara.
 // Generado con un script de apoyo (fuera del repo); se puede retocar a mano.
 ..................................
@@ -6,27 +6,27 @@
 ..................................
 ......0...........................
 .00000C0......................0000
-02222CxC0.....................0110
-0222xcxCC0000000000000........0w10
-02221xCCCC0WWWWWWWWWWW000000000110
-0222xCCCCC000000000000BBBBCC1111w0
-02122CCCCc0kkCCCRRCCC0BBBBCC1w1110
+02222CCC0.....................0110
+02222cCCC0000000000000........0w10
+0222CCCCCC0WWWWWWWWWWW000000000110
+0212CCCCCC000000000000BBBBCC1111w0
+02222CCCCc0kkCCCRRCCC0BBBBCC1w1110
 0222222Cc0000000000000BBBBCC111110
-02122200000kkkkkkkkkkkbbbbcc111000
-0022222000000000000000000000000000
-..00000...........................
+022222222022kkkkkkkkkkbbbbcc111000
+0022222220000000000000000000000000
+..0000000.........................
 ---
 ..................................
 ..................................
 ..................................
 ......0...........................
 .00000C0......................0000
-02222CxC0...00000000..........0110
-0222xcxCC000WWWWWWWW00........0w10
-02221xCCCC0WWWWWWWWWWW000000000110
-0222xCCCCC000000000000BBBBCC1111w0
-02122CCCCc0kkCCCRRCCC0BBBBCC1w1110
+02222CCC0...00000000..........0110
+02222cCCC000WWWWWWWW00........0w10
+0222CCCCCC0WWWWWWWWWWW000000000110
+0212CCCCCC000000000000BBBBCC1111w0
+02222CCCCc0kkCCCRRCCC0BBBBCC1w1110
 0222222Cc0000000000000BBBBCC111110
-02122200000kkkkkkkkkkkbbbbcc111000
-0022222000000000000000000000000000
-..00000...........................
+022222222022kkkkkkkkkkbbbbcc111000
+0022222220000000000000000000000000
+..0000000.........................
