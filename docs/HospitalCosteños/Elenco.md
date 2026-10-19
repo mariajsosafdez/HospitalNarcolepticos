@@ -49,7 +49,7 @@ Pacientes extra, raros, inspirados en fotos de la autora (las fotos no están en
 | 1 | **Misifu** (gato) | Severo | Persa naranja y crema, cara aplastada de bravo, melena blanca. Collar rojo |
 | 2 | **Alejo Urrego** | Leve | Crespo oscuro, gafas rectangulares, camiseta azul oscuro, pulgar arriba |
 | 3 | **Samu Giraldo** | Leve | Mullet crespo, suéter gris |
-| 4 | **Cote** | Severo | Pelo ondulado, gafas redondas, camiseta crema, shorts de jean, medias con margaritas, reloj grande |
+| 4 | **Cote** | Severo | Mullet largo y ondulado, sin gafas ("quitale las gafas al cote y hazle mas mullet porfi"), camiseta crema, shorts de jean, medias con margaritas, reloj grande |
 | 5 | **Sebs** | Moderado | Crespo corto, camiseta blanca de maratón, shorts verdes, mano de rock |
 
 **Reglas** (palabras de la autora: "que sea raro que salga, por cierto, los dos que tienes severo se duermen mucho mas seguido que los demás, evitando el cooldown para poderse volver a dormir"):
