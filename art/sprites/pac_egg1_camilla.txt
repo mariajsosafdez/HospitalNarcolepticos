@@ -1,0 +1,10 @@
+// Easter egg 1, Misifu (gato persa naranja y crema, cara de bravo; Severo, collar R en vez de manilla): capa para la camilla, 1 cuadro de 7x6.
+// Se dibuja encima de cualquier *_camilla en (14,8) de cada cuadro: tapa la cabeza del paciente
+// genérico (columnas 14-20, filas 9-13) y deja ver la cabeza del gato dormido con el collar.
+// Generado con un script de apoyo (fuera del repo); se puede retocar a mano.
+.0...0.
+0m000m0
+0mMMMm0
+011M110
+0wMcMw0
+0wRRRw0
