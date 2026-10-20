@@ -30,6 +30,13 @@ var (
 // alto después del título (la primera línea va 20 px bajo el borde de arriba).
 const reportCardLines = 5
 
+// La caja de la consulta 5.1 lleva hasta 6 líneas (con separación de 10 px
+// en vez de 11) y los nombres de cada grupo caben en 131 px (7 de sangría).
+const (
+	reportNoBedLines  = 6
+	reportNoBedNamesW = 131
+)
+
 // ---------------------------------------------------------------------------
 // Funciones puras: de game.Report a las líneas de cada caja (con test)
 // ---------------------------------------------------------------------------
@@ -131,23 +138,66 @@ func capWithMore(lines []rline, max int) []rline {
 	return append(out, rline{left: fmt.Sprintf("y %d más", len(lines)-(max-1)), dim: true})
 }
 
-// noBedLines es la caja "Atendidos sin cama" (consulta 5.1): cuántos
-// siguen así al cerrar el turno, cuántas veces pasó, y quiénes (con la cama
-// a la que pasaron después, si la consiguieron).
-func noBedLines(r game.Report) []rline {
+// noBedLines es la caja "Sin cama al cerrar el turno": cuántos quedaron sin
+// cama en total, cuántas veces pasó durante el turno y dos grupos con sus
+// nombres. "Atendidos, sin cama" ES la consulta 5.1 (h.PatientsInHallway):
+// solo ve a los que el jugador reportó. "Sin atender" son los que se
+// durmieron y nadie tocó: el modelo los ve despiertos, así que la 5.1 no los
+// cuenta y se suman aparte. Al final, quién se quedó sin cama y a qué cama
+// pasó después. measure mide el texto en píxeles (para "y N más").
+func noBedLines(r game.Report, measure func(string) int) []rline {
+	total := len(r.Hallway) + len(r.Waiting)
 	closing := "Al cerrar el turno: nadie."
-	if n := len(r.Hallway); n > 0 {
-		closing = fmt.Sprintf("Al cerrar el turno: %s.", countText(n, "paciente", "pacientes"))
+	if total > 0 {
+		closing = fmt.Sprintf("Al cerrar el turno: %s.", countText(total, "paciente", "pacientes"))
 	}
 	times := fmt.Sprintf("Durante el turno: %s.", countText(len(r.NoBed), "vez", "veces"))
 	lines := []rline{{left: closing}, {left: times}}
-	for _, p := range r.NoBed {
-		lines = append(lines, rline{left: p.Name + ", " + locationText(p.Location)})
+	lines = append(lines, groupLines("Atendidos, sin cama (5.1)", patientNames(r.Hallway), measure)...)
+	lines = append(lines, groupLines("Sin atender", patientNames(r.Waiting), measure)...)
+	// Los eventos van al final y solo con el espacio que sobre: los dos
+	// grupos nunca se recortan. Cada uno ocupa 1 o 2 líneas; si no caben
+	// todos, la última línea dice "y N más" contando PERSONAS, no líneas.
+	room := reportNoBedLines - len(lines)
+	for i, p := range r.NoBed {
+		need := 1
 		if p.LaterRoom > 0 {
-			lines = append(lines, rline{left: fmt.Sprintf("(después pasó a la %d)", p.LaterRoom)})
+			need = 2
 		}
+		left := len(r.NoBed) - i // personas que faltan por mostrar
+		more := left > 1         // si este no es el último, hay que dejar lugar para "y N más"
+		if need > room || (more && need == room) {
+			if room > 0 {
+				lines = append(lines, rline{left: fmt.Sprintf("y %d más", left), dim: true})
+			}
+			break
+		}
+		lines = append(lines, rline{left: p.Name + ", " + locationText(p.Location), dim: true})
+		if p.LaterRoom > 0 {
+			lines = append(lines, rline{left: fmt.Sprintf("(después pasó a la %d)", p.LaterRoom), dim: true})
+		}
+		room -= need
 	}
-	return capWithMore(lines, reportCardLines)
+	return lines
+}
+
+// groupLines es un grupo de la caja: "Título: N" y, si hay gente, una línea
+// con sus primeros nombres (con "y N más" si no caben).
+func groupLines(title string, names []string, measure func(string) int) []rline {
+	lines := []rline{{left: fmt.Sprintf("%s: %d", title, len(names))}}
+	if len(names) > 0 {
+		lines = append(lines, rline{left: unattendedText(names, reportNoBedNamesW, measure), indent: true, dim: true})
+	}
+	return lines
+}
+
+// patientNames saca los nombres de una lista de pacientes.
+func patientNames(ps []game.PatientLine) []string {
+	names := make([]string, len(ps))
+	for i, p := range ps {
+		names[i] = p.Name
+	}
+	return names
 }
 
 // demoLocations traduce los cuatro lugares en inglés del escenario del
@@ -371,8 +421,8 @@ func (s *reportScene) Draw(dst *ebiten.Image) {
 	}
 
 	s.drawPointsCard(dst)
-	s.drawLinesCard(dst, reportNoBedCard, "Atendidos sin cama", noBedLines(r))
-	s.drawLinesCard(dst, reportDoctorCard, "Episodios por doctor", doctorLines(r))
+	s.drawLinesCard(dst, reportNoBedCard, "Sin cama al cerrar el turno", noBedLines(r, func(t string) int { return e.Fonts.Width(t, fontPixel, 8) }), 18, 10)
+	s.drawLinesCard(dst, reportDoctorCard, "Episodios por doctor", doctorLines(r), 19, 11)
 	s.drawBedsCard(dst)
 	s.drawSevereCard(dst)
 	s.drawDirectorCard(dst)
@@ -413,12 +463,12 @@ func lineKey(dim bool) byte {
 }
 
 // drawLinesCard pinta una caja de líneas simples (consultas 5.1 y 5.2).
-func (s *reportScene) drawLinesCard(dst *ebiten.Image, r rect, title string, lines []rline) {
+func (s *reportScene) drawLinesCard(dst *ebiten.Image, r rect, title string, lines []rline, top, pitch int) {
 	e := s.env
 	s.drawCard(dst, r, title)
 	measure := func(t string) int { return e.Fonts.Width(t, fontPixel, 8) }
 	for i, l := range lines {
-		x, y := r.x+5, r.y+19+11*i
+		x, y := r.x+5, r.y+top+pitch*i
 		if l.indent {
 			x += 7
 		}
@@ -534,10 +584,6 @@ func (s *reportScene) drawPointsCard(dst *ebiten.Image) {
 		e.Text(dst, p.label, r.x+6, y, textStyle{fontPixel, 8, '1', alignLeft})
 		e.Text(dst, fmt.Sprint(p.count), r.x+110, y, textStyle{fontPixel, 8, 'x', alignCenter}) // cuántas veces se cobró
 		e.Text(dst, signedPoints(p.value), r.x+148, y, textStyle{fontPixel, 8, valueKey(p.value), alignRight})
-	}
-	measure := func(t string) int { return e.Fonts.Width(t, fontPixel, 8) }
-	if names := unattendedText(s.report.Unattended, 139, measure); names != "" {
-		e.Text(dst, names, r.x+13, r.y+134, textStyle{fontPixel, 8, 'x', alignLeft}) // quiénes, bajo su fila
 	}
 	e.FillRect(dst, rect{r.x + 6, r.y + 145, 146, 1}, 'k', 1)
 	e.Text(dst, "Total", r.x+6, r.y+149, textStyle{fontPixelBold, 10, '1', alignLeft})

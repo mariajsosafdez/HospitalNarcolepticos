@@ -64,7 +64,8 @@ type NoBedLine struct {
 type Report struct {
 	Day        int            `json:"day"`
 	Hallway    []PatientLine  `json:"hallway"`
-	NoBed      []NoBedLine    `json:"noBed"` // los que se quedaron sin cama en algún momento
+	Waiting    []PatientLine  `json:"waiting"` // dormidos que el jugador nunca atendió (el modelo los ve despiertos)
+	NoBed      []NoBedLine    `json:"noBed"`   // los que se quedaron sin cama en algún momento
 	Doctors    []DoctorLine   `json:"doctors"`
 	Rooms      []RoomLine     `json:"rooms"`
 	FreeRooms  int            `json:"freeRooms"`
@@ -112,9 +113,19 @@ func (s *Shift) Report() Report {
 		r.NoBed = append(r.NoBed, line)
 	}
 
-	// Consulta 5.1: dormidos fuera de una cama.
+	// Consulta 5.1: dormidos fuera de una cama. Solo trae a los que el
+	// jugador reportó (Assign): el modelo no sabe de los demás.
 	for _, p := range s.h.PatientsInHallway() {
 		r.Hallway = append(r.Hallway, PatientLine{ID: p.ID(), Name: p.Name(), Location: p.Location()})
+	}
+
+	// Los que se durmieron y nadie atendió: para el modelo siguen despiertos,
+	// así que la consulta 5.1 no los ve. Se listan aparte, con el lugar donde
+	// se durmieron, para que el reporte cuente a todos los que quedaron sin cama.
+	for _, g := range s.patients {
+		if g.state == AsleepWaiting {
+			r.Waiting = append(r.Waiting, PatientLine{ID: g.patient.ID(), Name: g.patient.Name(), Location: g.sleepLocation})
+		}
 	}
 
 	// Consulta 5.2: episodios de cada doctor. h.Doctors() sale vacío en el

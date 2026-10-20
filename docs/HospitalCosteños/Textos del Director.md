@@ -101,7 +101,7 @@ Pasos de la Demo (caja de la Demo, "Paso N de 4"):
 |---|---|
 | Título | "Fin del turno" · "Día N  ·  de 12 a 6  ·  X pacientes atendidos" ("Nadie fue atendido" si son 0) |
 | Puntos | "Puntos", "de N posibles (P %)", "Excelente", "Bien", "Regular", "Mal", "Bonus severos", "Penalizaciones" con "Día N · ×1,25" a la derecha, "Cama sin alta", "Exceso de trabajo", "Sin cama o sin atender" (antes "Sin atender"), cada una con cuántas veces se cobró y los puntos; bajo la última, los nombres: "Eder, Abelardo, Marelvis y 4 más"; "Total" |
-| 5.1 | "Atendidos sin cama" (antes "Se quedaron sin cama"; la autora: "mejor"): "Al cerrar el turno: nadie." / "Durante el turno: 1 vez." (o "N veces.") / "{Nombre}, {lugar}" / "(después pasó a la 101)" |
+| 5.1 | **"Sin cama al cerrar el turno"** (2026-10-19, antes "Atendidos sin cama"): "Al cerrar el turno: nadie." / "Al cerrar el turno: N pacientes." (suma los dos grupos) · "Durante el turno: 1 vez." (o "N veces.") · "Atendidos, sin cama (5.1): N" + nombres (es la consulta 5.1 tal cual) · "Sin atender: M" + nombres (los que se durmieron y nadie tocó) · con espacio: "{Nombre}, {lugar}" / "(después pasó a la 101)" · si no caben: "y N más" |
 | 5.2 | "Episodios por doctor" (nombre, cantidad y debajo los pacientes) |
 | 5.3 | "Camas" (número y ocupante, o "libre") · "Veces sin cama: N" |
 | 5.4 | "Pacientes severos" ("cama 102", "despierta"/"despierto") · "3 severos, 2 atendidos por doctor" |

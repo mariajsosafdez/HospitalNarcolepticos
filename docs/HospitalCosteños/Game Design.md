@@ -202,6 +202,7 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-18 | Créditos aprobados con cambios: la clase es Compiladores y Lenguajes; Don Ernesto: "Gracias por la ayuda, vale!"; se queda la línea de IA | Revisión | "Es clase de Compiladores y lenguajes :P" / "pon \"gracias por la ayuda vale!\"" / "Sip" |
 | 2026-10-18 | Dígitos dibujados en pixel art (el 5 de Pixelify parece una S) | Legibilidad | "okey" |
 | 2026-10-18 | El recuadro de la consulta 5.1 se titula "Atendidos sin cama" | Que no parezca contradictorio | "mejor" |
+| 2026-10-19 | El recuadro de 5.1 pasa a "Sin cama al cerrar el turno" con dos grupos: "Atendidos, sin cama (5.1)" y "Sin atender" | El reporte no contaba a los que nunca se tocaron (el modelo los ve despiertos) | "no los añade a la cantidad de pacientes que se quedaron sin cama o dormidos en el pasillo" |
 | 2026-10-18 | Obstáculos en todas las salas para que nadie se duerma sobre los muebles | — | "me gusta" |
 | 2026-10-18 | Dígitos en pixel art aprobados (0 pequeño sin punto, medianos con trazo de 1 px) | El 5 de Pixelify parecía una S | "si" / "ok" / "ok" |
 | 2026-10-18 | Nadie se duerme en los últimos 10 s reales del turno (17:40–18:00) | Si no, la penalización sería segura | "los pacientes no deberían dormirse faltando menos de 10 segundos para que se acabe el juego, porque sino seria garantizar una penalización" |
