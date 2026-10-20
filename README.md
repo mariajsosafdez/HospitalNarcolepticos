@@ -176,6 +176,12 @@ See [AI_USAGE.md](AI_USAGE.md).
   - **Pixelify Sans** by Stefie Justprince, from [Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans). Used for the menu and every interface text.
   - **VT323** by Peter Hull, from [Google Fonts](https://fonts.google.com/specimen/VT323). Used only for the camera stamp, the clock and the map buttons.
 - **Game engine:** [Ebitengine](https://ebitengine.org) (Apache 2.0).
+- **Music and sound effects** (all CC0, embedded in `gameview/assets/sound/`; no credit is required, but they are named anyway):
+  - Menu music: "Shop Theme" by CleytonKauffman, CC0, via [OpenGameArt.org](https://opengameart.org/content/shop-theme).
+  - Shift music: "Calm Track" by pmiller, CC0, via [OpenGameArt.org](https://opengameart.org/content/calm-track).
+  - Interface sounds, steel-drum jingle and clicks (discharge, wake-up, no-bed, end of shift, button click): [Kenney.nl](https://kenney.nl) (Interface Sounds, UI Audio, Music Jingles), CC0.
+  - Snore ("80 CC0 creature SFX #2") and rolling stretcher ("30 CC0 SFX loops"): rubberduck, CC0, via [OpenGameArt.org](https://opengameart.org).
+  - The volume of every file is normalized (see `gameview/sound_gain.go`).
 - **Pixel art:** drawn for this project from text grids (`art/sprites/`).
 
 ## Test backdoor (`-agent`)
@@ -194,4 +200,4 @@ go run . -agent -scene settings -savepath scratch.json -quit
 
 ## Known limitations
 
-- The game has no sound or music (cut for time).
+- The sound is an experiment: every pick was chosen by description, not by ear, and still needs the author's confirmation (see `docs/HospitalCosteños/Sonido.md`). Settings has a "Sonido" switch to turn it all off.
