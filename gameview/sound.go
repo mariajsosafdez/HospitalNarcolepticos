@@ -40,6 +40,8 @@ type Sound struct {
 
 	log     []string // cues que se pidieron (para el volcado de pruebas)
 	enabled bool     // el interruptor "Sonido" de Ajustes
+	musicG  float64  // volumen de la música (0 a 1, ya con la curva de volumeGain)
+	sfxG    float64  // volumen de los efectos (0 a 1, ya con la curva)
 
 	playing Track   // pista que suena
 	level   float64 // nivel del fundido de esa pista (0 a 1)
@@ -62,7 +64,7 @@ type soundOut struct {
 // NewSound arma la mesa de sonido. Con silent (modo pruebas) no abre audio. Si
 // la tarjeta de sonido falla, el juego sigue en silencio.
 func NewSound(silent bool) *Sound {
-	s := &Sound{enabled: true, duck: 1}
+	s := &Sound{enabled: true, duck: 1, musicG: volumeGain(70), sfxG: volumeGain(80)}
 	if silent {
 		return s
 	}
@@ -115,8 +117,11 @@ func (s *Sound) Play(c Cue) {
 	if s.out == nil {
 		return
 	}
+	if s.sfxG == 0 {
+		return // volumen de efectos en 0: nada que reproducir
+	}
 	p := s.out.ctx.NewPlayerFromBytes(s.out.sfx[c])
-	p.SetVolume(1)
+	p.SetVolume(s.sfxG)
 	p.Play()
 	s.out.active = append(s.out.active, p)
 }
@@ -127,6 +132,32 @@ func (s *Sound) SetEnabled(on bool) {
 	if s != nil {
 		s.enabled = on
 	}
+}
+
+// SetVolumes pone los volúmenes de Ajustes (0 a 100) de la música y de los
+// efectos. Se llama en cada tick con lo guardado, así lo que se arrastra en la
+// barra se oye de inmediato: la música lo toma en el próximo update y los
+// efectos que ya suenan (ronquido, camilla) también.
+func (s *Sound) SetVolumes(music, sfx int) {
+	if s != nil {
+		s.musicG, s.sfxG = volumeGain(music), volumeGain(sfx)
+	}
+}
+
+// MusicGain y SfxGain dan el volumen efectivo (0 a 1) para el volcado de
+// pruebas: 0 si el sonido está apagado.
+func (s *Sound) MusicGain() float64 {
+	if s == nil || !s.enabled {
+		return 0
+	}
+	return s.musicG
+}
+
+func (s *Sound) SfxGain() float64 {
+	if s == nil || !s.enabled {
+		return 0
+	}
+	return s.sfxG
 }
 
 // Roll pide que suenen las ruedas de la camilla en este tick. Hay que llamarlo
@@ -166,7 +197,7 @@ func (o *soundOut) update(s *Sound, start, roll bool) {
 		o.openMusic(s.playing)
 	}
 	if o.music != nil {
-		o.music.SetVolume(musicVolumeNow(s.level, s.duck, s.enabled))
+		o.music.SetVolume(musicVolumeNow(s.level, s.duck, s.musicG, s.enabled))
 		switch {
 		case !s.enabled && o.music.IsPlaying():
 			o.music.Pause()
@@ -174,11 +205,13 @@ func (o *soundOut) update(s *Sound, start, roll bool) {
 			o.music.Play()
 		}
 	}
-	o.updateRoll(roll)
-	// Se sueltan los efectos que ya terminaron.
+	o.updateRoll(roll, s.sfxG)
+	// Se sueltan los efectos que ya terminaron; los que siguen sonando toman
+	// el volumen de efectos de ahora.
 	kept := o.active[:0]
 	for _, p := range o.active {
 		if p.IsPlaying() {
+			p.SetVolume(s.sfxG)
 			kept = append(kept, p)
 		} else {
 			p.Close()
@@ -212,16 +245,18 @@ func (o *soundOut) openMusic(t Track) {
 }
 
 // updateRoll arranca o frena el bucle de las ruedas.
-func (o *soundOut) updateRoll(on bool) {
+func (o *soundOut) updateRoll(on bool, gain float64) {
 	if on && o.roll == nil {
 		loop := audio.NewInfiniteLoop(bytes.NewReader(o.sfx[CueRoll]), int64(len(o.sfx[CueRoll])))
 		p, err := o.ctx.NewPlayer(loop)
 		if err != nil {
 			return
 		}
-		p.SetVolume(1)
 		p.Play()
 		o.roll = p
+	}
+	if o.roll != nil {
+		o.roll.SetVolume(gain)
 	}
 	if !on && o.roll != nil {
 		o.roll.Close()

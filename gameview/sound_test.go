@@ -273,17 +273,21 @@ func TestMusicVolumeNow(t *testing.T) {
 	tests := []struct {
 		name        string
 		level, duck float64
+		gain        float64
 		enabled     bool
 		want        float64
 	}{
-		{"normal", 1, 1, true, 1},
-		{"en pausa", 1, duckVolume, true, duckVolume},
-		{"a medio fundido", 0.5, 1, true, 0.25},
-		{"apagado", 1, 1, false, 0},
-		{"apagado en pausa", 0.5, duckVolume, false, 0},
+		{"normal", 1, 1, 1, true, 1},
+		{"en pausa", 1, duckVolume, 1, true, duckVolume},
+		{"a medio fundido", 0.5, 1, 1, true, 0.25},
+		{"apagado", 1, 1, 1, false, 0},
+		{"apagado en pausa", 0.5, duckVolume, 1, false, 0},
+		{"volumen 50 %", 1, 1, volumeGain(50), true, 0.25},
+		{"volumen 0 %", 1, 1, volumeGain(0), true, 0},
+		{"todo junto", 0.5, duckVolume, volumeGain(70), true, 0.25 * duckVolume * 0.49},
 	}
 	for _, tc := range tests {
-		if got := musicVolumeNow(tc.level, tc.duck, tc.enabled); math.Abs(got-tc.want) > 1e-9 {
+		if got := musicVolumeNow(tc.level, tc.duck, tc.gain, tc.enabled); math.Abs(got-tc.want) > 1e-9 {
 			t.Errorf("%s: %v, want %v", tc.name, got, tc.want)
 		}
 	}
@@ -330,4 +334,49 @@ func TestSoundLogAndMute(t *testing.T) {
 	nilSound.Play(CueClick)
 	nilSound.Roll()
 	nilSound.Update(TrackMenu, false, true)
+}
+
+func TestVolumeGain(t *testing.T) {
+	tests := []struct {
+		percent int
+		want    float64
+	}{
+		{0, 0}, {10, 0.01}, {50, 0.25}, {70, 0.49}, {80, 0.64}, {100, 1}, {-20, 0}, {250, 1},
+	}
+	for _, tt := range tests {
+		if got := volumeGain(tt.percent); math.Abs(got-tt.want) > 1e-9 {
+			t.Errorf("volumeGain(%d) = %v, want %v", tt.percent, got, tt.want)
+		}
+	}
+	// Siempre sube con la barra y 50 % son unos -12 dB.
+	for p := 0; p < 100; p += volumeStep {
+		if volumeGain(p+volumeStep) <= volumeGain(p) {
+			t.Errorf("volumeGain must grow: %d -> %d", p, p+volumeStep)
+		}
+	}
+	if db := toDB(volumeGain(50)); math.Abs(db+12.04) > 0.01 {
+		t.Errorf("50 %% = %.2f dB, want about -12", db)
+	}
+}
+
+// Con 0 % cada grupo calla, y el otro sigue igual; con el sonido apagado
+// callan los dos.
+func TestVolumesMute(t *testing.T) {
+	s := NewSound(true)
+	s.SetVolumes(0, 100)
+	if s.MusicGain() != 0 || s.SfxGain() != 1 {
+		t.Errorf("music 0 %%: music %v, sfx %v", s.MusicGain(), s.SfxGain())
+	}
+	s.SetVolumes(100, 0)
+	if s.MusicGain() != 1 || s.SfxGain() != 0 {
+		t.Errorf("sfx 0 %%: music %v, sfx %v", s.MusicGain(), s.SfxGain())
+	}
+	s.SetVolumes(70, 80)
+	s.SetEnabled(false)
+	if s.MusicGain() != 0 || s.SfxGain() != 0 {
+		t.Error("with the sound off both groups must be silent")
+	}
+	if musicVolumeNow(1, 1, volumeGain(0), true) != 0 {
+		t.Error("music at 0 % must give volume 0")
+	}
 }

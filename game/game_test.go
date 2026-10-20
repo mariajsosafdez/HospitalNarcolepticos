@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -1021,6 +1022,40 @@ func TestSaveStore(t *testing.T) {
 	data.RecordShift(MaxDay, 5)
 	if data.LastUnlockedDay > MaxDay {
 		t.Errorf("unlocked day %d beyond the last", data.LastUnlockedDay)
+	}
+}
+
+// Un guardado viejo sin volúmenes queda con los de fábrica (no con 0), y uno
+// con volúmenes los conserva, incluido el 0 a propósito.
+func TestLoadVolumes(t *testing.T) {
+	tests := []struct {
+		name         string
+		json         string
+		music, sfx   int
+		soundOff     bool
+		lastUnlocked int
+	}{
+		{"sin volumenes", `{"lastUnlockedDay":3,"settings":{"fullscreen":true}}`, 70, 80, false, 3},
+		{"solo musica", `{"settings":{"musicVolume":30}}`, 30, 80, false, 1},
+		{"con ambos", `{"settings":{"musicVolume":10,"sfxVolume":90,"soundOff":true}}`, 10, 90, true, 1},
+		{"cero a proposito", `{"settings":{"musicVolume":0,"sfxVolume":0}}`, 0, 0, false, 1},
+	}
+	for _, tt := range tests {
+		path := filepath.Join(t.TempDir(), "save.json")
+		if err := os.WriteFile(path, []byte(tt.json), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		got, err := NewSaveStore(path).Load()
+		if err != nil {
+			t.Fatalf("%s: %v", tt.name, err)
+		}
+		s := got.Settings
+		if s.MusicVolume != tt.music || s.SfxVolume != tt.sfx || s.SoundOff != tt.soundOff || got.LastUnlockedDay != tt.lastUnlocked {
+			t.Errorf("%s: got %+v (day %d)", tt.name, s, got.LastUnlockedDay)
+		}
+	}
+	if d := DefaultSettings(); d.MusicVolume != 70 || d.SfxVolume != 80 {
+		t.Errorf("defaults = %+v", d)
 	}
 }
 

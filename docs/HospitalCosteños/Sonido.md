@@ -129,3 +129,7 @@ Se **mide** cada archivo (`measureLoudness`, en `gameview/sound_mix.go`): el pic
 
 - Nadie ha oído nada (ni la IA ni, todavía, la autora). Lo único comprobado es que decodifica, que los volúmenes medidos quedan en su objetivo y que el juego arranca con el audio real sin caerse.
 - No se probó el empalme del bucle de las dos músicas (las páginas dicen que ya vienen en bucle). Si se oye un salto al reiniciar, hay que cortarlas.
+
+### Volúmenes de música y efectos (2026-10-19)
+
+Ajustes vuelve a tener las dos barras aprobadas (Volumen música 70 % y Volumen efectos 80 % por defecto, de 10 en 10), además del interruptor **Sonido** (silencio total). Cada porcentaje pasa por `volumeGain` (`sound_mix.go`): **ganancia = (porcentaje / 100)²**. El oído no es lineal, así que una curva cuadrática hace que cada paso de la barra se sienta parejo: 50 % es -12 dB, 10 % es -40 dB, 0 % es silencio exacto y 100 % deja el nivel ya normalizado de cada archivo. La música multiplica `fundido × pausa × volumen`; los efectos (incluidos el ronquido y la camilla) multiplican su volumen, y `Sound.SetVolumes` se llama en cada tick, así lo que se arrastra se oye al instante. Un guardado sin estos campos toma 70 / 80. Como siempre, los valores por defecto son de la IA: la autora confirma de oído.

@@ -6,6 +6,78 @@ import (
 	"costenos-narcolepsia/game"
 )
 
+func TestStepVolume(t *testing.T) {
+	tests := []struct{ v, dir, want int }{
+		{70, 1, 80}, {70, -1, 60}, {100, 1, 100}, {0, -1, 0}, {95, 1, 100}, {5, -1, 0},
+	}
+	for _, tt := range tests {
+		if got := stepVolume(tt.v, tt.dir); got != tt.want {
+			t.Errorf("stepVolume(%d,%d) = %d, want %d", tt.v, tt.dir, got, tt.want)
+		}
+	}
+}
+
+func TestVolumeAt(t *testing.T) {
+	track := rect{262, 66, 60, 4}
+	tests := []struct{ x, want int }{
+		{262, 0}, {292, 50}, {322, 100}, {304, 70}, {200, 0}, {400, 100}, {264, 0}, {268, 10},
+	}
+	for _, tt := range tests {
+		if got := volumeAt(tt.x, track); got != tt.want {
+			t.Errorf("volumeAt(%d) = %d, want %d", tt.x, got, tt.want)
+		}
+	}
+}
+
+// Izquierda y Derecha cambian el volumen de la fila marcada, y el arrastre con
+// el mouse lo sigue mientras el botón esté abajo.
+func TestVolumeRowsAndDrag(t *testing.T) {
+	env := &Env{Save: game.NewSaveData(), Opts: Options{Agent: true}}
+	v := newSettingsView(env)
+	left, right := &Input{keys: map[string]bool{"Left": true}}, &Input{keys: map[string]bool{"Right": true}}
+	v.Update(right)
+	v.Update(right)
+	if env.Save.Settings.MusicVolume != 90 {
+		t.Errorf("music = %d, want 90", env.Save.Settings.MusicVolume)
+	}
+	v.sel = setSfx
+	v.Update(left)
+	if env.Save.Settings.SfxVolume != 70 || env.Save.Settings.MusicVolume != 90 {
+		t.Errorf("settings = %+v", env.Save.Settings)
+	}
+
+	track := settingsTrack(setMusic)
+	y := track.y + 1
+	v.Update(&Input{MouseX: track.x + 30, MouseY: y, Click: true, Down: true, Moved: true})
+	if env.Save.Settings.MusicVolume != 50 || v.drag != setMusic {
+		t.Fatalf("click: music = %d, drag = %d", env.Save.Settings.MusicVolume, v.drag)
+	}
+	// Arrastra fuera de la fila: sigue al mouse.
+	v.Update(&Input{MouseX: track.x + 60, MouseY: y + 80, Down: true})
+	if env.Save.Settings.MusicVolume != 100 {
+		t.Errorf("drag: music = %d, want 100", env.Save.Settings.MusicVolume)
+	}
+	v.Update(&Input{MouseX: track.x, MouseY: y})
+	if v.drag != -1 || env.Save.Settings.MusicVolume != 100 {
+		t.Errorf("after release: drag = %d, music = %d", v.drag, env.Save.Settings.MusicVolume)
+	}
+}
+
+func TestSettingsLayout(t *testing.T) {
+	// Las seis filas y "Volver" caben en la caja sin tocarse.
+	prev := settingsRowRect(0).y
+	for i := 1; i < setBack; i++ {
+		r, p := settingsRowRect(i), settingsRowRect(i-1)
+		if r.y < p.y+p.h+3 {
+			t.Errorf("row %d is too close to row %d", i, i-1)
+		}
+		prev = r.y + r.h
+	}
+	if settingsBackRect.y < prev+3 || settingsBackRect.y+settingsBackRect.h >= 200 {
+		t.Errorf("Volver at y=%d overlaps rows (end %d) or the description line", settingsBackRect.y, prev)
+	}
+}
+
 func TestStepRowsWrap(t *testing.T) {
 	if stepRow(0, -1) != setBack || stepRow(setBack, 1) != 0 || stepRow(0, 1) != 1 {
 		t.Error("stepRow must wrap around")

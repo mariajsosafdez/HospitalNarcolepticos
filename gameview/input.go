@@ -16,6 +16,7 @@ type Input struct {
 	MouseX, MouseY int  // posición del mouse en el lienzo de 480x270
 	Moved          bool // el mouse cambió de sitio en este tick
 	Click          bool // clic izquierdo en este tick
+	Down           bool // el botón izquierdo sigue apretado (para arrastrar)
 	keys           map[string]bool
 }
 
@@ -26,6 +27,7 @@ func (in *Input) Pressed(name string) bool { return in.keys[name] }
 func (in *Input) reset() {
 	in.Moved = false
 	in.Click = false
+	in.Down = false
 	in.keys = make(map[string]bool)
 }
 
@@ -111,6 +113,7 @@ func (in *Input) readReal(v viewport) {
 	x, y := ebiten.CursorPosition()
 	in.moveToWindow(x, y, v)
 	in.Click = inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)
+	in.Down = ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
 	for name, key := range keyNames {
 		if inpututil.IsKeyJustPressed(key) {
 			in.keys[name] = true

@@ -98,6 +98,8 @@ type UIState struct {
 	DemoAuto        bool         `json:"demoAuto,omitempty"`
 	Sounds          []string     `json:"sounds,omitempty"` // modo pruebas: los efectos que se pidieron (no suena nada)
 	Music           string       `json:"music,omitempty"`  // modo pruebas: la pista que sonaría
+	MusicVolume     float64      `json:"musicVolume"`      // volumen efectivo de la música (0 a 1; 0 con el sonido apagado)
+	SfxVolume       float64      `json:"sfxVolume"`        // ... y el de los efectos
 	UITick          int          `json:"uiTick"`
 	MouseX          int          `json:"mouseX"`
 	MouseY          int          `json:"mouseY"`
@@ -172,6 +174,8 @@ func (a *App) step() {
 		a.scene = next
 	}
 	track, paused := soundFor(a.scene)
+	// Después de actualizar la pantalla: un cambio en Ajustes suena en este mismo tick.
+	sound.SetVolumes(a.env.Save.Settings.MusicVolume, a.env.Save.Settings.SfxVolume)
 	sound.Update(track, paused, !a.env.Save.Settings.SoundOff)
 }
 

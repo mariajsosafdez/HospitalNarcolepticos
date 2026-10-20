@@ -204,13 +204,26 @@ func musicStep(playing, want Track, level float64) (next Track, newLevel float64
 	return want, 0, want != TrackNone
 }
 
+// volumeGain convierte un volumen de Ajustes (0 a 100) en el número por el que
+// se multiplica la señal (0 a 1). El oído no oye en línea recta: la mitad de la
+// amplitud (50 %) apenas suena "un poco más bajito", y para que la barra se
+// sienta pareja se usa una curva cuadrática, gain = (v/100)². Así 50 % es 0,25
+// (-12 dB) y 10 % es 0,01 (-40 dB), y cada paso de la barra baja unos dB
+// parecidos. 0 % da exactamente 0 (silencio) y 100 % da 1 (el nivel ya
+// normalizado de cada archivo). Fuera de 0 a 100 se corta.
+func volumeGain(percent int) float64 {
+	v := float64(min(max(percent, 0), 100)) / 100
+	return v * v
+}
+
 // musicVolumeNow es el volumen real de la música: el fundido, el "agachado" de
-// la pausa (duck, de 1 a duckVolume) y el interruptor de Ajustes.
-func musicVolumeNow(level, duck float64, enabled bool) float64 {
+// la pausa (duck, de 1 a duckVolume), el volumen de Ajustes (ya pasado por
+// volumeGain, de 0 a 1) y el interruptor de Sonido.
+func musicVolumeNow(level, duck, gain float64, enabled bool) float64 {
 	if !enabled {
 		return 0
 	}
-	return fadeVolume(level) * duck * musicVolume
+	return fadeVolume(level) * duck * gain * musicVolume
 }
 
 // duckTarget dice a qué nivel debe estar el "agachado": en pausa baja.
