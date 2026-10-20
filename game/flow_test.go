@@ -1,10 +1,13 @@
 package game
 
 import (
+	"errors"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"costenos-narcolepsia/hospital"
 )
 
 func TestDayIntro(t *testing.T) {
@@ -230,4 +233,72 @@ func mustNewDemo(t *testing.T) *Demo {
 		t.Fatal(err)
 	}
 	return d
+}
+
+// El reporte separa a los que quedaron sin cama en dos grupos: los que el
+// jugador reportó (Hallway, la consulta 5.1 tal cual) y los que se durmieron
+// y nadie atendió (Waiting), que el modelo ve despiertos y la 5.1 no cuenta.
+func TestReportSplitsHallwayAndWaiting(t *testing.T) {
+	tests := []struct {
+		name    string
+		reports int // cuántos duermen y se asignan (el primero toma la única cama)
+		silent  int // cuántos duermen sin que nadie los atienda
+		hallway int
+		waiting int
+	}{
+		{"nobody asleep", 0, 0, 0, 0},
+		{"only unattended", 0, 2, 0, 2},
+		{"one in bed, one without bed", 2, 0, 1, 0},
+		{"both groups", 2, 1, 1, 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := newCustomShift(t, 1, 2, 1, 1, 4) // una sola cama
+			ids := []string{"P-001", "P-002", "P-003", "P-004"}
+			for i := 0; i < tt.reports; i++ {
+				if i == 0 {
+					mustSleepAndAssign(t, s, ids[i], "O-001")
+					continue
+				}
+				if err := s.ForceSleep(ids[i], "8", "champeta dance hall"); err != nil {
+					t.Fatal(err)
+				}
+				if err := s.Assign(ids[i], "D-001"); !errors.Is(err, hospital.ErrNoRoomAvailable) {
+					t.Fatalf("Assign = %v, want ErrNoRoomAvailable", err)
+				}
+			}
+			for i := 0; i < tt.silent; i++ {
+				if err := s.ForceSleep(ids[tt.reports+i], "1B", "waiting room"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			for _, finished := range []bool{false, true} {
+				if finished {
+					advance(s, ShiftTicks+50)
+				}
+				r := s.Report()
+				if len(r.Waiting) != tt.waiting {
+					t.Errorf("finished=%v: Waiting = %+v, want %d", finished, r.Waiting, tt.waiting)
+				}
+				// El grupo 1 es EXACTAMENTE la consulta 5.1 del modelo.
+				inModel := s.Hospital().PatientsInHallway()
+				if len(r.Hallway) != len(inModel) {
+					t.Fatalf("finished=%v: Hallway has %d, PatientsInHallway has %d", finished, len(r.Hallway), len(inModel))
+				}
+				for i, p := range inModel {
+					if r.Hallway[i].ID != p.ID() || r.Hallway[i].Name != p.Name() || r.Hallway[i].Location != p.Location() {
+						t.Errorf("Hallway[%d] = %+v, model says %s", i, r.Hallway[i], p.ID())
+					}
+				}
+				// Ningún paciente está en los dos grupos.
+				for _, w := range r.Waiting {
+					for _, h := range r.Hallway {
+						if w.ID == h.ID {
+							t.Errorf("%s is in both groups", w.ID)
+						}
+					}
+				}
+			}
+		})
+	}
 }

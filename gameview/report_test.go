@@ -63,8 +63,8 @@ func TestCapWithMore(t *testing.T) {
 func TestDemoReportCards(t *testing.T) {
 	r := demoReport(t)
 
-	noBed := noBedLines(r)
-	want := []string{"Al cerrar el turno: nadie.", "Durante el turno: 1 vez.", "Wilfrido Berrio, Pasillo Oeste", "(después pasó a la 101)"}
+	noBed := noBedLines(r, testMeasure)
+	want := []string{"Al cerrar el turno: nadie.", "Durante el turno: 1 vez.", "Atendidos, sin cama (5.1): 0", "Sin atender: 0", "Wilfrido Berrio, Pasillo Oeste", "(después pasó a la 101)"}
 	if len(noBed) != len(want) {
 		t.Fatalf("noBedLines = %+v", noBed)
 	}
@@ -118,14 +118,50 @@ func TestSevereStatus(t *testing.T) {
 	}
 }
 
-func TestNoBedStillInHallway(t *testing.T) {
-	r := game.Report{
-		Hallway: []game.PatientLine{{ID: "P-004", Name: "Wilfrido Berrio", Location: "Pasillo Oeste"}},
-		NoBed:   []game.NoBedLine{{ID: "P-004", Name: "Wilfrido Berrio", Location: "Pasillo Oeste"}},
+// testMeasure mide 5 px por letra, basta para probar.
+func testMeasure(s string) int { return len(s) * 5 }
+
+func TestNoBedLinesGroups(t *testing.T) {
+	p := func(name string) game.PatientLine { return game.PatientLine{Name: name} }
+	tests := []struct {
+		name string
+		r    game.Report
+		want []string
+	}{
+		{"nobody", game.Report{}, []string{"Al cerrar el turno: nadie.", "Durante el turno: 0 veces.", "Atendidos, sin cama (5.1): 0", "Sin atender: 0"}},
+		{"only unattended counts in the header", game.Report{Waiting: []game.PatientLine{p("Luz Dary Pérez")}},
+			[]string{"Al cerrar el turno: 1 paciente.", "Durante el turno: 0 veces.", "Atendidos, sin cama (5.1): 0", "Sin atender: 1", "Luz"}},
+		{"both groups add up", game.Report{
+			Hallway: []game.PatientLine{p("Wilfrido Berrio")},
+			Waiting: []game.PatientLine{p("Yeimy Padilla"), p("Rafa Cantillo")},
+			NoBed:   []game.NoBedLine{{Name: "Wilfrido Berrio", Location: "Cafetería"}}},
+			[]string{"Al cerrar el turno: 3 pacientes.", "Durante el turno: 1 vez.", "Atendidos, sin cama (5.1): 1", "Wilfrido", "Sin atender: 2", "Yeimy, Rafa"}},
 	}
-	lines := noBedLines(r)
-	if lines[0].left != "Al cerrar el turno: 1 paciente." || len(lines) != 3 {
-		t.Errorf("noBedLines = %+v", lines)
+	for _, tt := range tests {
+		got := noBedLines(tt.r, testMeasure)
+		if len(got) < len(tt.want) {
+			t.Errorf("%s: %d lines, want at least %d: %+v", tt.name, len(got), len(tt.want), got)
+			continue
+		}
+		for i, w := range tt.want {
+			if got[i].left != w {
+				t.Errorf("%s: line %d = %q, want %q", tt.name, i, got[i].left, w)
+			}
+		}
+	}
+}
+
+func TestNoBedLinesOverflow(t *testing.T) {
+	var waiting []game.PatientLine
+	for _, n := range []string{"Aaaaaaaaaaaa Z", "Bbbbbbbbbbbb Z", "Cccccccccccc Z", "Dddddddddddd Z"} {
+		waiting = append(waiting, game.PatientLine{Name: n})
+	}
+	got := noBedLines(game.Report{Waiting: waiting}, testMeasure)
+	if len(got) > reportNoBedLines {
+		t.Fatalf("%d lines, max %d", len(got), reportNoBedLines)
+	}
+	if names := got[len(got)-1].left; !strings.Contains(names, "más") {
+		t.Errorf("names line %q should end with 'y N más'", names)
 	}
 }
 
@@ -170,6 +206,30 @@ func TestUnattendedText(t *testing.T) {
 	for _, tt := range tests {
 		if got := unattendedText(tt.names, tt.maxW, measure); got != tt.want {
 			t.Errorf("unattendedText(%v, %d) = %q, want %q", tt.names, tt.maxW, got, tt.want)
+		}
+	}
+}
+
+// Los eventos "sin cama durante el turno" van al final, con el espacio que
+// sobre, y el "y N más" cuenta personas.
+func TestNoBedLinesEventsCap(t *testing.T) {
+	ev := func(room int) game.NoBedLine {
+		return game.NoBedLine{Name: "Ana", Location: "Cafetería", LaterRoom: room}
+	}
+	tests := []struct {
+		name   string
+		noBed  []game.NoBedLine
+		length int    // líneas en total (4 de base: sin nadie)
+		last   string // última línea
+	}{
+		{"fits", []game.NoBedLine{ev(101)}, 6, "(después pasó a la 101)"},
+		{"two do not fit", []game.NoBedLine{ev(0), ev(0), ev(0)}, 6, "y 2 más"},
+		{"four with rooms", []game.NoBedLine{ev(101), ev(102), ev(103), ev(104)}, 5, "y 4 más"},
+	}
+	for _, tt := range tests {
+		got := noBedLines(game.Report{NoBed: tt.noBed}, testMeasure)
+		if len(got) != tt.length || got[len(got)-1].left != tt.last {
+			t.Errorf("%s: %d lines, last %q; want %d, %q", tt.name, len(got), got[len(got)-1].left, tt.length, tt.last)
 		}
 	}
 }

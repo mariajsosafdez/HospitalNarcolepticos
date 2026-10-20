@@ -311,6 +311,8 @@ Al llegar las 18:00 el turno se congela y se muestra el reporte, armado con **la
 
 Más: estrellas, puntos, desglose y los doctores que hicieron exceso de trabajo.
 
+**Por qué los "sin atender" no salen en la consulta 5.1.** El modelo solo sabe lo que el jugador le reporta: un paciente que se durmió y nadie atendió (`AsleepWaiting`) sigue `Awake` para el hospital, así que `h.PatientsInHallway()` no lo ve. El reporte (`Report.Hallway` y `Report.Waiting`) muestra los dos grupos por separado ("Atendidos, sin cama (5.1)" y "Sin atender") y suma ambos en "Al cerrar el turno"; `hospital/` no cambia y el primer grupo es exactamente la consulta 5.1.
+
 ---
 
 ## 9. Modo Demo (`demo.go`)
