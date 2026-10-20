@@ -150,8 +150,14 @@ func (c *creditsScene) Draw(dst *ebiten.Image) {
 	e.Text(dst, "VT323 (Peter Hull)", 250, 91, data)
 	e.Text(dst, "Licencia SIL OFL 1.1", 250, 102, faint)
 	ai := textStyle{fontPixel, 8, '2', alignLeft}
-	e.Text(dst, "Arte y código hechos con ayuda de IA", 250, 122, ai)
-	e.Text(dst, "(Claude, de Anthropic)", 250, 133, ai)
+	e.Text(dst, "Arte y código hechos con ayuda de IA", 250, 114, ai)
+	e.Text(dst, "(Claude, de Anthropic)", 250, 125, ai)
+	// Música y efectos (todo CC0). Cabe entre el bloque de la IA y el botón
+	// Volver; la tercera línea es corta para no llegar al botón (x = 372).
+	e.Text(dst, "Música y sonidos", 250, 144, label)
+	e.Text(dst, "Shop Theme (CleytonKauffman), Calm Track (pmiller)", 250, 154, data)
+	e.Text(dst, "Efectos: Kenney.nl (CC0) y rubberduck", 250, 165, data)
+	e.Text(dst, "CC0, vía OpenGameArt.org", 250, 176, faint)
 
 	// 7. Botón Volver (siempre elegido: es la única opción) y ayuda.
 	btn := rect{372, 174, 84, 16}

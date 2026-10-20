@@ -25,7 +25,7 @@ var pauseLabels = [pauseItems]string{"Continuar", "Ajustes", "Salir al menú"}
 // "Salir al menú" avisa que el turno no se guarda (decisión de la autora).
 var pauseDescs = [pauseItems]string{
 	"El turno sigue donde iba.",
-	"Parpadeo y pantalla completa.",
+	"Parpadeo, sonido y pantalla.",
 	"Ojo: este turno no cuenta.",
 }
 
@@ -134,10 +134,21 @@ func (c *camsScene) trackBlinks() {
 		id := g.Patient().ID()
 		cur[id] = g.State()
 		prev, seen := c.prev[id]
-		if !seen || g.Camera() == c.shift.CurrentCamera() {
+		if !seen {
 			continue
 		}
+		// Sonidos: el "ding" del alta (la dé el jugador o la Demo) y el pop de
+		// quien despierta en la cámara que se está mirando.
+		if prev == game.AwakeInBed && g.State() == game.Gone {
+			c.env.Sound.Play(CueDischarge)
+		}
 		slept, woke := stateEvent(prev, g.State())
+		if g.Camera() == c.shift.CurrentCamera() {
+			if woke {
+				c.env.Sound.Play(CueWake)
+			}
+			continue
+		}
 		switch {
 		case slept && set.BlinkOnSleep:
 			c.addBlink(g.Camera(), false)

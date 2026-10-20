@@ -31,6 +31,7 @@ type Env struct {
 	Assets *Assets
 	Fonts  *Fonts
 	Opts   Options
+	Sound  *Sound // la mesa de sonido (en el modo pruebas no suena: solo anota los cues)
 
 	// Tick cuenta los ticks de la INTERFAZ (parpadeos, animaciones). No es el
 	// reloj del turno: sigue corriendo aunque el juego esté en pausa.
@@ -95,6 +96,8 @@ type UIState struct {
 	DemoPlaying     bool         `json:"demoPlaying,omitempty"`     // una parte se está animando (el reloj corre)
 	DemoBeat        string       `json:"demoBeat,omitempty"`        // momento de la animación (sleep, arrive, carry...)
 	DemoAuto        bool         `json:"demoAuto,omitempty"`
+	Sounds          []string     `json:"sounds,omitempty"` // modo pruebas: los efectos que se pidieron (no suena nada)
+	Music           string       `json:"music,omitempty"`  // modo pruebas: la pista que sonaría
 	UITick          int          `json:"uiTick"`
 	MouseX          int          `json:"mouseX"`
 	MouseY          int          `json:"mouseY"`
@@ -159,9 +162,30 @@ func (a *App) Update() error {
 // step avanza la interfaz un tick con la entrada actual.
 func (a *App) step() {
 	a.env.Tick++
+	sound, on := a.env.Sound, !a.env.Save.Settings.SoundOff
+	sound.SetEnabled(on)
+	// Todo clic o tecla de aceptar/volver suena como botón.
+	if a.in.Click || a.in.Pressed("Enter") || a.in.Pressed("Space") || a.in.Pressed("Escape") {
+		sound.Play(CueClick)
+	}
 	if next := a.scene.Update(&a.in); next != nil {
 		a.scene = next
 	}
+	track, paused := soundFor(a.scene)
+	sound.Update(track, paused, !a.env.Save.Settings.SoundOff)
+}
+
+// soundFor dice qué música toca en la pantalla actual y si el juego está en
+// pausa (la música baja): el menú, los créditos y los ajustes tienen la del
+// menú; el turno, la Demo y el reporte, la del turno.
+func soundFor(s Scene) (track Track, paused bool) {
+	switch v := s.(type) {
+	case *camsScene:
+		return TrackTurno, v.paused
+	case *reportScene:
+		return TrackTurno, false
+	}
+	return TrackMenu, false
 }
 
 // Draw pinta un cuadro. El lienzo del juego mide 480x270 por Env.Scale (un
@@ -268,6 +292,7 @@ func newApp(opts Options, store *game.SaveStore) (*App, error) {
 		startScale = opts.Scale
 	}
 	env := &Env{Scale: float64(startScale), Assets: assets, Fonts: fonts, Opts: opts, Store: store, Save: game.NewSaveData()}
+	env.Sound = NewSound(opts.Agent) // el modo pruebas es siempre silencioso
 	if store != nil {
 		if data, err := store.Load(); err == nil {
 			env.Save = data

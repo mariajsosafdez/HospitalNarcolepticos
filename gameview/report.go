@@ -271,6 +271,7 @@ type reportScene struct {
 // estrellas y de la semilla del turno (la misma semilla, la misma frase).
 func newReportScene(env *Env, shift *game.Shift, demo bool) *reportScene {
 	r := shift.Report()
+	env.Sound.Play(CueEndShift)
 	return &reportScene{
 		env:    env,
 		shift:  shift,

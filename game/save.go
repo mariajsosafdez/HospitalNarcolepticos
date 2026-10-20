@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 )
 
-// Settings son los ajustes del jugador (sección 10). El juego no tiene sonido,
-// así que no hay volúmenes: si un archivo viejo trae "musicVolume" o
+// Settings son los ajustes del jugador (sección 10). El sonido es un solo
+// interruptor (no hay volúmenes): si un archivo viejo trae "musicVolume" o
 // "sfxVolume", json.Unmarshal ignora los campos que no conoce y el guardado
 // sigue leyéndose sin problema.
 type Settings struct {
+	SoundOff     bool `json:"soundOff"`     // sonido apagado (se guarda al revés para que, por defecto, esté prendido)
 	BlinkOnSleep bool `json:"blinkOnSleep"` // parpadeo de cámara cuando alguien se duerme
 	BlinkOnWake  bool `json:"blinkOnWake"`  // ... y cuando alguien despierta
 	Fullscreen   bool `json:"fullscreen"`

@@ -297,6 +297,7 @@ type dumpFile struct {
 func (d *agentDriver) dump(a *App, path string) error {
 	ui := a.scene.State()
 	ui.UITick = a.env.Tick
+	ui.Sounds, ui.Music = a.env.Sound.Log(), string(a.env.Sound.Music())
 	ui.MouseX, ui.MouseY = a.in.MouseX, a.in.MouseY
 	out := dumpFile{UI: ui, Save: a.env.Save}
 	if shift := a.scene.Shift(); shift != nil {

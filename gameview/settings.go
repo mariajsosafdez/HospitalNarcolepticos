@@ -16,28 +16,32 @@ const (
 	setBlinkSleep = iota
 	setBlinkWake
 	setFullscreen
+	setSound
 	setBack
 	setRows
 )
 
 // settingsLabels son los rótulos de las filas, y settingsDescs lo que dice la
 // línea de abajo con la fila marcada (Textos del Director.md).
-var settingsLabels = [setRows]string{"Parpadeo al dormirse", "Parpadeo al despertarse", "Pantalla completa", "Volver"}
+var settingsLabels = [setRows]string{"Parpadeo al dormirse", "Parpadeo al despertarse", "Pantalla completa", "Sonido", "Volver"}
 
 var settingsDescs = [setRows]string{
 	"La cámara titila cuando alguien se duerme.",
 	"La cámara titila cuando alguien se despierta.",
 	"Llena toda la pantalla.",
+	"Música y efectos. Apagado: silencio total.",
 	"",
 }
 
 const settingsHelp = "Flechas: elegir  ·  Izq/Der: cambiar  ·  Esc: volver"
 
-// settingsRowRect es la barra de la fila i (las 3 primeras): (116, 64 + 28i) 248x15.
+// settingsRowRect es la barra de la fila i (las 4 primeras): (116, 64 + 28i) 248x15.
 func settingsRowRect(i int) rect { return rect{116, 64 + 28*i, 248, 15} }
 
 // settingsBackRect es el botón "Volver".
-var settingsBackRect = rect{200, 162, 80, 16}
+// Va en y = 172 (era 162 en la vista aprobada, antes de que hubiera una cuarta
+// fila: la fila "Sonido" ocupa de 148 a 163).
+var settingsBackRect = rect{200, 172, 80, 16}
 
 // settingsToggle es el botón Apagado/Prendido de la fila i: (300, y + 3) 52x12.
 func settingsToggle(i int) rect { r := settingsRowRect(i); return rect{300, r.y + 3, 52, 12} }
@@ -73,11 +77,13 @@ func (v *settingsView) toggle(row int) {
 		s.BlinkOnWake = !s.BlinkOnWake
 	case setFullscreen:
 		s.Fullscreen = !s.Fullscreen
+	case setSound:
+		s.SoundOff = !s.SoundOff
 	}
 	v.env.settingsChanged()
 }
 
-// change aplica Izquierda o Derecha a la fila marcada. Las tres opciones son
+// change aplica Izquierda o Derecha a la fila marcada. Las cuatro opciones son
 // de prender y apagar, así que da igual la dirección; en "Volver" no hace nada.
 func (v *settingsView) change() {
 	if v.sel != setBack {
@@ -164,6 +170,8 @@ func (v *settingsView) Draw(dst *ebiten.Image) {
 			v.drawToggle(dst, i, s.BlinkOnWake)
 		case setFullscreen:
 			v.drawToggle(dst, i, s.Fullscreen)
+		case setSound:
+			v.drawToggle(dst, i, !s.SoundOff)
 		}
 	}
 

@@ -1,6 +1,7 @@
 package gameview
 
 import (
+	"errors"
 	"math"
 	"math/rand"
 	"slices"
@@ -63,6 +64,8 @@ type camsScene struct {
 
 	walkers map[string]*walker
 	rng     *rand.Rand
+	snores  *rand.Rand    // azar aparte (de la misma semilla) para los ronquidos: no cambia el de los paseos
+	snoreIn int           // ticks que faltan para el próximo ronquido
 	feed    *ebiten.Image // la cámara se pinta aquí a 168x123 y luego a x2
 }
 
@@ -76,6 +79,7 @@ func newCams(env *Env, shift *game.Shift, demo *game.Demo, cam game.CameraID) (*
 		cursor:  -1,
 		walkers: make(map[string]*walker),
 		rng:     rand.New(rand.NewSource(shift.Seed() + 1)),
+		snores:  rand.New(rand.NewSource(shift.Seed() + 2)),
 		feed:    ebiten.NewImage(feedW, feedH),
 	}
 	if demo != nil && cam == "" {
@@ -182,6 +186,7 @@ func (c *camsScene) update(in *Input) Scene {
 	}
 	c.updateWalkers()
 	c.trackBlinks()
+	c.updateSounds()
 	if c.notice != nil && c.env.Tick >= c.notice.until {
 		c.notice = nil
 	}
@@ -478,6 +483,9 @@ func (c *camsScene) discharge(g *game.GamePatient) {
 // showError muestra el aviso amable de un error de game.
 func (c *camsScene) showError(err error, g *game.GamePatient) {
 	title, lines := friendlyError(err, g.Patient().Name())
+	if errors.Is(err, hospital.ErrNoRoomAvailable) {
+		c.env.Sound.Play(CueNoBed)
+	}
 	c.notice = &notice{title, lines, c.env.Tick + noticeTicks, c.noticeYFor(g)}
 }
 

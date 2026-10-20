@@ -998,7 +998,7 @@ func TestSaveStore(t *testing.T) {
 	if data.LastUnlockedDay != 1 || data.Settings != DefaultSettings() {
 		t.Errorf("new data = %+v", data)
 	}
-	if got := DefaultSettings(); got.BlinkOnSleep || got.BlinkOnWake || got.Fullscreen {
+	if got := DefaultSettings(); got.BlinkOnSleep || got.BlinkOnWake || got.Fullscreen || got.SoundOff { // el sonido nace prendido
 		t.Errorf("default settings = %+v", got)
 	}
 

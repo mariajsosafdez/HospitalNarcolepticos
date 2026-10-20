@@ -75,3 +75,23 @@ func TestOnOff(t *testing.T) {
 		t.Error("onOff")
 	}
 }
+
+// El interruptor de sonido: nace prendido y se guarda al revés (SoundOff).
+func TestSoundSettingToggle(t *testing.T) {
+	env := &Env{Save: game.NewSaveData()}
+	v := newSettingsView(env)
+	if env.Save.Settings.SoundOff {
+		t.Fatal("sound must start on")
+	}
+	v.toggle(setSound)
+	if !env.Save.Settings.SoundOff || onOff(!env.Save.Settings.SoundOff) != "Apagado" {
+		t.Errorf("after toggling the row must read Apagado: %+v", env.Save.Settings)
+	}
+	v.toggle(setSound)
+	if env.Save.Settings.SoundOff {
+		t.Error("toggling twice must turn the sound back on")
+	}
+	if settingsToggle(setSound).y+settingsToggle(setSound).h >= settingsBackRect.y {
+		t.Error("the Sonido row must not touch the Volver button")
+	}
+}
