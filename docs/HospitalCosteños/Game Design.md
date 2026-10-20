@@ -220,3 +220,5 @@ Rondas 1, 2 y 3 respondidas (ver el registro). Las pendientes de personajes y te
 | 2026-10-19 | `main` adelantado a la rama `game` (fast-forward) y verificado con un clon limpio | Asegurar la entrega | "okey" |
 | 2026-10-19 | El desfile de Créditos incluye a todo el elenco (10 pacientes, 3 doctores, 2 camilleros y los 5 easter eggs) | Que salgan todos | "en los creditos incluye a todo el elenco, incluido los del easter egg" |
 | 2026-10-19 | El juego se entrega **sin sonido**: se quitan el bloque de música de Créditos y los volúmenes de Ajustes | Prioridad: preparar la sustentación | "Yo creo que mejor deberiamos dejar el juego sin música, no creo que nos dé el tiempo, tengo que preparar la sustentación" |
+| 2026-10-19 | Sonido aprobado y unido a la entrega (`main`): bossa en el menú, "Green Salon" en el turno, efectos CC0, barras de volumen | Le gustó al escucharlo | "unela, me gustó bastante" |
+| 2026-10-19 | El parpadeo de cámara sigue hasta que el jugador mira esa cámara (o el motivo desaparece) | Solo parpadeaba un momento | "las cámaras no están parpadeando para siempre, solo lo hacen un momento" |
