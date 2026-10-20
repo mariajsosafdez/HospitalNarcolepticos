@@ -235,7 +235,13 @@ func (o *soundOut) openMusic(t Track) {
 	if err != nil {
 		return
 	}
-	loop := audio.NewInfiniteLoop(&gainReader{stream, fromDB(soundGainDB[file])}, stream.Length())
+	// La música del turno no está hecha para repetirse: se le baja y sube el
+	// volumen 1 s en la costura del bucle (ver seamReader).
+	var src io.ReadSeeker = &gainReader{stream, fromDB(soundGainDB[file])}
+	if t == TrackTurno {
+		src = &seamReader{src: src, total: int(stream.Length() / 4), fade: seamFadeFrames}
+	}
+	loop := audio.NewInfiniteLoop(src, stream.Length())
 	p, err := o.ctx.NewPlayer(loop)
 	if err != nil {
 		return

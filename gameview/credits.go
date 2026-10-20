@@ -152,12 +152,13 @@ func (c *creditsScene) Draw(dst *ebiten.Image) {
 	ai := textStyle{fontPixel, 8, '2', alignLeft}
 	e.Text(dst, "Arte y código hechos con ayuda de IA", 250, 114, ai)
 	e.Text(dst, "(Claude, de Anthropic)", 250, 125, ai)
-	// Música y efectos (todo CC0). Cabe entre el bloque de la IA y el botón
-	// Volver; la tercera línea es corta para no llegar al botón (x = 372).
-	e.Text(dst, "Música y sonidos", 250, 144, label)
-	e.Text(dst, "Shop Theme (CleytonKauffman), Calm Track (pmiller)", 250, 154, data)
-	e.Text(dst, "Efectos: Kenney.nl (CC0) y rubberduck", 250, 165, data)
-	e.Text(dst, "CC0, vía OpenGameArt.org", 250, 176, faint)
+	// Música y efectos. Green Salon es CC BY 4.0 (pide crédito); lo demás es
+	// CC0. Son tres líneas porque el panel termina en y = 195; la tercera es
+	// corta para no llegar al botón Volver (x = 372).
+	e.Text(dst, "Música y sonidos · vía OpenGameArt.org", 250, 144, label)
+	e.Text(dst, "Shop Theme (CleytonKauffman, CC0)", 250, 154, data)
+	e.Text(dst, "\"Green Salon\" (Yubatake, CC BY 4.0)", 250, 165, data)
+	e.Text(dst, "Efectos: Kenney (CC0)", 250, 176, data)
 
 	// 7. Botón Volver (siempre elegido: es la única opción) y ayuda.
 	btn := rect{372, 174, 84, 16}

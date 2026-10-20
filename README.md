@@ -176,9 +176,9 @@ See [AI_USAGE.md](AI_USAGE.md).
   - **Pixelify Sans** by Stefie Justprince, from [Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans). Used for the menu and every interface text.
   - **VT323** by Peter Hull, from [Google Fonts](https://fonts.google.com/specimen/VT323). Used only for the camera stamp, the clock and the map buttons.
 - **Game engine:** [Ebitengine](https://ebitengine.org) (Apache 2.0).
-- **Music and sound effects** (all CC0, embedded in `gameview/assets/sound/`; no credit is required, but they are named anyway):
+- **Music and sound effects** (embedded in `gameview/assets/sound/`; everything is CC0 except the shift music, which is CC BY 4.0 and therefore credited):
   - Menu music: "Shop Theme" by CleytonKauffman, CC0, via [OpenGameArt.org](https://opengameart.org/content/shop-theme).
-  - Shift music: "Calm Track" by pmiller, CC0, via [OpenGameArt.org](https://opengameart.org/content/calm-track).
+  - Shift music: "Green Salon" by Yubatake, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), via [OpenGameArt.org](https://opengameart.org/content/green-salon). Used as is (only its volume is normalized, and it fades out and in for about a second where it loops).
   - Interface sounds, steel-drum jingle and clicks (discharge, wake-up, no-bed, end of shift, button click): [Kenney.nl](https://kenney.nl) (Interface Sounds, UI Audio, Music Jingles), CC0.
   - Snore ("80 CC0 creature SFX #2") and rolling stretcher ("30 CC0 SFX loops"): rubberduck, CC0, via [OpenGameArt.org](https://opengameart.org).
   - The volume of every file is normalized (see `gameview/sound_gain.go`).

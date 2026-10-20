@@ -165,6 +165,48 @@ func TestSoundTargets(t *testing.T) {
 	}
 }
 
+func TestSeamGain(t *testing.T) {
+	// Pista de 100 cuadros con fundido de 10.
+	tests := []struct {
+		frame int
+		want  float64
+	}{
+		{0, 0}, {5, 0.5}, {10, 1}, {50, 1}, {90, 1}, {95, 0.5}, {99, 0.1},
+	}
+	for _, tc := range tests {
+		if got := seamGain(tc.frame, 100, 10); math.Abs(got-tc.want) > 1e-9 {
+			t.Errorf("frame %d: gain %.3f, want %.3f", tc.frame, got, tc.want)
+		}
+	}
+	if got := seamGain(3, 100, 0); got != 1 {
+		t.Errorf("without fade: gain %v, want 1", got)
+	}
+}
+
+func TestSeamReader(t *testing.T) {
+	// 20 cuadros estéreo con todas las muestras en 10000 y fundido de 5.
+	var src []byte
+	for i := 0; i < 20*2; i++ {
+		src = append(src, 10000&0xff, 10000>>8)
+	}
+	r := &seamReader{src: bytes.NewReader(src), total: 20, fade: 5}
+	// Dos pasadas (como el bucle): en ambas el primer cuadro es silencio y el
+	// del medio queda entero.
+	for pass := 0; pass < 2; pass++ {
+		if _, err := r.Seek(0, io.SeekStart); err != nil {
+			t.Fatal(err)
+		}
+		got, err := io.ReadAll(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		frame := func(i int) int16 { return int16(uint16(got[4*i]) | uint16(got[4*i+1])<<8) }
+		if frame(0) != 0 || frame(10) != 10000 || frame(19) >= 10000/4 {
+			t.Errorf("pass %d: frames 0/10/19 = %d/%d/%d", pass, frame(0), frame(10), frame(19))
+		}
+	}
+}
+
 func TestScalePCM(t *testing.T) {
 	// Muestras: 1000, -1000, 30000, -30000. Con ganancia 2: 2000, -2000, y las dos últimas se recortan.
 	vals := []int16{1000, -1000, 30000, -30000}

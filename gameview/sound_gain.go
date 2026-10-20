@@ -17,8 +17,8 @@ package gameview
 var soundGainDB = map[string]float64{
 	// antes: RMS -16.4 dBFS, pico -0.3 dBFS; objetivo RMS -20 dBFS
 	"music_menu.ogg": -3.6,
-	// antes: RMS -14.6 dBFS, pico -0.0 dBFS; objetivo RMS -20 dBFS
-	"music_turno.ogg": -5.4,
+	// antes: RMS -17.7 dBFS, pico -1.6 dBFS; objetivo RMS -20 dBFS
+	"music_turno.ogg": -2.3,
 	// antes: RMS -15.7 dBFS, pico -1.0 dBFS; objetivo RMS -18 dBFS
 	"sfx_alta.ogg": -2.3,
 	// antes: RMS -26.6 dBFS, pico -13.4 dBFS; objetivo RMS -32 dBFS

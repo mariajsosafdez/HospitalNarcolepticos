@@ -80,7 +80,7 @@ Para escuchar (desde la raíz del repo): `powershell -ExecutionPolicy Bypass -Fi
 | Cue | Archivo (carpeta de `sound/audition/`) | Autor / fuente | Licencia | En el juego |
 |---|---|---|---|---|
 | `music_menu` | `04_shop_theme_bossa` | CleytonKauffman, OpenGameArt ("Shop Theme") | CC0 | Menú, créditos y ajustes, en bucle |
-| `music_turno` | `01_calm_track` | pmiller, OpenGameArt ("Calm Track") | CC0 | Turno, Demo y reporte, en bucle. Pesa 3,4 MB (no es enorme), así que no hizo falta usar la de guitarra (`02_etirwer_guitarra`, 2 MB, queda de reserva) |
+| `music_turno` | `04_green_salon` (antes `01_calm_track`, ver [abajo](#música-del-turno-más-alegre-2026-10-19)) | Yubatake, OpenGameArt ("Green Salon") | **CC BY 4.0** (pide crédito: está en Créditos y en el README) | Turno, Demo y reporte, en bucle con fundido en la costura. Pesa 7 MB; `02_etirwer_guitarra` (2 MB, CC0) queda de reserva |
 | `sfx_alta` | `03_glass_ding` | Kenney, Interface Sounds | CC0 | Alta (de quien sea, también en la Demo) |
 | `sfx_despierta` | `03_pluck_a` | Kenney, Interface Sounds | CC0 | El "!" de quien despierta, solo si está en la cámara que se mira |
 | `sfx_click` | `03_ui_click` | Kenney, UI Audio | CC0 | Todo clic, Enter, Espacio o Esc |
@@ -89,7 +89,7 @@ Para escuchar (desde la raíz del repo): `powershell -ExecutionPolicy Bypass -Fi
 | `sfx_ronquido` | `02_snore_b` | rubberduck, OpenGameArt | CC0 | Muy bajito y de vez en cuando (cada 6 a 14 s, sorteado con la semilla del turno) si hay alguien durmiendo en la cámara que se mira |
 | `sfx_camilla` | `01_rolling_loop` | rubberduck, OpenGameArt | CC0 | Bajito, en bucle, mientras la cámara muestre una camilla |
 
-Los OGG originales (sin tocar) están en `gameview/assets/sound/` con el nombre del cue (`music_menu.ogg`, `sfx_alta.ogg`...): 6,9 MB en total. No hay `sfx_pasos` (era opcional).
+Los OGG originales (sin tocar) están en `gameview/assets/sound/` con el nombre del cue (`music_menu.ogg`, `sfx_alta.ogg`...): 10,5 MB en total. No hay `sfx_pasos` (era opcional).
 
 ### Cómo se igualó el volumen
 
@@ -98,7 +98,7 @@ Se **mide** cada archivo (`measureLoudness`, en `gameview/sound_mix.go`): el pic
 | Archivo | RMS antes | Pico antes | Objetivo | Ganancia | RMS después | Pico después |
 |---|---|---|---|---|---|---|
 | `music_menu` | -16,4 | -0,3 | -20 | -3,6 dB | -20,0 | -3,9 |
-| `music_turno` | -14,6 | -0,0 | -20 | -5,4 dB | -20,0 | -5,4 |
+| `music_turno` | -17,7 | -1,6 | -20 | -2,3 dB | -20,0 | -3,9 |
 | `sfx_alta` | -15,7 | -1,0 | -18 | -2,3 dB | -18,0 | -3,3 |
 | `sfx_despierta` | -16,5 | -0,0 | -18 | -1,5 dB | -18,0 | -1,5 |
 | `sfx_click` | -17,5 | -1,5 | -18 | -0,5 dB | -18,0 | -2,1 |
@@ -120,7 +120,7 @@ Se **mide** cada archivo (`measureLoudness`, en `gameview/sound_mix.go`): el pic
 ### Qué escuchar primero (la autora)
 
 1. **El volumen de la música contra los efectos** en un turno (la música a -20 y los efectos a -18 dBFS es solo un número: de oído puede quedar alta o baja; se cambia en `targetMusicDB` y `targetSFXDB` y se vuelve a medir).
-2. **`music_turno` (Calm Track)**: es la que más tiempo se oye; ¿relaja o cansa? Si cansa, la alternativa es `02_etirwer_guitarra`.
+2. **`music_turno` (Green Salon)**: es la que más tiempo se oye; ¿relaja o cansa? Y en el minuto 5:01, ¿se nota la costura del bucle? Si no gusta, la alternativa es `02_etirwer_guitarra`.
 3. **El ronquido y la camilla**: son aproximaciones (ya se dijo que no hay ruedas de camilla reales); ¿molestan a ese volumen o ni se oyen?
 4. **El clic con cada Enter/clic**: suena en todo clic, también si se toca el vacío; si es demasiado, se puede quitar de las teclas.
 5. **El steel drum al terminar el turno** (`sfx_fin_turno`) sobre la música del turno que sigue sonando.
@@ -133,3 +133,12 @@ Se **mide** cada archivo (`measureLoudness`, en `gameview/sound_mix.go`): el pic
 ### Volúmenes de música y efectos (2026-10-19)
 
 Ajustes vuelve a tener las dos barras aprobadas (Volumen música 70 % y Volumen efectos 80 % por defecto, de 10 en 10), además del interruptor **Sonido** (silencio total). Cada porcentaje pasa por `volumeGain` (`sound_mix.go`): **ganancia = (porcentaje / 100)²**. El oído no es lineal, así que una curva cuadrática hace que cada paso de la barra se sienta parejo: 50 % es -12 dB, 10 % es -40 dB, 0 % es silencio exacto y 100 % deja el nivel ya normalizado de cada archivo. La música multiplica `fundido × pausa × volumen`; los efectos (incluidos el ronquido y la camilla) multiplican su volumen, y `Sound.SetVolumes` se llama en cada tick, así lo que se arrastra se oye al instante. Un guardado sin estos campos toma 70 / 80. Como siempre, los valores por defecto son de la IA: la autora confirma de oído.
+
+### Música del turno más alegre (2026-10-19)
+
+La autora, sobre `01_calm_track`: *"Puedes hacer la música de la partida diferente? parecida a la del menú, que sea menos tétrica"*. Se cambió por **"Green Salon" de Yubatake** (bossa nova con vibráfono, 65 BPM, la hermana de la bossa del menú; la IA no puede oírla, **por defecto, la autora confirma de oído**).
+
+- **Licencia**: CC BY 4.0, así que *hay que dar crédito*: Créditos ("Green Salon" (Yubatake, CC BY 4.0), "vía OpenGameArt.org") y README. Se usa sin cambios salvo el volumen (permitido).
+- **Peso**: el OGG mide 7,0 MB (el de Calm Track era 3,4), el total de sonido queda en 10,5 MB, dentro del presupuesto de ~12 MB.
+- **Bucle**: dura 5:01 y no está hecha para repetirse, así que en la unión (fin con inicio) habría un corte. No se buscó un punto de empalme por análisis (sin oído ni herramientas de audio no se podía comprobar que sonara bien): se esconde con un fundido de 1 s al final (baja a 0) y 1 s al principio (sube desde 0) (`seamGain` y `seamReader` en `sound_mix.go`, usados solo para `TrackTurno`; tests `TestSeamGain` y `TestSeamReader`). Cada 5 minutos hay entonces unos 2 s de música que se apaga y vuelve. Un turno dura menos que eso, así que casi nunca se oirá.
+- **Volumen**: antes (Calm Track) RMS -14,6 y pico -0,0, ganancia -5,4 dB; ahora (Green Salon) RMS -17,7, pico -1,6, ganancia -2,3 dB, y queda en RMS -20,0 (objetivo de la música) y pico -3,9 dBFS.

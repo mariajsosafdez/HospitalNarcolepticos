@@ -164,6 +164,59 @@ func (g *gainReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
+// Costura del bucle -------------------------------------------------------------
+
+// seamFadeFrames es lo que dura el fundido en la costura del bucle: 1 s (a
+// 44 100 Hz) al final de la pista baja a 0 y 1 s al principio sube desde 0.
+// Una pista que no fue hecha para repetirse tiene un corte en la unión; así el
+// corte cae en puro silencio y no se oye.
+const seamFadeFrames = sampleRate
+
+// seamGain es el multiplicador (0 a 1) de la muestra número frame en una pista
+// de total cuadros: sube en línea recta en los primeros fade cuadros y baja en
+// los últimos fade; en medio vale 1.
+func seamGain(frame, total, fade int) float64 {
+	if fade <= 0 || total <= 0 {
+		return 1
+	}
+	g := 1.0
+	if frame < fade {
+		g = float64(frame) / float64(fade)
+	}
+	if left := total - frame; left < fade {
+		g = math.Min(g, float64(left)/float64(fade))
+	}
+	return math.Max(0, math.Min(1, g))
+}
+
+// seamReader aplica seamGain a un PCM de 16 bits estéreo mientras se lee. Sabe
+// en qué cuadro va porque anota los Seek y los bytes leídos (NewInfiniteLoop
+// vuelve a 0 con Seek al llegar al final).
+type seamReader struct {
+	src   io.ReadSeeker
+	total int   // cuadros estéreo de la pista
+	fade  int   // cuadros de cada fundido
+	pos   int64 // byte en que va la lectura
+}
+
+func (r *seamReader) Seek(offset int64, whence int) (int64, error) {
+	p, err := r.src.Seek(offset, whence)
+	r.pos = p
+	return p, err
+}
+
+func (r *seamReader) Read(p []byte) (int, error) {
+	n, err := r.src.Read(p)
+	for i := 0; i+3 < n; i += 4 {
+		g := seamGain(int((r.pos+int64(i))/4), r.total, r.fade)
+		if g < 1 {
+			scalePCM(p[i:i+4], g)
+		}
+	}
+	r.pos += int64(n)
+	return n, err
+}
+
 // Fundidos y silencio ------------------------------------------------------------
 
 const (
