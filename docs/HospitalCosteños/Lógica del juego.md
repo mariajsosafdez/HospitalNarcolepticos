@@ -344,6 +344,8 @@ Tests: `game/demo_test.go` (el reloj no se mueve con 10 000 ticks de espera, cad
 |---|---|
 | Parpadeo de cámara cuando alguien se duerme | **apagado** |
 | Parpadeo de cámara cuando alguien se despierta | **apagado** |
+
+El parpadeo no se acaba solo (la autora: "las cámaras no están parpadeando para siempre, solo lo hacen un momento"): el botón del mapa parpadea mientras haya un dormido sin atender (mango) o un despierto en cama (menta) en esa cámara y el jugador no la haya mirado; mirarla lo apaga y un paciente nuevo lo prende otra vez.
 | Volumen música / efectos | 70 % / 80 % *(propuesto)* |
 | Pantalla completa | apagado |
 

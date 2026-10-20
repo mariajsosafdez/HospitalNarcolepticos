@@ -100,8 +100,11 @@ func TestPauseItemAt(t *testing.T) {
 }
 
 func TestBlinkAlpha(t *testing.T) {
-	if blinkAlpha(-1) != 0 || blinkAlpha(blinkTotalTicks) != 0 || blinkAlpha(blinkTotalTicks+50) != 0 {
-		t.Error("no blink before it starts or after 5 s")
+	if blinkAlpha(-1) != 0 {
+		t.Error("no blink before it starts")
+	}
+	if blinkAlpha(100000+blinkPeriodTicks/2) != blinkMaxAlpha {
+		t.Error("the blink never stops: it must still peak after a long time")
 	}
 	if blinkAlpha(0) != 0 {
 		t.Errorf("the blink starts transparent, got %v", blinkAlpha(0))
@@ -114,7 +117,7 @@ func TestBlinkAlpha(t *testing.T) {
 	if !(blinkAlpha(5) < blinkAlpha(10) && blinkAlpha(30) > blinkAlpha(35)) {
 		t.Error("the blink must rise and then fall within each period")
 	}
-	for e := 0; e < blinkTotalTicks; e++ {
+	for e := 0; e < 10*blinkPeriodTicks; e++ {
 		if a := blinkAlpha(e); a < 0 || a > blinkMaxAlpha {
 			t.Fatalf("alpha(%d) = %v out of range", e, a)
 		}
@@ -165,5 +168,75 @@ func TestSoundSettingToggle(t *testing.T) {
 	}
 	if settingsToggle(setSound).y+settingsToggle(setSound).h >= settingsBackRect.y {
 		t.Error("the Sonido row must not touch the Volver button")
+	}
+}
+
+// Tabla de blinkReasons y updateSeen: simulan la partida tick a tick.
+func TestBlinkReasons(t *testing.T) {
+	const cam2, cam1b, room = game.CameraID("2"), game.CameraID("1B"), game.CameraID("7A")
+	sleeper := blinkPatient{"P-001", cam2, game.AsleepWaiting}
+	waker := blinkPatient{"P-002", room, game.AwakeInBed}
+	tests := []struct {
+		name            string
+		ps              []blinkPatient
+		current         game.CameraID
+		seen            map[string]bool
+		sleepOn, wakeOn bool
+		want            map[game.CameraID]bool
+	}{
+		{"sleeper elsewhere blinks mango", []blinkPatient{sleeper}, cam1b, nil, true, true, map[game.CameraID]bool{cam2: false}},
+		{"no-bed patient counts as sleep", []blinkPatient{{"P-003", cam2, game.NoBedWaiting}}, cam1b, nil, true, false, map[game.CameraID]bool{cam2: false}},
+		{"waker blinks mint", []blinkPatient{waker}, cam1b, nil, true, true, map[game.CameraID]bool{room: true}},
+		{"viewed reason does not blink", []blinkPatient{sleeper}, cam1b, map[string]bool{"s:P-001": true}, true, true, map[game.CameraID]bool{}},
+		{"new sleeper blinks next to a seen one", []blinkPatient{sleeper, {"P-004", cam2, game.AsleepWaiting}}, cam1b, map[string]bool{"s:P-001": true}, true, true, map[game.CameraID]bool{cam2: false}},
+		{"current camera never blinks", []blinkPatient{sleeper}, cam2, nil, true, true, map[game.CameraID]bool{}},
+		{"sleep setting off", []blinkPatient{sleeper}, cam1b, nil, false, true, map[game.CameraID]bool{}},
+		{"wake setting off", []blinkPatient{waker}, cam1b, nil, true, false, map[game.CameraID]bool{}},
+		{"reason gone (attended)", []blinkPatient{{"P-001", cam2, game.Carried}}, cam1b, nil, true, true, map[game.CameraID]bool{}},
+		{"both reasons: mint wins", []blinkPatient{{"P-001", room, game.AsleepWaiting}, waker}, cam1b, nil, true, true, map[game.CameraID]bool{room: true}},
+		{"both reasons, wake off: mango", []blinkPatient{{"P-001", room, game.AsleepWaiting}, waker}, cam1b, nil, true, false, map[game.CameraID]bool{room: false}},
+	}
+	for _, tt := range tests {
+		got := blinkReasons(tt.ps, tt.current, tt.seen, tt.sleepOn, tt.wakeOn)
+		if len(got) != len(tt.want) {
+			t.Errorf("%s: got %v want %v", tt.name, got, tt.want)
+			continue
+		}
+		for cam, wake := range tt.want {
+			if v, ok := got[cam]; !ok || v != wake {
+				t.Errorf("%s: got %v want %v", tt.name, got, tt.want)
+			}
+		}
+	}
+}
+
+func TestBlinkLifecycle(t *testing.T) {
+	const cam2, cam1b = game.CameraID("2"), game.CameraID("1B")
+	seen := map[string]bool{}
+	p1 := blinkPatient{"P-001", cam2, game.AsleepWaiting}
+	step := func(ps []blinkPatient, cur game.CameraID) map[game.CameraID]bool {
+		updateSeen(ps, cur, seen)
+		return blinkReasons(ps, cur, seen, true, true)
+	}
+	if len(step([]blinkPatient{p1}, cam1b)) != 1 {
+		t.Fatal("a sleeper on another camera must blink")
+	}
+	if len(step([]blinkPatient{p1}, cam1b)) != 1 {
+		t.Fatal("it keeps blinking while nobody looks")
+	}
+	step([]blinkPatient{p1}, cam2) // el jugador mira la cámara
+	if len(step([]blinkPatient{p1}, cam1b)) != 0 {
+		t.Fatal("after looking and leaving, the blink must stay off")
+	}
+	p2 := blinkPatient{"P-002", cam2, game.AsleepWaiting}
+	if len(step([]blinkPatient{p1, p2}, cam1b)) != 1 {
+		t.Fatal("a second sleeper is a new event: blink again")
+	}
+	step([]blinkPatient{{"P-001", cam2, game.Carried}, {"P-002", cam2, game.Carried}}, cam1b)
+	if len(seen) != 0 {
+		t.Fatalf("gone reasons must be forgotten, seen = %v", seen)
+	}
+	if len(step([]blinkPatient{p1}, cam1b)) != 1 {
+		t.Fatal("the same patient falling asleep again must blink again")
 	}
 }

@@ -54,7 +54,8 @@ type camsScene struct {
 	practice     bool                         // "Cómo jugar": solo el tutorial, y al terminar vuelve al menú
 	settings     *settingsView                // ajustes abiertos desde la pausa
 	prev         map[string]game.PatientState // estado de cada paciente en el tick anterior (para los parpadeos)
-	blinks       map[game.CameraID]blink      // botones del mapa que están parpadeando
+	blinks       map[game.CameraID]bool       // botones del mapa que parpadean (true = menta)
+	seen         map[string]bool              // motivos de parpadeo que el jugador ya miró
 	recorded     bool                         // el resultado del turno ya se guardó
 	arrivalsSeen int                          // cuántas llegadas ya se miraron (para el comentario del Director sobre el gato)
 
@@ -436,7 +437,7 @@ func (c *camsScene) switchCamera(id game.CameraID) {
 	if err := c.shift.SwitchCamera(id); err == nil {
 		c.selected = ""
 		c.cursor = -1
-		delete(c.blinks, id) // ya se miró la cámara que avisaba
+		c.refreshBlinks() // al mirar la cámara se dan por vistos sus motivos
 	}
 }
 
@@ -681,7 +682,7 @@ func (c *camsScene) demoEvent(ev game.DemoEvent) {
 	if cam := c.shift.CurrentCamera(); cam != c.shownCam {
 		c.shownCam = cam
 		c.selected, c.cursor = "", -1
-		delete(c.blinks, cam)
+		c.refreshBlinks()
 	}
 	if ev.Kind == game.EventNoBed {
 		if g := c.shift.FindPatient(ev.Patient); g != nil {

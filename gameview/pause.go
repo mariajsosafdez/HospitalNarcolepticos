@@ -75,32 +75,94 @@ func (c *camsScene) drawPause(dst *ebiten.Image) {
 // Parpadeo de los botones del mapa (opciones de Ajustes)
 // ---------------------------------------------------------------------------
 
-// blink es un botón del mapa que está parpadeando: desde qué tick de la
-// interfaz y si fue porque alguien despertó (si no, porque se durmió).
-type blink struct {
-	start int
-	wake  bool
+// blinkPatient es lo único que el parpadeo necesita saber de un paciente:
+// quién es, en qué cámara está y en qué estado.
+type blinkPatient struct {
+	ID    string
+	Cam   game.CameraID
+	State game.PatientState
 }
 
 const (
-	blinkTotalTicks  = 5 * game.TicksPerSecond // dura 5 s
-	blinkPeriodTicks = 40                      // un titileo cada 0,67 s
-	blinkMaxAlpha    = 0.7                     // "suave": nunca tapa del todo el botón
+	blinkPeriodTicks = 40  // un titileo cada 0,67 s
+	blinkMaxAlpha    = 0.7 // "suave": nunca tapa del todo el botón
 )
 
-// blinkAlpha es la opacidad del titileo a los elapsed ticks de empezar: sube y
-// baja como un triángulo y vale 0 antes de empezar y después de los 5 s. Es
-// pura para probarla con una tabla.
-func blinkAlpha(elapsed int) float64 {
-	if elapsed < 0 || elapsed >= blinkTotalTicks {
+// blinkAlpha es la opacidad del titileo en un tick de la interfaz: sube y baja
+// como un triángulo, sin parar (el parpadeo ya no se acaba solo: dura mientras
+// haya un motivo sin atender). Es pura para probarla con una tabla.
+func blinkAlpha(tick int) float64 {
+	if tick < 0 {
 		return 0
 	}
 	half := blinkPeriodTicks / 2
-	phase := elapsed % blinkPeriodTicks
+	phase := tick % blinkPeriodTicks
 	if phase > half {
 		phase = blinkPeriodTicks - phase
 	}
 	return blinkMaxAlpha * float64(phase) / float64(half)
+}
+
+// reasonKey es la clave de un motivo de parpadeo ("s" dormido, "w" despierto)
+// para guardarlo en el conjunto de motivos ya vistos.
+func reasonKey(wake bool, id string) string {
+	if wake {
+		return "w:" + id
+	}
+	return "s:" + id
+}
+
+// blinkReasons decide qué botones del mapa parpadean. Devuelve cámara -> true
+// si el color es menta (despertó) y false si es mango (dormido). Reglas:
+//   - motivo de sueño: paciente AsleepWaiting o NoBedWaiting en esa cámara;
+//   - motivo de despertar: paciente AwakeInBed en esa cámara;
+//   - cada ajuste (sleepOn, wakeOn) prende solo su motivo;
+//   - un motivo que ya está en seen (el jugador ya miró esa cámara) no cuenta;
+//   - la cámara que se está mirando nunca parpadea;
+//   - si una cámara tiene los dos motivos, gana menta (despertar), por regla fija.
+func blinkReasons(ps []blinkPatient, current game.CameraID, seen map[string]bool, sleepOn, wakeOn bool) map[game.CameraID]bool {
+	out := make(map[game.CameraID]bool)
+	for _, p := range ps {
+		if p.Cam == current {
+			continue
+		}
+		switch {
+		case wakeOn && p.State == game.AwakeInBed && !seen[reasonKey(true, p.ID)]:
+			out[p.Cam] = true
+		case sleepOn && (p.State == game.AsleepWaiting || p.State == game.NoBedWaiting) && !seen[reasonKey(false, p.ID)]:
+			if _, already := out[p.Cam]; !already {
+				out[p.Cam] = false
+			}
+		}
+	}
+	return out
+}
+
+// updateSeen actualiza los motivos ya vistos: marca como vistos todos los de
+// la cámara actual y olvida los que ya no existen (así un paciente que se
+// vuelve a dormir sí avisa otra vez).
+func updateSeen(ps []blinkPatient, current game.CameraID, seen map[string]bool) {
+	live := make(map[string]bool)
+	for _, p := range ps {
+		var key string
+		switch p.State {
+		case game.AwakeInBed:
+			key = reasonKey(true, p.ID)
+		case game.AsleepWaiting, game.NoBedWaiting:
+			key = reasonKey(false, p.ID)
+		default:
+			continue
+		}
+		live[key] = true
+		if p.Cam == current {
+			seen[key] = true
+		}
+	}
+	for key := range seen {
+		if !live[key] {
+			delete(seen, key)
+		}
+	}
 }
 
 // blinkKey es el color del titileo: mango al dormirse, menta al despertar.
@@ -119,16 +181,12 @@ func stateEvent(prev, cur game.PatientState) (slept, woke bool) {
 	return slept, woke
 }
 
-// trackBlinks compara el estado de cada paciente con el del tick anterior y,
-// si el ajuste está prendido, hace parpadear el botón de la cámara donde
-// alguien se durmió o se despertó (solo si no es la cámara que se mira).
+// trackBlinks recalcula cada tick qué botones del mapa parpadean (ver
+// blinkReasons) y toca los sonidos del alta y del que despierta mirando.
 func (c *camsScene) trackBlinks() {
-	for cam, b := range c.blinks { // los parpadeos terminados se quitan
-		if c.env.Tick-b.start >= blinkTotalTicks {
-			delete(c.blinks, cam)
-		}
+	if c.seen == nil {
+		c.seen = make(map[string]bool)
 	}
-	set := c.env.Save.Settings
 	cur := make(map[string]game.PatientState)
 	for _, g := range c.shift.Patients() {
 		id := g.Patient().ID()
@@ -142,27 +200,32 @@ func (c *camsScene) trackBlinks() {
 		if prev == game.AwakeInBed && g.State() == game.Gone {
 			c.env.Sound.Play(CueDischarge)
 		}
-		slept, woke := stateEvent(prev, g.State())
-		if g.Camera() == c.shift.CurrentCamera() {
-			if woke {
-				c.env.Sound.Play(CueWake)
-			}
-			continue
-		}
-		switch {
-		case slept && set.BlinkOnSleep:
-			c.addBlink(g.Camera(), false)
-		case woke && set.BlinkOnWake:
-			c.addBlink(g.Camera(), true)
+		_, woke := stateEvent(prev, g.State())
+		if woke && g.Camera() == c.shift.CurrentCamera() {
+			c.env.Sound.Play(CueWake)
 		}
 	}
 	c.prev = cur
+	c.refreshBlinks()
 }
 
-// addBlink empieza (o reinicia) el parpadeo del botón de una cámara.
-func (c *camsScene) addBlink(cam game.CameraID, wake bool) {
-	if c.blinks == nil {
-		c.blinks = make(map[game.CameraID]blink)
+// blinkPatients saca del turno la foto que necesita blinkReasons.
+func (c *camsScene) blinkPatients() []blinkPatient {
+	var ps []blinkPatient
+	for _, g := range c.shift.Patients() {
+		ps = append(ps, blinkPatient{g.Patient().ID(), g.Camera(), g.State()})
 	}
-	c.blinks[cam] = blink{start: c.env.Tick, wake: wake}
+	return ps
+}
+
+// refreshBlinks marca como vistos los motivos de la cámara actual y guarda en
+// c.blinks los botones que deben parpadear ahora.
+func (c *camsScene) refreshBlinks() {
+	if c.seen == nil {
+		c.seen = make(map[string]bool)
+	}
+	ps, cam := c.blinkPatients(), c.shift.CurrentCamera()
+	updateSeen(ps, cam, c.seen)
+	set := c.env.Save.Settings
+	c.blinks = blinkReasons(ps, cam, c.seen, set.BlinkOnSleep, set.BlinkOnWake)
 }

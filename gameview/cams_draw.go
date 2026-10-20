@@ -635,11 +635,11 @@ func (c *camsScene) drawMap(dst *ebiten.Image) {
 		case locked:
 			key = 'X'
 		}
-		if b, ok := c.blinks[id]; ok && id != current {
+		if wake, ok := c.blinks[id]; ok && id != current {
 			// Parpadeo suave de una cámara donde alguien se durmió (mango) o se
-			// despertó (menta). Solo en las cámaras que no se están mirando.
-			if alpha := blinkAlpha(e.Tick - b.start); alpha > 0 {
-				e.FillRect(dst, r, blinkKey(b.wake), alpha)
+			// despertó (menta), sin parar mientras el motivo siga y no se haya mirado.
+			if alpha := blinkAlpha(e.Tick); alpha > 0 {
+				e.FillRect(dst, r, blinkKey(wake), alpha)
 			}
 		}
 		if id != c.hoverLocked { // con el candado encima, el rótulo se esconde
